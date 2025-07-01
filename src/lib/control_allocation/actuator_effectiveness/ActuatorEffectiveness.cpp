@@ -34,7 +34,10 @@
 #include "ActuatorEffectiveness.hpp"
 
 #include <px4_platform_common/log.h>
-
+/*
+ *const matrix::Vector3f &torque表示一个三维向量，包含了绕x,y,z轴的力矩信息
+ *const matrix::Vector3f &thrust表示一个三维向量，包含了在x,y,z轴方向上的推力信息
+*/
 int ActuatorEffectiveness::Configuration::addActuator(ActuatorType type, const matrix::Vector3f &torque,
 		const matrix::Vector3f &thrust)
 {

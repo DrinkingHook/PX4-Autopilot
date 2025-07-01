@@ -53,6 +53,7 @@
 #include <ActuatorEffectivenessUUV.hpp>
 #include <ActuatorEffectivenessHelicopter.hpp>
 #include <ActuatorEffectivenessHelicopterCoaxial.hpp>
+#include <ActuatorEffectivenessIntermeshing.hpp>
 
 #include <ControlAllocation.hpp>
 #include <ControlAllocationPseudoInverse.hpp>
@@ -156,10 +157,12 @@ private:
 		MULTIROTOR_WITH_TILT = 8,
 		CUSTOM = 9,
 		HELICOPTER_TAIL_ESC = 10,
-		HELICOPTER_TAIL_SERVO = 11,
+		// HELICOPTER_TAIL_SERVO = 11,
+		HELICOPTER_INTERMESHING = 11,
 		HELICOPTER_COAXIAL = 12,
 		SPACECRAFT_2D = 13,
 		SPACECRAFT_3D = 14,
+
 	};
 
 	enum class FailureMode {

@@ -87,8 +87,9 @@ bool ActuatorEffectivenessHelicopterCoaxial::getEffectivenessMatrix(Configuratio
 	}
 
 	// As the allocation is non-linear, we use updateSetpoint() instead of the matrix
-	configuration.addActuator(ActuatorType::MOTORS, Vector3f{}, Vector3f{}); // Clockwise rotor
-	configuration.addActuator(ActuatorType::MOTORS, Vector3f{}, Vector3f{}); // Counter-clockwise rotor
+	// 翻译：作为分配是非线性的，我们使用updateSetpoint()而不是矩阵
+	configuration.addActuator(ActuatorType::MOTORS, Vector3f{}, Vector3f{}); // Clockwise rotor 翻译：顺时针转子
+	configuration.addActuator(ActuatorType::MOTORS, Vector3f{}, Vector3f{}); // Counter-clockwise rotor 翻译：逆时针转子
 
 	// N swash plate servos
 	_first_swash_plate_servo_index = configuration.num_actuators_matrix[0];

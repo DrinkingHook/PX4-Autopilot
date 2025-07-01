@@ -72,6 +72,7 @@ if(CONFIG_MODULES_MC_RATE_CONTROL)
 		4500_clover4
 		4601_droneblocks_dexi_5
 		4901_crazyflie21
+		4199_DK_CUAVx7
 
 		# [5000, 5999] Quadrotor +
 		5001_quad_+

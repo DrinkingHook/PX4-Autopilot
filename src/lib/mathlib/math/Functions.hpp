@@ -167,6 +167,7 @@ const T interpolate(const T &value, const T &x_low, const T &x_high, const T &y_
 
 /*
  * Constant, piecewise linear, constant function with 1/N size intervalls and N corner points as parameters
+ * 翻译：常数，分段线性，常数函数，具有1/N大小的间隔和N个拐角点作为参数
  * y[N-1]               -------
  *                     /
  *                   /

@@ -45,7 +45,6 @@
 #include <circuit_breaker/circuit_breaker.h>
 #include <mathlib/math/Limits.hpp>
 #include <mathlib/math/Functions.hpp>
-
 using namespace matrix;
 using namespace time_literals;
 
@@ -118,7 +117,9 @@ ControlAllocator::parameters_updated()
 	}
 
 	// Allocation method & effectiveness source
+	// 翻译：分配方法和有效性源
 	// Do this first: in case a new method is loaded, it will be configured below
+	// 翻译：首先执行此操作：如果加载了新方法，则将在下面进行配置
 	bool updated = update_effectiveness_source();
 	update_allocation_method(updated); // must be called after update_effectiveness_source()
 
@@ -200,10 +201,12 @@ ControlAllocator::update_allocation_method(bool force)
 		_allocation_method_id = configured_method;
 	}
 }
-
+// 选择机型
 bool
 ControlAllocator::update_effectiveness_source()
 {
+
+	// 读取FLash存储的机型类型
 	const EffectivenessSource source = (EffectivenessSource)_param_ca_airframe.get();
 
 	if (_effectiveness_source_id != source) {
@@ -257,9 +260,9 @@ ControlAllocator::update_effectiveness_source()
 			tmp = new ActuatorEffectivenessHelicopter(this, ActuatorType::MOTORS);
 			break;
 
-		case EffectivenessSource::HELICOPTER_TAIL_SERVO:
-			tmp = new ActuatorEffectivenessHelicopter(this, ActuatorType::SERVOS);
-			break;
+		// case EffectivenessSource::HELICOPTER_TAIL_SERVO:
+		// 	tmp = new ActuatorEffectivenessHelicopter(this, ActuatorType::SERVOS);
+		// 	break;
 
 		case EffectivenessSource::HELICOPTER_COAXIAL:
 			tmp = new ActuatorEffectivenessHelicopterCoaxial(this);
@@ -273,6 +276,9 @@ ControlAllocator::update_effectiveness_source()
 			// spacecraft_allocation does allocation and publishes directly to actuator_motors topic
 			break;
 
+		case EffectivenessSource::HELICOPTER_INTERMESHING:
+			tmp = new ActuatorEffectivenessIntermeshing(this, ActuatorType::SERVOS);
+			break;
 		default:
 			PX4_ERR("Unknown airframe");
 			break;
@@ -316,6 +322,7 @@ ControlAllocator::Run()
 #endif
 
 	// Check if parameters have changed
+	// 翻译：检查参数是否已更改
 	if (_parameter_update_sub.updated()) {
 		// clear update
 		parameter_update_s param_update;
@@ -323,7 +330,9 @@ ControlAllocator::Run()
 
 		if (_handled_motor_failure_bitmask == 0) {
 			// We don't update the geometry after an actuator failure, as it could lead to unexpected results
+			// 翻译：在执行器故障后，我们不会更新几何形状，因为这可能导致意外结果
 			// (e.g. a user could add/remove motors, such that the bitmask isn't correct anymore)
+			// 翻译：例如，用户可以添加/删除电机，从而使位掩码不再正确
 			updateParams();
 			parameters_updated();
 		}
@@ -477,6 +486,7 @@ ControlAllocator::update_effectiveness_matrix_if_needed(EffectivenessUpdateReaso
 		       sizeof(_control_allocation_selection_indexes));
 
 		// Get the minimum and maximum depending on type and configuration
+		// 翻译：根据类型和配置获取最小值和最大值
 		ActuatorEffectiveness::ActuatorVector minimum[ActuatorEffectiveness::MAX_NUM_MATRICES];
 		ActuatorEffectiveness::ActuatorVector maximum[ActuatorEffectiveness::MAX_NUM_MATRICES];
 		ActuatorEffectiveness::ActuatorVector slew_rate[ActuatorEffectiveness::MAX_NUM_MATRICES];
@@ -806,6 +816,7 @@ int ControlAllocator::print_status()
 	}
 
 	// Print current airframe
+	// 翻译：打印当前机型
 	if (_actuator_effectiveness != nullptr) {
 		PX4_INFO("Effectiveness Source: %s", _actuator_effectiveness->name());
 	}

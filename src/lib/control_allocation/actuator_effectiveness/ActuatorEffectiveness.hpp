@@ -35,6 +35,7 @@
  * @file ActuatorEffectiveness.hpp
  *
  * Interface for Actuator Effectiveness
+ * 翻译：执行器效能接口
  *
  * @author Julien Lecoeur <julien.lecoeur@gmail.com>
  */
@@ -100,20 +101,25 @@ public:
 	struct Configuration {
 		/**
 		 * Add an actuator to the selected matrix, returning the index, or -1 on error
+		 * 翻译：将一个执行器添加到所选矩阵，返回索引，如果出错则返回-1
 		 */
 		int addActuator(ActuatorType type, const matrix::Vector3f &torque, const matrix::Vector3f &thrust);
 
 		/**
 		 * Call this after manually adding N actuators to the selected matrix
+		 * 翻译：在手动添加N个执行器到所选矩阵后调用此函数
 		 */
 		void actuatorsAdded(ActuatorType type, int count);
 
 		int totalNumActuators() const;
 
 		/// Configured effectiveness matrix. Actuators are expected to be filled in order, motors first, then servos
+		// 翻译：配置的效能矩阵。预期按顺序填充执行器，先是电机，然后是伺服
 		EffectivenessMatrix effectiveness_matrices[MAX_NUM_MATRICES];
 
 		int num_actuators_matrix[MAX_NUM_MATRICES]; ///< current amount, and next actuator index to fill in to effectiveness_matrices
+		// 翻译：当前数量，以及下一个要填充到effectiveness_matrices的执行器索引
+		
 		ActuatorVector trim[MAX_NUM_MATRICES];
 
 		ActuatorVector linearization_point[MAX_NUM_MATRICES];
