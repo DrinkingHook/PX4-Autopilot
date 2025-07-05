@@ -93,6 +93,7 @@ protected:
 
 	/**
 	 * Remove work item from the runnable queue, if it's there
+	 * 如果在那里，请从可运行的队列中删除工作项目
 	 */
 	void ScheduleClear();
 protected:

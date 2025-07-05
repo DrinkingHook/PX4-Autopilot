@@ -187,6 +187,7 @@ void WorkQueue::Run()
 			work->RunPreamble();
 			work->Run();
 			// Note: after Run() we cannot access work anymore, as it might have been deleted
+			// 注意：run（）之后，我们无法访问工作，因为它可能已被删除
 			work_lock(); // re-lock
 		}
 

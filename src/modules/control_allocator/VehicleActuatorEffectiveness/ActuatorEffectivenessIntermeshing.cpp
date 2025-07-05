@@ -88,8 +88,6 @@ ActuatorEffectivenessIntermeshing::ActuatorEffectivenessIntermeshing(ModuleParam
 	_param_handles_1.yaw_ccw = param_find("CA_HELI_YAW_CCW");
 	_param_handles_1.spoolup_time = param_find("COM_SPOOLUP_TIME");
 	_param_handles_1.max_servo_throw = param_find("CA_MAX_SVO_THROW");
-	_rollFactor[0] = -1;
-	_rollFactor[1] = 1;
 	_yawFactor[0] = 1;
 	_yawFactor[1] = -1;
 	_yawFactor2[0] = -1;
@@ -248,17 +246,17 @@ void ActuatorEffectivenessIntermeshing::updateSetpoint(const matrix::Vector<floa
 		// pitch_coeff = (i == 0) ? -pitch_coeff : pitch_coeff;// 反转第一个伺服的俯仰系数
 		actuator_sp(_first_swash_plate_servo_index + i) = collective_pitch
 				// + swash_servo_throttle
-				+ control_sp(ControlAxis::PITCH) * pitch_coeff * 0.8f
+				+ control_sp(ControlAxis::PITCH) * pitch_coeff
 				// + control_sp(ControlAxis::ROLL) * roll_coeff * 0.8f
-				+ control_sp(ControlAxis::ROLL) * _rollFactor[0]
+				- control_sp(ControlAxis::ROLL)
 				+ control_sp(ControlAxis::YAW) * _yawFactor2[i]
 				+ _geometry.swash_plate_servos[i].trim;
 
 		actuator_sp(_first_swash_plate_servo_index * 3 + i) = collective_pitch
 				// + swash_servo_throttle
-				+ control_sp(ControlAxis::PITCH) * pitch_coeff * 0.8f
+				+ control_sp(ControlAxis::PITCH) * pitch_coeff
 				// + control_sp(ControlAxis::ROLL) * roll_coeff * 0.8f
-				+ control_sp(ControlAxis::ROLL) * _rollFactor[1]
+				+ control_sp(ControlAxis::ROLL)
 				+ control_sp(ControlAxis::YAW) * _yawFactor[i]
 				+ _geometry.swash_plate_servos[i].trim;
 

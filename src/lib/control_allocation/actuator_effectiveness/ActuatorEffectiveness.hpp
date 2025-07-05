@@ -119,7 +119,7 @@ public:
 
 		int num_actuators_matrix[MAX_NUM_MATRICES]; ///< current amount, and next actuator index to fill in to effectiveness_matrices
 		// 翻译：当前数量，以及下一个要填充到effectiveness_matrices的执行器索引
-		
+
 		ActuatorVector trim[MAX_NUM_MATRICES];
 
 		ActuatorVector linearization_point[MAX_NUM_MATRICES];
@@ -132,7 +132,7 @@ public:
 
 	/**
 	 * Set the current flight phase
-	 *
+	 * 翻译：设置当前飞行阶段
 	 * @param Flight phase
 	 */
 	virtual void setFlightPhase(const FlightPhase &flight_phase)
@@ -190,7 +190,9 @@ public:
 
 	/**
 	 * Callback from the control allocation, allowing to manipulate the setpoint.
+	 * 翻译：控制分配的回调，允许操作设定点。
 	 * Used to allocate auxiliary controls to actuators (e.g. flaps and spoilers).
+	 * 翻译：用于将辅助控制分配给执行器（例如襟翼和扰流板）。
 	 *
 	 * @param actuator_sp input & output setpoint
 	 */
@@ -198,8 +200,11 @@ public:
 
 	/**
 	 * Callback from the control allocation, allowing to manipulate the setpoint.
+	 * 翻译：控制分配的回调，允许操作设定点。
 	 * This can be used to e.g. add non-linear or external terms.
+	 * 翻译：这可以用于添加非线性或外部项。
 	 * It is called after the matrix multiplication and before final clipping.
+	 * 翻译：在矩阵乘法之后和最终裁剪之前调用。
 	 * @param actuator_sp input & output setpoint
 	 */
 	virtual void updateSetpoint(const matrix::Vector<float, NUM_AXES> &control_sp,

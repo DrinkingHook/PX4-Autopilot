@@ -285,6 +285,7 @@ ControlAllocator::update_effectiveness_source()
 		}
 
 		// Replace previous source with new one
+		// 翻译：用新的源替换先前的源
 		if (tmp == nullptr) {
 			// It did not work, forget about it
 			PX4_ERR("Actuator effectiveness init failed");
@@ -292,6 +293,7 @@ ControlAllocator::update_effectiveness_source()
 
 		} else {
 			// Swap effectiveness sources
+			// 翻译：交换有效性来源
 			delete _actuator_effectiveness;
 			_actuator_effectiveness = tmp;
 
@@ -352,6 +354,7 @@ ControlAllocator::Run()
 			ActuatorEffectiveness::FlightPhase flight_phase{ActuatorEffectiveness::FlightPhase::HOVER_FLIGHT};
 
 			// Check if the current flight phase is HOVER or FIXED_WING
+			// 翻译：检查当前飞行阶段是否为悬停或固定翼
 			if (vehicle_status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
 				flight_phase = ActuatorEffectiveness::FlightPhase::HOVER_FLIGHT;
 
@@ -360,6 +363,7 @@ ControlAllocator::Run()
 			}
 
 			// Special cases for VTOL in transition
+			// 翻译：VTOL在过渡中的特殊情况
 			if (vehicle_status.is_vtol && vehicle_status.in_transition_mode) {
 				if (vehicle_status.in_transition_to_fw) {
 					flight_phase = ActuatorEffectiveness::FlightPhase::TRANSITION_HF_TO_FF;
@@ -370,6 +374,7 @@ ControlAllocator::Run()
 			}
 
 			// Forward to effectiveness source
+			// 翻译：转发到有效性源
 			_actuator_effectiveness->setFlightPhase(flight_phase);
 		}
 	}
@@ -440,6 +445,7 @@ ControlAllocator::Run()
 			// Do allocation
 			_control_allocation[i]->allocate();
 			_actuator_effectiveness->allocateAuxilaryControls(dt, i, _control_allocation[i]->_actuator_sp); //flaps and spoilers
+			// 更新目标输出函数 _actuator_effectiveness为机型类型在函数update_effectiveness_source赋值
 			_actuator_effectiveness->updateSetpoint(c[i], i, _control_allocation[i]->_actuator_sp,
 								_control_allocation[i]->getActuatorMin(), _control_allocation[i]->getActuatorMax());
 

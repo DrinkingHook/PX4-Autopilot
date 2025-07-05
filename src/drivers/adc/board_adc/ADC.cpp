@@ -98,6 +98,7 @@ int ADC::init()
 	}
 
 	// schedule regular updates
+	// 安排定期更新
 	ScheduleOnInterval(kINTERVAL, kINTERVAL);
 
 	return PX4_OK;

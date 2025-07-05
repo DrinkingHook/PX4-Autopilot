@@ -129,7 +129,6 @@ private:
 	Geometry _geometry{};
 	Geometry _geometry_1{};
 
-	float _rollFactor[NUM_SWASH_PLATE_SERVOS_MAX];        // Roll axis scaling of servo output based on servo position
 	float _yawFactor[NUM_SWASH_PLATE_SERVOS_MAX];	 // Yaw axis scaling of servo output based on servo position
 	float _yawFactor2[NUM_SWASH_PLATE_SERVOS_MAX];	 // Yaw axis scaling of servo output based on servo position
 	int _first_swash_plate_servo_index{};
