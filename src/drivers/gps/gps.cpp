@@ -190,8 +190,6 @@ private:
 
 	sensor_gps_s			_report_gps_pos{};				///< uORB topic for gps position
 	satellite_info_s		*_p_report_sat_info{nullptr};			///< pointer to uORB topic for satellite info
-	uint8_t                         _spoofing_state{0};                             ///< spoofing state
-	uint8_t                         _jamming_state{0};                              ///< jamming state
 
 	uORB::PublicationMulti<sensor_gps_s>	_report_gps_pos_pub{ORB_ID(sensor_gps)};	///< uORB pub for gps position
 	uORB::PublicationMulti<sensor_gnss_relative_s> _sensor_gnss_relative_pub{ORB_ID(sensor_gnss_relative)};
@@ -449,7 +447,7 @@ int GPS::callback(GPSCallbackType type, void *data1, int data2, void *user)
 
 		px4_clock_gettime(CLOCK_REALTIME, &rtc_system_time);
 		timespec rtc_gps_time = *(timespec *)data1;
-		int drift_time = abs(rtc_system_time.tv_sec - rtc_gps_time.tv_sec);
+		int drift_time = abs(static_cast<long>(rtc_system_time.tv_sec - rtc_gps_time.tv_sec));
 
 		if (drift_time >= SET_CLOCK_DRIFT_TIME_S) {
 			// as of 2021 setting the time on Nuttx temporarily pauses interrupts
@@ -911,6 +909,15 @@ GPS::run()
 
 		gpsConfig.interface_protocols = static_cast<GPSHelper::InterfaceProtocolsMask>(gps_ubx_cfg_intf);
 
+		int32_t gps_cfg_wipe = 0;
+		handle = param_find("GPS_CFG_WIPE");
+
+		if (handle != PARAM_INVALID) {
+			param_get(handle, &gps_cfg_wipe);
+		}
+
+		gpsConfig.cfg_wipe = static_cast<bool>(gps_cfg_wipe);
+
 		if (_helper && _helper->configure(_baudrate, gpsConfig) == 0) {
 
 			/* reset report */
@@ -1205,25 +1212,6 @@ GPS::publish()
 		// The uORB message definition requires this data to be set to a NAN if no new valid data is available.
 		_report_gps_pos.heading = NAN;
 		_is_gps_main_advertised.store(true);
-
-		if (_report_gps_pos.spoofing_state != _spoofing_state) {
-
-			if (_report_gps_pos.spoofing_state > sensor_gps_s::SPOOFING_STATE_NONE) {
-				PX4_WARN("GPS spoofing detected! (state: %d)", _report_gps_pos.spoofing_state);
-			}
-
-			_spoofing_state = _report_gps_pos.spoofing_state;
-		}
-
-		if (_report_gps_pos.jamming_state != _jamming_state) {
-
-			if (_report_gps_pos.jamming_state > sensor_gps_s::JAMMING_STATE_WARNING) {
-				PX4_WARN("GPS jamming detected! (state: %d) (indicator: %d)", _report_gps_pos.jamming_state,
-					 (uint8_t)_report_gps_pos.jamming_indicator);
-			}
-
-			_jamming_state = _report_gps_pos.jamming_state;
-		}
 	}
 }
 

@@ -94,7 +94,7 @@ static constexpr bool operator ==(const actuator_armed_s &a, const actuator_arme
 		a.ready_to_arm == b.ready_to_arm &&
 		a.lockdown == b.lockdown &&
 		a.manual_lockdown == b.manual_lockdown &&
-		a.force_failsafe == b.force_failsafe &&
+		a.termination == b.termination &&
 		a.in_esc_calibration_mode == b.in_esc_calibration_mode);
 }
 static_assert(sizeof(actuator_armed_s) == 16, "actuator_armed equality operator review");
@@ -428,16 +428,8 @@ int Commander::custom_command(int argc, char *argv[])
 		}
 	}
 
-	if (!strcmp(argv[0], "lockdown")) {
-
-		if (argc < 2) {
-			Commander::print_usage("not enough arguments, missing [on, off]");
-			return 1;
-		}
-
-		bool ret = send_vehicle_command(vehicle_command_s::VEHICLE_CMD_DO_FLIGHTTERMINATION,
-						strcmp(argv[1], "off") ? 2.0f : 0.0f /* lockdown */, 0.0f);
-
+	if (!strcmp(argv[0], "termination")) {
+		bool ret = send_vehicle_command(vehicle_command_s::VEHICLE_CMD_DO_FLIGHTTERMINATION, 1.0f, 0.0f);
 		return (ret ? 0 : 1);
 	}
 
@@ -574,7 +566,9 @@ transition_result_t Commander::arm(arm_disarm_reason_t calling_reason, bool run_
 
 			if (!_vehicle_control_mode.flag_control_climb_rate_enabled &&
 			    !_failsafe_flags.manual_control_signal_lost && !_is_throttle_low
-			    && !is_ground_vehicle(_vehicle_status)) {
+			    && ((_vehicle_status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING)
+				|| (_vehicle_status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING))
+			   ) {
 
 				mavlink_log_critical(&_mavlink_log_pub, "Arming denied: high throttle\t");
 				events::send(events::ID("commander_arm_denied_throttle_high"), {events::Log::Critical, events::LogInternal::Info},
@@ -999,6 +993,10 @@ Commander::handle_command(const vehicle_command_s &cmd)
 					}
 
 				} else {
+					float roll = matrix::wrap_2pi(math::radians(cmd.param2));
+					roll = PX4_ISFINITE(roll) ? roll : 0.0f;
+					float pitch = matrix::wrap_2pi(math::radians(cmd.param3));
+					pitch = PX4_ISFINITE(pitch) ? pitch : 0.0f;
 					float yaw = matrix::wrap_2pi(math::radians(cmd.param4));
 					yaw = PX4_ISFINITE(yaw) ? yaw : (float)NAN;
 					const double lat = cmd.param5;
@@ -1007,7 +1005,7 @@ Commander::handle_command(const vehicle_command_s &cmd)
 
 					if (PX4_ISFINITE(lat) && PX4_ISFINITE(lon) && PX4_ISFINITE(alt)) {
 
-						if (_home_position.setManually(lat, lon, alt, yaw)) {
+						if (_home_position.setManually(lat, lon, alt, roll, pitch, yaw)) {
 
 							cmd_result = vehicle_command_ack_s::VEHICLE_CMD_RESULT_ACCEPTED;
 
@@ -1694,6 +1692,11 @@ void Commander::executeActionRequest(const action_request_s &action_request)
 
 		break;
 
+	case action_request_s::ACTION_TERMINATION:
+		_user_mode_intention.change(vehicle_status_s::NAVIGATION_STATE_TERMINATION);
+
+		break;
+
 	case action_request_s::ACTION_SWITCH_MODE:
 
 		if (!_user_mode_intention.change(action_request.mode, ModeChangeSource::User, false)) {
@@ -1895,16 +1898,12 @@ void Commander::run()
 		_actuator_armed.lockdown = ((_vehicle_status.hil_state == vehicle_status_s::HIL_STATE_ON)
 					    || _multicopter_throw_launch.isThrowLaunchInProgress());
 		// _actuator_armed.manual_lockdown // action_request_s::ACTION_KILL
-		_actuator_armed.force_failsafe = (_vehicle_status.nav_state == _vehicle_status.NAVIGATION_STATE_TERMINATION);
+		_actuator_armed.termination = (_vehicle_status.nav_state == _vehicle_status.NAVIGATION_STATE_TERMINATION);
 		// _actuator_armed.in_esc_calibration_mode // VEHICLE_CMD_PREFLIGHT_CALIBRATION
 
-		// if force_failsafe or manual_lockdown activated send parachute command
-		if ((!actuator_armed_prev.force_failsafe && _actuator_armed.force_failsafe)
-		    || (!actuator_armed_prev.manual_lockdown && _actuator_armed.manual_lockdown)
-		   ) {
-			if (isArmed()) {
-				send_parachute_command();
-			}
+		// Send parachute command upon termination
+		if (!actuator_armed_prev.termination && _actuator_armed.termination && isArmed()) {
+			send_parachute_command();
 		}
 
 		// publish states (armed, control_mode, vehicle_status, failure_detector_status) at 2 Hz or immediately when changed
@@ -2011,12 +2010,18 @@ void Commander::checkForMissionUpdate()
 					_user_mode_intention.change(vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION);
 
 				} else {
-					_user_mode_intention.change(vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER);
+					// Transition to loiter when the takeoff is completed (force into the Loiter, if mode is not executable then failsafe).
+					_user_mode_intention.change(vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER, ModeChangeSource::ModeExecutor, false,
+								    true);
 				}
 
 			} else if (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION) {
 				// Transition to loiter when the mission is cleared and/or finished, and we are still in mission mode.
-				_user_mode_intention.change(vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER);
+
+				// However, only do so if there's no pending mode change, so there isn't already a pending change (like RTL).
+				if (_user_mode_intention.get() == vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION) {
+					_user_mode_intention.change(vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER);
+				}
 			}
 		}
 	}
@@ -2337,6 +2342,7 @@ bool Commander::handleModeIntentionAndFailsafe()
 	}
 
 	// Handle failsafe action
+	_mode_management.setFailsafeState(_failsafe.selectedAction() > FailsafeBase::Action::Warn);
 	_vehicle_status.nav_state_user_intention = _mode_management.getNavStateReplacementIfValid(_user_mode_intention.get(),
 			false);
 	_vehicle_status.nav_state = _mode_management.getNavStateReplacementIfValid(FailsafeBase::modeFromAction(
@@ -2404,7 +2410,7 @@ void Commander::modeManagementUpdate()
 {
 	ModeManagement::UpdateRequest mode_management_update{};
 	_mode_management.update(isArmed(), _vehicle_status.nav_state_user_intention,
-				_failsafe.selectedAction() > FailsafeBase::Action::Warn, mode_management_update);
+				mode_management_update);
 
 	if (!isArmed() && mode_management_update.change_user_intended_nav_state) {
 		_user_mode_intention.change(mode_management_update.user_intended_nav_state);
@@ -3024,7 +3030,7 @@ The commander module contains the state machine for mode switching and failsafe 
 	PRINT_MODULE_USAGE_ARG("manual|acro|offboard|stabilized|altctl|posctl|position:slow|auto:mission|auto:loiter|auto:rtl|auto:takeoff|auto:land|auto:precland|ext1",
 			"Flight mode", false);
 	PRINT_MODULE_USAGE_COMMAND("pair");
-	PRINT_MODULE_USAGE_COMMAND("lockdown");
+	PRINT_MODULE_USAGE_COMMAND("termination");
 	PRINT_MODULE_USAGE_ARG("on|off", "Turn lockdown on or off", false);
 	PRINT_MODULE_USAGE_COMMAND("set_ekf_origin");
 	PRINT_MODULE_USAGE_ARG("lat, lon, alt", "Origin Latitude, Longitude, Altitude", false);
