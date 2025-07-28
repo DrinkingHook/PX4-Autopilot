@@ -214,75 +214,75 @@ ControlAllocator::update_effectiveness_source()
 		// try to instanciate new effectiveness source
 		ActuatorEffectiveness *tmp = nullptr;
 
-		switch (source) {
-		case EffectivenessSource::NONE:
-		case EffectivenessSource::MULTIROTOR:
-			tmp = new ActuatorEffectivenessMultirotor(this);
-			break;
+		// switch (source) {
+		// case EffectivenessSource::NONE:
+		// case EffectivenessSource::MULTIROTOR:
+		// 	tmp = new ActuatorEffectivenessMultirotor(this);
+		// 	break;
 
-		case EffectivenessSource::STANDARD_VTOL:
-			tmp = new ActuatorEffectivenessStandardVTOL(this);
-			break;
+		// case EffectivenessSource::STANDARD_VTOL:
+		// 	tmp = new ActuatorEffectivenessStandardVTOL(this);
+		// 	break;
 
-		case EffectivenessSource::TILTROTOR_VTOL:
-			tmp = new ActuatorEffectivenessTiltrotorVTOL(this);
-			break;
+		// case EffectivenessSource::TILTROTOR_VTOL:
+		// 	tmp = new ActuatorEffectivenessTiltrotorVTOL(this);
+		// 	break;
 
-		case EffectivenessSource::TAILSITTER_VTOL:
-			tmp = new ActuatorEffectivenessTailsitterVTOL(this);
-			break;
+		// case EffectivenessSource::TAILSITTER_VTOL:
+		// 	tmp = new ActuatorEffectivenessTailsitterVTOL(this);
+		// 	break;
 
-		case EffectivenessSource::ROVER_ACKERMANN:
-			tmp = new ActuatorEffectivenessRoverAckermann();
-			break;
+		// case EffectivenessSource::ROVER_ACKERMANN:
+		// 	tmp = new ActuatorEffectivenessRoverAckermann();
+		// 	break;
 
-		case EffectivenessSource::ROVER_DIFFERENTIAL:
-			// rover_differential_control does allocation and publishes directly to actuator_motors topic
-			break;
+		// case EffectivenessSource::ROVER_DIFFERENTIAL:
+		// 	// rover_differential_control does allocation and publishes directly to actuator_motors topic
+		// 	break;
 
-		case EffectivenessSource::FIXED_WING:
-			tmp = new ActuatorEffectivenessFixedWing(this);
-			break;
+		// case EffectivenessSource::FIXED_WING:
+		// 	tmp = new ActuatorEffectivenessFixedWing(this);
+		// 	break;
 
-		case EffectivenessSource::MOTORS_6DOF: // just a different UI from MULTIROTOR
-			tmp = new ActuatorEffectivenessUUV(this);
-			break;
+		// case EffectivenessSource::MOTORS_6DOF: // just a different UI from MULTIROTOR
+		// 	tmp = new ActuatorEffectivenessUUV(this);
+		// 	break;
 
-		case EffectivenessSource::MULTIROTOR_WITH_TILT:
-			tmp = new ActuatorEffectivenessMCTilt(this);
-			break;
+		// case EffectivenessSource::MULTIROTOR_WITH_TILT:
+		// 	tmp = new ActuatorEffectivenessMCTilt(this);
+		// 	break;
 
-		case EffectivenessSource::CUSTOM:
-			tmp = new ActuatorEffectivenessCustom(this);
-			break;
+		// case EffectivenessSource::CUSTOM:
+		// 	tmp = new ActuatorEffectivenessCustom(this);
+		// 	break;
 
-		case EffectivenessSource::HELICOPTER_TAIL_ESC:
-			tmp = new ActuatorEffectivenessHelicopter(this, ActuatorType::MOTORS);
-			break;
+		// case EffectivenessSource::HELICOPTER_TAIL_ESC:
+		// 	tmp = new ActuatorEffectivenessHelicopter(this, ActuatorType::MOTORS);
+		// 	break;
 
 		// case EffectivenessSource::HELICOPTER_TAIL_SERVO:
 		// 	tmp = new ActuatorEffectivenessHelicopter(this, ActuatorType::SERVOS);
 		// 	break;
 
-		case EffectivenessSource::HELICOPTER_COAXIAL:
-			tmp = new ActuatorEffectivenessHelicopterCoaxial(this);
-			break;
+		// case EffectivenessSource::HELICOPTER_COAXIAL:
+		// 	tmp = new ActuatorEffectivenessHelicopterCoaxial(this);
+		// 	break;
 
-		case EffectivenessSource::SPACECRAFT_2D:
-			tmp = new ActuatorEffectivenessSpacecraft(this);
-			break;
+		// case EffectivenessSource::SPACECRAFT_2D:
+		// 	tmp = new ActuatorEffectivenessSpacecraft(this);
+		// 	break;
 
-		case EffectivenessSource::SPACECRAFT_3D:
-			tmp = new ActuatorEffectivenessSpacecraft(this);
-			break;
+		// case EffectivenessSource::SPACECRAFT_3D:
+		// 	tmp = new ActuatorEffectivenessSpacecraft(this);
+		// 	break;
 
-		case EffectivenessSource::HELICOPTER_INTERMESHING:
+		// case EffectivenessSource::HELICOPTER_INTERMESHING:
 			tmp = new ActuatorEffectivenessIntermeshing(this, ActuatorType::SERVOS);
-			break;
-		default:
-			PX4_ERR("Unknown airframe");
-			break;
-		}
+			// break;
+		// default:
+		// 	PX4_ERR("Unknown airframe");
+		// 	break;
+		// }
 
 		// Replace previous source with new one
 		// 翻译：用新的源替换先前的源
