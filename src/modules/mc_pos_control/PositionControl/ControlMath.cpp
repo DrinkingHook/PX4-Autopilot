@@ -227,6 +227,7 @@ bool cross_sphere_line(const Vector3f &sphere_c, const float sphere_r,
 
 void addIfNotNan(float &setpoint, const float addition)
 {
+	// 如果都为有效值，则添加，setpoint为无效值则赋值
 	if (PX4_ISFINITE(setpoint) && PX4_ISFINITE(addition)) {
 		// No NAN, add to the setpoint
 		setpoint += addition;

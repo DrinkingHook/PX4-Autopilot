@@ -81,6 +81,7 @@ public:
 
 	/**
 	 * Set the position control gains
+	 * 设置位置控制增益
 	 * @param P 3D vector of proportional gains for x,y,z axis
 	 */
 	void setPositionGains(const matrix::Vector3f &P) { _gain_pos_p = P; }
@@ -95,6 +96,7 @@ public:
 
 	/**
 	 * Set the maximum velocity to execute with feed forward and position control
+	 * 设置最大速度以馈送向前和位置控制执行
 	 * @param vel_horizontal horizontal velocity limit
 	 * @param vel_up upwards velocity limit
 	 * @param vel_down downwards velocity limit
@@ -116,6 +118,7 @@ public:
 
 	/**
 	 * Set the maximum tilt angle in radians the output attitude is allowed to have
+	 * 将最大倾斜角设置为弧度的最大倾斜角度允许输出态度
 	 * @param tilt angle in radians from level orientation
 	 */
 	void setTiltLimit(const float tilt) { _lim_tilt = tilt; }

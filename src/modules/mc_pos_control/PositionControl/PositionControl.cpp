@@ -63,6 +63,7 @@ void PositionControl::setVelocityLimits(const float vel_horizontal, const float 
 void PositionControl::setThrustLimits(const float min, const float max)
 {
 	// make sure there's always enough thrust vector length to infer the attitude
+	// 确保有足够的推力向量长度来推断姿态
 	_lim_thr_min = math::max(min, 10e-4f);
 	_lim_thr_max = max;
 }
@@ -107,6 +108,7 @@ void PositionControl::setInputSetpoint(const trajectory_setpoint_s &setpoint)
 
 bool PositionControl::update(const float dt)
 {
+	// 验证数据有效性。包括：位置期望值，速度期望值，加速度期望值
 	bool valid = _inputValid();
 
 	if (valid) {
@@ -121,22 +123,28 @@ bool PositionControl::update(const float dt)
 	return valid && _acc_sp.isAllFinite() && _thr_sp.isAllFinite();
 }
 
+//位置控制
 void PositionControl::_positionControl()
 {
 	// P-position controller
+	// P-位置环控制：（期望位置-当前位置）* 位置增益
 	Vector3f vel_sp_position = (_pos_sp - _pos).emult(_gain_pos_p);
 	// Position and feed-forward velocity setpoints or position states being NAN results in them not having an influence
+	// 翻译：位置和前馈速度设定点或位置状态为NAN会导致它们没有影响
+	// 如果期望速度和速度位置前馈都为有效值，则加上速度位置前馈。如果期望速度值无效，则期望速度赋值为速度位置前馈的值。
 	ControlMath::addIfNotNanVector3f(_vel_sp, vel_sp_position);
 	// make sure there are no NAN elements for further reference while constraining
 	ControlMath::setZeroIfNanVector3f(vel_sp_position);
 
 	// Constrain horizontal velocity by prioritizing the velocity component along the
 	// the desired position setpoint over the feed-forward term.
+	// 翻译：通过优先考虑沿期望位置设定点的速度分量来约束水平速度，而不是前馈项。
 	_vel_sp.xy() = ControlMath::constrainXY(vel_sp_position.xy(), (_vel_sp - vel_sp_position).xy(), _lim_vel_horizontal);
 	// Constrain velocity in z-direction.
 	_vel_sp(2) = math::constrain(_vel_sp(2), -_lim_vel_up, _lim_vel_down);
 }
 
+// 速度环控制
 void PositionControl::_velocityControl(const float dt)
 {
 	// Constrain vertical velocity integral
@@ -226,16 +234,20 @@ bool PositionControl::_inputValid()
 	bool valid = true;
 
 	// Every axis x, y, z needs to have some setpoint
+	// 翻译：每个轴x，y，z都需要一个设定点
+	// 循环判断位置、速度和加速度期望值设定点是否为有效值
 	for (int i = 0; i <= 2; i++) {
 		valid = valid && (PX4_ISFINITE(_pos_sp(i)) || PX4_ISFINITE(_vel_sp(i)) || PX4_ISFINITE(_acc_sp(i)));
 	}
 
 	// x and y input setpoints always have to come in pairs
+	// 翻译：x和y输入设定点总是成对出现
 	valid = valid && (PX4_ISFINITE(_pos_sp(0)) == PX4_ISFINITE(_pos_sp(1)));
 	valid = valid && (PX4_ISFINITE(_vel_sp(0)) == PX4_ISFINITE(_vel_sp(1)));
 	valid = valid && (PX4_ISFINITE(_acc_sp(0)) == PX4_ISFINITE(_acc_sp(1)));
 
 	// For each controlled state the estimate has to be valid
+	// 翻译：对于每个受控状态，估计值必须是有效的
 	for (int i = 0; i <= 2; i++) {
 		if (PX4_ISFINITE(_pos_sp(i))) {
 			valid = valid && PX4_ISFINITE(_pos(i));
