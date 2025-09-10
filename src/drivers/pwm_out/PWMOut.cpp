@@ -168,6 +168,7 @@ void PWMOut::Run()
 	_mixing_output.update();
 
 	/* update PWM status if armed or if disarmed PWM values are set */
+	// 翻译：如果武装或设置了解除武装PWM值，请更新PWM状态
 	bool pwm_on = true;
 
 	if (_pwm_on != pwm_on) {
@@ -177,6 +178,7 @@ void PWMOut::Run()
 	}
 
 	// check for parameter updates
+	// 翻译：检查参数更新
 	if (_parameter_update_sub.updated()) {
 		// clear update
 		parameter_update_s pupdate;
@@ -187,6 +189,7 @@ void PWMOut::Run()
 	}
 
 	// check at end of cycle (updateSubscriptions() can potentially change to a different WorkQueue thread)
+	// 翻译：在周期结束时检查（updatesUbscriptions（）可能会更改为其他工作形线程）
 	_mixing_output.updateSubscriptions(true);
 
 	perf_end(_cycle_perf);
@@ -219,6 +222,7 @@ void PWMOut::update_params()
 	updateParams();
 
 	// Automatically set PWM configuration when a channel is first assigned
+	// 翻译：首先分配通道时自动设置PWM配置
 	if (!_first_update_cycle) {
 		for (size_t i = 0; i < _num_outputs; i++) {
 			if ((previously_set_functions & (1u << i)) == 0 && _mixing_output.functionParamHandle(i) != PARAM_INVALID) {
@@ -226,6 +230,7 @@ void PWMOut::update_params()
 
 				if (param_get(_mixing_output.functionParamHandle(i), &output_function) == 0) {
 					// Servos need PWM rate 50Hz and disramed value 1500us
+					// 翻译：伺服器需要PWM速率50Hz，并取消值1500US
 					if (output_function >= (int)OutputFunction::Servo1
 					    && output_function <= (int)OutputFunction::ServoMax) { // Function got set to a servo
 						int32_t val = 1500;
@@ -233,6 +238,7 @@ void PWMOut::update_params()
 						param_set(_mixing_output.disarmedParamHandle(i), &val);
 
 						// If the whole timer group was not set previously, then set the pwm rate to 50 Hz
+						// 翻译：如果以前没有设置整个计时器组，则将PWM速率设置为50 Hz
 						for (int timer = 0; timer < MAX_IO_TIMERS; ++timer) {
 
 							uint32_t channels = io_timer_get_group(timer);
@@ -258,6 +264,7 @@ void PWMOut::update_params()
 					}
 
 					// Motors need a minimum value that idles the motor and have a deadzone at the top of the range
+					// 翻译：电机需要一个最小值，使电机空转，并在范围顶部有一个死区
 					if (output_function >= (int)OutputFunction::Motor1
 					    && output_function <= (int)OutputFunction::MotorMax) { // Function got set to a motor
 						int32_t val = 1100;

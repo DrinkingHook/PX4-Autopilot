@@ -55,6 +55,7 @@ public:
 
 	/**
 	 * Schedule repeating run with optional delay.
+	 * 翻译：安排重复运行并可选择延迟
 	 *
 	 * @param interval_us		The interval in microseconds.
 	 * @param delay_us		The delay (optional) in microseconds.

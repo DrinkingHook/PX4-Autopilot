@@ -91,6 +91,7 @@ bool ActuatorEffectivenessHelicopterCoaxial::getEffectivenessMatrix(Configuratio
 	configuration.addActuator(ActuatorType::MOTORS, Vector3f{}, Vector3f{}); // Counter-clockwise rotor
 
 	// N swash plate servos
+	// N个斜盘伺服
 	_first_swash_plate_servo_index = configuration.num_actuators_matrix[0];
 
 	for (int i = 0; i < _geometry.num_swash_plate_servos; ++i) {
@@ -107,14 +108,17 @@ void ActuatorEffectivenessHelicopterCoaxial::updateSetpoint(const matrix::Vector
 	_saturation_flags = {};
 
 	// throttle/collective pitch curve
+	// 翻译：油门/集体音高曲线
 	const float throttle = -control_sp(ControlAxis::THRUST_Z) * throttleSpoolupProgress();
 	const float yaw = control_sp(ControlAxis::YAW);
 
 	// actuator mapping
+	// 翻译：执行器映射
 	actuator_sp(0) = throttle - yaw; // Clockwise
 	actuator_sp(1) = throttle + yaw; // Counter-clockwise
 
 	// Saturation check for yaw
+	// 翻译：偏航饱和检查
 	if ((actuator_sp(0) < actuator_min(0)) || (actuator_sp(1) > actuator_max(1))) {
 		setSaturationFlag(1.f, _saturation_flags.yaw_neg, _saturation_flags.yaw_pos);
 
@@ -131,6 +135,7 @@ void ActuatorEffectivenessHelicopterCoaxial::updateSetpoint(const matrix::Vector
 			+ _geometry.swash_plate_servos[i].trim;
 
 		// Saturation check for roll & pitch
+		// 翻译：滚转和俯仰的饱和检查
 		if (actuator_sp(_first_swash_plate_servo_index + i) < actuator_min(_first_swash_plate_servo_index + i)) {
 			setSaturationFlag(roll_coeff, _saturation_flags.roll_pos, _saturation_flags.roll_neg);
 			setSaturationFlag(pitch_coeff, _saturation_flags.pitch_neg, _saturation_flags.pitch_pos);
@@ -146,18 +151,23 @@ float ActuatorEffectivenessHelicopterCoaxial::throttleSpoolupProgress()
 {
 	vehicle_status_s vehicle_status;
 
+        // 获取最新的车辆状态
 	if (_vehicle_status_sub.update(&vehicle_status)) {
 		_armed = vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_ARMED;
 		_armed_time = vehicle_status.armed_time;
 	}
 
+        // 计算从解锁到现在的时间
 	const float time_since_arming = (hrt_absolute_time() - _armed_time) / 1e6f;
+	// 计算油门渐起进度
 	const float spoolup_progress = time_since_arming / _geometry.spoolup_time;
 
+	// 如果已经解锁且渐起进度小于1，则返回渐起进度
 	if (_armed && spoolup_progress < 1.f) {
 		return spoolup_progress;
 	}
 
+        // 否则返回1，表示油门已经完全渐起
 	return 1.f;
 }
 
@@ -166,10 +176,12 @@ void ActuatorEffectivenessHelicopterCoaxial::setSaturationFlag(float coeff, bool
 {
 	if (coeff > 0.f) {
 		// A positive change in given axis will increase saturation
+		// 翻译：给定轴的积极变化将增加饱和度
 		positive_flag = true;
 
 	} else if (coeff < 0.f) {
 		// A negative change in given axis will increase saturation
+		// 翻译：给定轴的消极变化将增加饱和度
 		negative_flag = true;
 	}
 }

@@ -221,22 +221,27 @@ bool MixingOutput::updateSubscriptions(bool allow_wq_switch)
 	}
 
 	// must be locked to potentially change WorkQueue
+	// 翻译：必须被锁定才可能改变工作场
 	lock();
 
 	_has_backup_schedule = false;
 
 	if (_scheduling_policy == SchedulingPolicy::Auto) {
 		// first clear everything
+		// 翻译：首先清理所有东西
 		unregister();
 		_interface.ScheduleClear();
 
 		bool switch_requested = false;
 
 		// potentially switch work queue if we run motor outputs
+		// 翻译：如果我们运行电机输出那么可能切换工作队列
 		for (unsigned i = 0; i < _max_num_outputs; i++) {
 			// read function directly from param, as _function_assignment[i] is updated later
+			// 翻译：直接从参数中读取功能，由于_function_assignment [i]将稍后更新
 			int32_t function;
 
+                        // function等参数 在initParamHandles中初始化
 			if (_param_handles[i].function != PARAM_INVALID && param_get(_param_handles[i].function, &function) == 0) {
 				if (function >= (int32_t)OutputFunction::Motor1 && function <= (int32_t)OutputFunction::MotorMax) {
 					switch_requested = true;
@@ -247,6 +252,7 @@ bool MixingOutput::updateSubscriptions(bool allow_wq_switch)
 		if (allow_wq_switch && !_wq_switched && switch_requested) {
 			if (_interface.ChangeWorkQueue(px4::wq_configurations::rate_ctrl)) {
 				// let the new WQ handle the subscribe update
+				// 翻译：让新的WQ处理订阅更新
 				_wq_switched = true;
 				_interface.ScheduleNow();
 				unlock();
@@ -256,12 +262,15 @@ bool MixingOutput::updateSubscriptions(bool allow_wq_switch)
 	}
 
 	// Now update the functions
+	// 翻译：现在更新功能
 	PX4_DEBUG("updating functions");
 
 	cleanupFunctions();
 
 	const FunctionProviderBase::Context context{_interface, _param_thr_mdl_fac.reference()};
+	// 记录已分配的 provider 在 all_function_providers 数组中的索引（即 p 值），数组元素按 next_provider 顺序填充（未填充的元素为 0）
 	int provider_indexes[MAX_ACTUATORS] {};
+	// 已经分配的 provider 数量（也是 _function_allocated 下一个可用槽的索引）
 	int next_provider = 0;
 	int subscription_callback_provider_index = INT_MAX;
 	bool all_disabled = true;
@@ -269,6 +278,7 @@ bool MixingOutput::updateSubscriptions(bool allow_wq_switch)
 	for (int i = 0; i < _max_num_outputs; ++i) {
 		int32_t val;
 
+		// function等参数 在initParamHandles中初始化
 		if (_param_handles[i].function != PARAM_INVALID && param_get(_param_handles[i].function, &val) == 0) {
 			_function_assignment[i] = (OutputFunction)val;
 
@@ -282,6 +292,12 @@ bool MixingOutput::updateSubscriptions(bool allow_wq_switch)
 				all_disabled = false;
 				int found_index = -1;
 
+                                /* p=0=min_func; p=1=max_func; p=2=Motor1~MotorMax ; p=3=Servo1~ServoMax
+				 * 假设我的配置为Motor1, Motor2, Servo1
+				 * 当第一次运行时 i = 0,p = 2 时会创建 Motor1 的 provider 实例，并记录 provider_indexes[0] = 2
+				 * 当第二次运行时 i = 1,p = 2 时会复用
+				 * 当第三次运行时 i = 2,p = 3 时会创建 Servo1 的 provider 实例，并记录 provider_indexes[1] = 3
+				*/
 				for (int existing = 0; existing < next_provider; ++existing) {
 					if (provider_indexes[existing] == p) {
 						found_index = existing;
@@ -289,17 +305,24 @@ bool MixingOutput::updateSubscriptions(bool allow_wq_switch)
 					}
 				}
 
+                                /* 如果找到则复用已分配的 provider 实例
+				 * 若没有找到则创建一个新的 provider 实例
+                                 */
 				if (found_index >= 0) {
 					_functions[i] = _function_allocated[found_index];
 
 				} else {
 					_function_allocated[next_provider] = all_function_providers[p].constructor(context);
 
+                                        /* 判断是否构建成功
+					 * 若成功则分配给当前通道，并记录 provider 索引
+					 */
 					if (_function_allocated[next_provider]) {
 						_functions[i] = _function_allocated[next_provider];
 						provider_indexes[next_provider++] = p;
 
 						// lowest provider takes precedence for scheduling
+						// 翻译：最低提供者优先考虑调度
 						if (p < subscription_callback_provider_index && _functions[i]->subscriptionCallback()) {
 							subscription_callback_provider_index = p;
 							_subscription_callback = _functions[i]->subscriptionCallback();
@@ -406,6 +429,7 @@ void MixingOutput::unregister()
 bool MixingOutput::update()
 {
 	// check arming state
+	// 翻译：检查武装状态
 	if (_armed_sub.update(&_armed)) {
 		_armed.in_esc_calibration_mode &= _support_esc_calibration;
 
@@ -414,11 +438,13 @@ bool MixingOutput::update()
 		}
 
 		/* Update the armed status and check that we're not locked down.
+		 * 翻译：更新武装状态并且检查我们是不是没有被锁定
 		 * We also need to arm throttle for the ESC calibration. */
 		_throttle_armed = (_armed.armed && !_armed.lockdown) || _armed.in_esc_calibration_mode;
 	}
 
 	// only used for sitl with lockstep
+	// 翻译：仅用于锁定的SITL
 	bool has_updates = _subscription_callback && _subscription_callback->updated();
 
 	// update topics
@@ -457,11 +483,13 @@ bool MixingOutput::update()
 	}
 
 	// Send output if any function mapped or one last disabling sample
+	// 翻译：如果有任何函数被映射或最后一个禁用样本，则发送输出
 	if (!all_disabled || !_was_all_disabled) {
 		if (!_armed.armed && !_armed.kill) {
 			_actuator_test.overrideValues(outputs, _max_num_outputs);
 		}
 
+                // 输出限制
 		limitAndUpdateOutputs(outputs, has_updates);
 	}
 
@@ -475,24 +503,30 @@ MixingOutput::limitAndUpdateOutputs(float outputs[MAX_ACTUATORS], bool has_updat
 {
 	if (_armed.lockdown || _armed.kill) {
 		// overwrite outputs in case of lockdown with disarmed values
+		// 翻译：在锁定的情况下使用解除武装的值覆盖输出
 		for (size_t i = 0; i < _max_num_outputs; i++) {
 			_current_output_value[i] = _disarmed_value[i];
 		}
 
 	} else if (_armed.termination) {
 		// Overwrite outputs with _failsafe_value when terminated
+		// 翻译：终止时用_failSafe_value覆盖输出
 		for (size_t i = 0; i < _max_num_outputs; i++) {
 			_current_output_value[i] = actualFailsafeValue(i);
 		}
 
 	} else {
 		// the output limit call takes care of out of band errors, NaN and constrains
+		// 翻译：输出限制调用处理带外错误、NaN 和约束
 		output_limit_calc(_throttle_armed || _actuator_test.inTestMode(), _max_num_outputs, outputs);
 	}
 
 	// We must calibrate the PWM and Oneshot ESCs to a consistent range of 1000-2000us (gets mapped to 125-250us for Oneshot)
+	// 翻译：我们必须校准PWM和Oneshot ESC，达到1000-2000US的一致范围（映射到Oneshot的125-250US）
 	// Doing so makes calibrations consistent among different configurations and hence PWM minimum and maximum have a consistent effect
+	// 翻译：这样做可以使校准在不同的配置之间保持一致，因此PWM最小和最大效果具有一致的效果
 	// hence the defaults for these parameters also make most setups work out of the box
+	// 翻译：因此，这些参数的默认值也使大多数设置可以使用
 	if (_armed.in_esc_calibration_mode) {
 		static constexpr uint16_t PWM_CALIBRATION_LOW = 1000;
 		static constexpr uint16_t PWM_CALIBRATION_HIGH = 2000;
@@ -509,6 +543,7 @@ MixingOutput::limitAndUpdateOutputs(float outputs[MAX_ACTUATORS], bool has_updat
 	}
 
 	/* now return the outputs to the driver */
+	// 翻译：现在将输出返回驱动程序
 	if (_interface.updateOutputs(_current_output_value, _max_num_outputs, has_updates)) {
 		actuator_outputs_s actuator_outputs{};
 		setAndPublishActuatorOutputs(_max_num_outputs, actuator_outputs);
@@ -557,6 +592,7 @@ MixingOutput::output_limit_calc(const bool armed, const int num_channels, const 
 
 		break;
 
+        // 爬升阶段 当超过设定的时间后切换输出状态为ON
 	case OutputLimitState::RAMP:
 		if (!armed) {
 			_output_state = OutputLimitState::OFF;
@@ -581,6 +617,12 @@ MixingOutput::output_limit_calc(const bool armed, const int num_channels, const 
 	 * as the throttle channels need to go through the ramp at
 	 * regular arming time.
 	 */
+
+        /* 如果系统已预防，则极限状态暂时打开,
+	* 因为一些输出是有效的，而无效输出已被设置为 NaN.
+	* 不过，这并不存储在状态机器中,
+	* 因为油门通道需要在常规准备时间内经过斜坡.
+	*/
 	auto local_limit_state = _output_state;
 
 	if (isPrearmed()) {
@@ -606,6 +648,7 @@ MixingOutput::output_limit_calc(const bool armed, const int num_channels, const 
 
 			for (int i = 0; i < num_channels; i++) {
 				// Ramp from disarmed value to currently desired output that would apply without ramp
+				// 翻译：从解除武装的价值到当前所需的输出的坡道，而无需坡道
 				uint16_t desired_output = output_limit_calc_single(i, output[i]);
 				_current_output_value[i] = _disarmed_value[i] + progress * (desired_output - _disarmed_value[i]);
 			}

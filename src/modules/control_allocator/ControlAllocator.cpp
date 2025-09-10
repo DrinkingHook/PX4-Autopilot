@@ -302,6 +302,7 @@ ControlAllocator::update_effectiveness_source()
 void
 ControlAllocator::Run()
 {
+	// 检查是否应该退出 模块线程
 	if (should_exit()) {
 		_vehicle_torque_setpoint_sub.unregisterCallback();
 		exit_and_cleanup();
@@ -316,6 +317,7 @@ ControlAllocator::Run()
 #endif
 
 	// Check if parameters have changed
+	// 翻译：检查参数是否改变
 	if (_parameter_update_sub.updated()) {
 		// clear update
 		parameter_update_s param_update;
@@ -323,6 +325,7 @@ ControlAllocator::Run()
 
 		if (_handled_motor_failure_bitmask == 0) {
 			// We don't update the geometry after an actuator failure, as it could lead to unexpected results
+			// 翻译：我们不会在执行器故障后更新几何形状，因为它可能导致意外结果
 			// (e.g. a user could add/remove motors, such that the bitmask isn't correct anymore)
 			updateParams();
 			parameters_updated();
@@ -443,6 +446,7 @@ ControlAllocator::Run()
 	}
 
 	// Publish actuator setpoint and allocator status
+	// 翻译：发布执行器设定点和分配器状态
 	publish_actuator_controls();
 
 	// Publish status at limited rate, as it's somewhat expensive and we use it for slower dynamics

@@ -129,4 +129,8 @@
         "yaml.schemas": {
                 "${workspaceFolder}/validation/module_schema.yaml": "${workspaceFolder}/src/modules/*/module.yaml"
         },
+        "clangd.arguments": [
+                "--pch-storage=memory",
+                "--compile-commands-dir=build/cuav_x7pro_default"
+        ],
 }

@@ -60,8 +60,10 @@ bool SubscriptionInterval::copy(void *dst)
 		const hrt_abstime now = hrt_absolute_time();
 
 		// make sure we don't set a timestamp before the timer started counting (now - _interval_us would wrap because it's unsigned)
+		// 翻译：确保在计时器开始计数之前我们不会设置时间戳（现在 -  _interval_us会包装，因为它是未签名的）
 		if (now > _interval_us) {
 			// shift last update time forward, but don't let it get further behind than the interval
+			// 翻译：将上次更新时间提前，但不要让它比间隔更进一步
 			_last_update = math::constrain(_last_update + _interval_us, now - _interval_us, now);
 
 		} else {

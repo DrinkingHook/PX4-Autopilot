@@ -218,6 +218,7 @@ void VehicleIMU::Run()
 		}
 
 		// update gyro until integrator ready and not falling behind
+		// 翻译：更新陀螺仪直到准备好的整合器并不落后
 		if (!_gyro_integrator.integral_ready() || consume_all_gyro) {
 			if (UpdateGyro()) {
 				updated = true;
@@ -226,6 +227,7 @@ void VehicleIMU::Run()
 
 
 		// update accel until integrator ready and caught up to gyro
+		// 翻译：更新加速直到准备好的积分器并赶上Gyro
 		int sensor_accel_sub_updates = 0;
 
 		while (_sensor_accel_sub.updated()
@@ -242,16 +244,19 @@ void VehicleIMU::Run()
 		}
 
 		// reconfigure integrators if calculated sensor intervals have changed
+		// 翻译：重新配置集成器如果计算的传感器间隔已更改
 		if (_update_integrator_config || !_intervals_configured) {
 			UpdateIntegratorConfiguration();
 		}
 
 		// check for additional updates and that we're fully caught up before publishing
+		// 翻译：检查是否有其他更新，并且我们在发布之前已完全陷入困境
 		if ((consume_all_gyro || _data_gap) && _sensor_gyro_sub.updated()) {
 			continue;
 		}
 
 		// publish if both accel & gyro integrators are ready
+		// 翻译：如果ACCEL和GYRO集成商都准备就绪，发布
 		if (_intervals_configured && _accel_integrator.integral_ready() && _gyro_integrator.integral_ready()) {
 			if (Publish()) {
 				break;

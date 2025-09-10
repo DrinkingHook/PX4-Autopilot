@@ -70,6 +70,7 @@ void ManualControl::Run()
 	processInput(hrt_absolute_time());
 
 	// reschedule to detect timeouts
+	// 翻译：重新安排以检测超时
 	ScheduleDelayed(200_ms);
 
 	perf_end(_loop_perf);
@@ -89,6 +90,7 @@ void ManualControl::processInput(hrt_abstime now)
 	}
 
 	// Check if parameters have changed
+	// 翻译：检查参数是否已更改
 	if (_parameter_update_sub.updated()) {
 		// clear update
 		parameter_update_s param_update;

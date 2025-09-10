@@ -274,8 +274,11 @@ private:
 
 	perf_counter_t _control_latency_perf;
 
+        // 唯一分配的功能对象集合，便于统一管理和更新。
 	FunctionProviderBase *_function_allocated[MAX_ACTUATORS] {}; ///< unique allocated functions
+	// 每个通道实际分配的功能对象指针，决定通道输出什么功能
 	FunctionProviderBase *_functions[MAX_ACTUATORS] {}; ///< currently assigned functions
+	// 每个通道分配的功能类型（枚举），用于标记和逻辑判断
 	OutputFunction _function_assignment[MAX_ACTUATORS] {};
 	bool _need_function_update{true};
 	bool _has_backup_schedule{false};

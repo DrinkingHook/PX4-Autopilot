@@ -110,6 +110,7 @@ void PWMSim::Run()
 	_mixing_output.update();
 
 	// check for parameter updates
+	// 翻译：检查参数更新
 	if (_parameter_update_sub.updated()) {
 		parameter_update_s pupdate;
 		_parameter_update_sub.copy(&pupdate);
@@ -117,6 +118,7 @@ void PWMSim::Run()
 	}
 
 	// check at end of cycle (updateSubscriptions() can potentially change to a different WorkQueue thread)
+	// 翻译：在周期结束时检查（updatesUbscriptions（）可能会更改为其他工作形线程）
 	_mixing_output.updateSubscriptions(true);
 }
 
