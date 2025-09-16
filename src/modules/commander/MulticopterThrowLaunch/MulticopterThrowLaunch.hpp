@@ -72,6 +72,7 @@ public:
 
 	enum class ThrowLaunchState {
 		DISABLED = 0,
+		// 空闲
 		IDLE = 1,
 		ARMED = 2,
 		UNSAFE = 3,

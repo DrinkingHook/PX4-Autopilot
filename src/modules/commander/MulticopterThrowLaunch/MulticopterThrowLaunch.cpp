@@ -40,10 +40,14 @@ MulticopterThrowLaunch::MulticopterThrowLaunch(ModuleParams *parent) :
 
 void MulticopterThrowLaunch::update(const bool armed)
 {
+	// 检查是否开启抛飞功能
 	if (_param_com_throw_en.get()) {
+		// 首先检查车辆本地位置信息订阅是否有更新
 		if (_vehicle_local_position_sub.updated()) {
+			// 初始化结构体
 			vehicle_local_position_s vehicle_local_position{};
 
+                        // 更新车辆本地位置信息
 			if (_vehicle_local_position_sub.copy(&vehicle_local_position)) {
 				_last_velocity = matrix::Vector3f(vehicle_local_position.vx, vehicle_local_position.vy, vehicle_local_position.vz);
 			}
@@ -64,6 +68,7 @@ void MulticopterThrowLaunch::update(const bool armed)
 			break;
 
 		case ThrowLaunchState::ARMED:
+			// 如果检测到抛飞则切换到模式：UNSAFE
 			if (_last_velocity.longerThan(_param_com_throw_min_speed.get())) {
 				PX4_INFO("Throw detected, motors will start once falling");
 				_throw_launch_state = ThrowLaunchState::UNSAFE;

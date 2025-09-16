@@ -373,8 +373,10 @@ FixedWingModeManager::set_control_mode_current(const hrt_abstime &now)
 		return; // do not publish the setpoint
 	}
 
+        // 首先记录当前的控制模式作为以前的控制模式
 	const FW_POSCTRL_MODE previous_position_control_mode = _control_mode_current;
 
+        // 设置跳过起飞检查为false
 	_skipping_takeoff_detection = false;
 	const bool doing_backtransition = _vehicle_status.in_transition_mode && !_vehicle_status.in_transition_to_fw;
 
@@ -444,6 +446,7 @@ FixedWingModeManager::set_control_mode_current(const hrt_abstime &now)
 		   && !_control_mode.flag_control_position_enabled) {
 
 		// failsafe modes engaged if position estimate is invalidated
+		// 翻译：如果位置估计无效，则参与故障安全模式
 
 		if (previous_position_control_mode != FW_POSCTRL_MODE_AUTO_ALTITUDE
 		    && previous_position_control_mode != FW_POSCTRL_MODE_AUTO_CLIMBRATE) {
@@ -453,12 +456,14 @@ FixedWingModeManager::set_control_mode_current(const hrt_abstime &now)
 
 		if (doing_backtransition) {
 			// we handle loss of position control during backtransition as a special case
+			// 翻译：我们将在回溯转换过程中失去位置控制的情况视为特殊情况
 			_control_mode_current = FW_POSCTRL_MODE_TRANSITION_TO_HOVER_HEADING_HOLD;
 
 		} else if (hrt_elapsed_time(&_time_in_fixed_bank_loiter) < (_param_nav_gpsf_lt.get() * 1_s)
 			   && !_vehicle_status.in_transition_mode) {
 			if (previous_position_control_mode != FW_POSCTRL_MODE_AUTO_ALTITUDE) {
 				// Need to init because last loop iteration was in a different mode
+				// 翻译：需要初始化，因为上次循环迭代处于不同的模式
 				events::send(events::ID("fixedwing_position_control_fb_loiter"), events::Log::Critical,
 					     "Start loiter with fixed bank angle");
 			}
@@ -1080,6 +1085,7 @@ FixedWingModeManager::control_auto_takeoff(const hrt_abstime &now, const float c
 	const float takeoff_airspeed = (_param_fw_tko_airspd.get() > FLT_EPSILON) ? _param_fw_tko_airspd.get() :
 				       _param_fw_airspd_min.get();
 
+        // 检测跑道起飞模式是否开启
 	if (_runway_takeoff.runwayTakeoffEnabled()) {
 		if (!_runway_takeoff.isInitialized()) {
 			_runway_takeoff.init(now);
@@ -1161,7 +1167,9 @@ FixedWingModeManager::control_auto_takeoff(const hrt_abstime &now, const float c
 		_fixed_wing_runway_control_pub.publish(fw_runway_control);
 
 	} else {
+		// 如果跑道飞机模式未开启则运行抛飞启动程序
 		/* Perform launch detection */
+		/* 执行启动检测 */
 		if (!_skipping_takeoff_detection && _param_fw_laun_detcn_on.get() &&
 		    _launchDetector.getLaunchDetected() < launch_detection_status_s::STATE_FLYING) {
 
@@ -1929,7 +1937,9 @@ void FixedWingModeManager::control_backtransition_line_follow(const Vector2f &gr
 	Vector2f curr_wp_local = _global_local_proj_ref.project(pos_sp_curr.lat, pos_sp_curr.lon);
 
 	// Set the position where the backtransition started the first ime we pass through here.
+	// 翻译：设置我们第一次经过此处时后退过渡开始的位置。
 	// Will get reset if not in transition anymore.
+	// 翻译：如果不再处于过渡状态，将会被重置。
 	if (!_lpos_where_backtrans_started.isAllFinite()) {
 		_lpos_where_backtrans_started = curr_pos_local;
 	}
@@ -1956,16 +1966,20 @@ FixedWingModeManager::Run()
 		return;
 	}
 
+        // 记录开始时间
 	perf_begin(_loop_perf);
 
+        // 检查是否有车俩状态uorb更新
 	if (_vehicle_status_sub.updated()) {
 
+		// 更新车辆状态
 		if (_vehicle_status_sub.update(&_vehicle_status)) {
 			_nav_state = _vehicle_status.nav_state;
 		}
 	}
 
 	/* only run controller if position changed and we are not running an external mode*/
+        /* 翻译：仅当位置更改并且我们没有运行外部模式时运行控制器 */
 
 	const bool is_external_nav_state = (_nav_state >= vehicle_status_s::NAVIGATION_STATE_EXTERNAL1)
 					   && (_nav_state <= vehicle_status_s::NAVIGATION_STATE_EXTERNAL8);
@@ -1973,6 +1987,7 @@ FixedWingModeManager::Run()
 	if (is_external_nav_state) {
 		// this will cause the configuration handler to publish immediately the next time an internal flight
 		// mode is active
+		// 翻译：这将导致配置处理程序在下次内部飞行模式激活时立即发布
 		_ctrl_configuration_handler.resetLastPublishTime();
 
 	} else if (_local_pos_sub.update(&_local_pos)) {
@@ -2010,17 +2025,21 @@ FixedWingModeManager::Run()
 		_current_altitude = -_local_pos.z + _reference_altitude; // Altitude AMSL in meters
 
 		// handle estimator reset events. we only adjust setpoins for manual modes
+		// 翻译：处理估算器重置事件。我们仅调整手动​​模式的设定点
 		if (_control_mode.flag_control_manual_enabled) {
 			// adjust navigation waypoints in position control mode
+			// 翻译：在位置控制模式下调整导航航路点
 			if (_control_mode.flag_control_altitude_enabled && _control_mode.flag_control_velocity_enabled
 			    && _local_pos.xy_reset_counter != _xy_reset_counter) {
 
 				// reset heading hold flag, which will re-initialise position control
+				// 翻译：重置航向保持标志，这将重新初始化位置控制
 				_hdg_hold_enabled = false;
 			}
 		}
 
 		// Convert Local setpoints to global setpoints
+		// 翻译：将本地设定值转换为全局设定点
 		if (!_global_local_proj_ref.isInitialized()
 		    || (_global_local_proj_ref.getProjectionReferenceTimestamp() != _local_pos.ref_timestamp)
 		    || (_local_pos.xy_reset_counter != _xy_reset_counter)) {
@@ -2037,11 +2056,15 @@ FixedWingModeManager::Run()
 							     _local_pos.ref_timestamp);
 		}
 
+                // 检查是否启用了板外控制
 		if (_control_mode.flag_control_offboard_enabled) {
+			// 轨迹设定点
 			trajectory_setpoint_s trajectory_setpoint;
 
+			// 获取板外控制的目标设定点
 			if (_trajectory_setpoint_sub.update(&trajectory_setpoint)) {
 				bool valid_setpoint = false;
+				// 清除现有的轨迹控制
 				_pos_sp_triplet = {}; // clear any existing
 				_pos_sp_triplet.timestamp = trajectory_setpoint.timestamp;
 				_pos_sp_triplet.current.timestamp = trajectory_setpoint.timestamp;
@@ -2054,6 +2077,7 @@ FixedWingModeManager::Run()
 				_pos_sp_triplet.current.lon = static_cast<double>(NAN);
 				_pos_sp_triplet.current.alt = NAN;
 
+                                // 检查所有板外轨迹位置控制点是否都为有限值
 				if (Vector3f(trajectory_setpoint.position).isAllFinite()) {
 					if (_global_local_proj_ref.isInitialized()) {
 						double lat;
@@ -2068,6 +2092,7 @@ FixedWingModeManager::Run()
 
 				}
 
+                                // 检查所有板外轨迹速度控制点是否都为有限值
 				if (Vector3f(trajectory_setpoint.velocity).isAllFinite()) {
 					valid_setpoint = true;
 					_pos_sp_triplet.current.type = position_setpoint_s::SETPOINT_TYPE_POSITION;
@@ -2075,6 +2100,7 @@ FixedWingModeManager::Run()
 					_pos_sp_triplet.current.vy = trajectory_setpoint.velocity[1];
 					_pos_sp_triplet.current.vz = trajectory_setpoint.velocity[2];
 
+                                        // 检查板外轨迹控制点的加速度值是否为有限值
 					if (Vector3f(trajectory_setpoint.acceleration).isAllFinite()) {
 						Vector2f velocity_sp_2d(trajectory_setpoint.velocity[0], trajectory_setpoint.velocity[1]);
 						Vector2f normalized_velocity_sp_2d = velocity_sp_2d.normalized();
@@ -2094,6 +2120,7 @@ FixedWingModeManager::Run()
 			}
 
 		} else {
+			// 如不是板外控制则更新_pos_sp_triplet轨迹控制
 			if (_pos_sp_triplet_sub.update(&_pos_sp_triplet)) {
 
 				_position_setpoint_previous_valid = PX4_ISFINITE(_pos_sp_triplet.previous.lat)
@@ -2115,6 +2142,7 @@ FixedWingModeManager::Run()
 
 		airspeed_poll();
 		manual_control_setpoint_poll();
+		// 车辆姿态轮询
 		vehicle_attitude_poll();
 		vehicle_command_poll();
 		vehicle_control_mode_poll();
@@ -2138,6 +2166,7 @@ FixedWingModeManager::Run()
 		Vector2d curr_pos(_current_latitude, _current_longitude);
 		Vector2f ground_speed(_local_pos.vx, _local_pos.vy);
 
+                // 设置当前的控制模式
 		set_control_mode_current(now);
 
 		update_in_air_states(now);
@@ -2152,6 +2181,7 @@ FixedWingModeManager::Run()
 		_spoilers_setpoint = 0.f;
 
 		// by default set speed weight to the param value, can be overwritten inside the methods below
+		// 翻译：默认情况下，将速度重量设置为参数值，可以在下面的方法中覆盖
 		_ctrl_configuration_handler.setSpeedWeight(_param_t_spdweight.get());
 
 		if (_control_mode_current != FW_POSCTRL_MODE_AUTO_LANDING_STRAIGHT

@@ -97,6 +97,7 @@ private:
 
 	/**
 	 *  Counter for how long the measured acceleration is above the defined threshold [s]
+	 *  翻译：计数器的测量加速度高于定义阈值的时间[S]
 	 */
 	float acceleration_detected_counter_{0.f};
 
@@ -106,8 +107,11 @@ private:
 	uint state_{launch_detection_status_s::STATE_WAITING_FOR_LAUNCH};
 
 	DEFINE_PARAMETERS(
+		// 定义了触发手抛起飞的加速度阈值。
 		(ParamFloat<px4::params::FW_LAUN_AC_THLD>) param_fw_laun_ac_thld_,
+		// 定义了加速度低于 FW_LAUN_AC_THLD 阈值需要持续的时间，以确认抛掷动作有效。
 		(ParamFloat<px4::params::FW_LAUN_AC_T>) param_fw_laun_ac_t_,
+		// 定义了在检测到抛掷动作（进入 STATE_LAUNCH_DETECTED_DISABLED_MOTOR）后，延迟多长时间启动电机（arming）并切换到 STATE_FLYING 状态。
 		(ParamFloat<px4::params::FW_LAUN_MOT_DEL>) param_fw_laun_mot_del_
 	)
 };

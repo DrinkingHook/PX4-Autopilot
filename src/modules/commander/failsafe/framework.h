@@ -125,8 +125,10 @@ public:
 
 	struct State {
 		bool armed{false};
+		// 用户意图的飞行模式
 		uint8_t user_intended_mode{0};
 		uint8_t vehicle_type;
+		// vtol是否处于过渡模式
 		bool vtol_in_transition_mode{false};
 		bool mission_finished{false};
 	};

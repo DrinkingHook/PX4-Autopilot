@@ -651,6 +651,7 @@ public:
 		return min_val;
 	}
 
+        // 检查所有元素是否都是 NaN
 	bool isAllNan() const
 	{
 		const Matrix<Type, M, N> &self = *this;
@@ -665,6 +666,7 @@ public:
 		return result;
 	}
 
+        // 检查所有元素是否都是有限值
 	bool isAllFinite() const
 	{
 		const Matrix<Type, M, N> &self = *this;

@@ -451,7 +451,9 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 				       || state.vtol_in_transition_mode;
 
 	// Do not enter failsafe while doing a vtol takeoff after the vehicle has started a transition and before it reaches the loiter
+	// 翻译：在飞行器开始过渡后、到达徘徊点之前，进行垂直起降起飞时请勿进入故障保护
 	// altitude. The vtol takeoff navigaton mode will set mission_finished to true as soon as the loiter is established
+	// 翻译：高度。一旦建立悬停，垂直起降起飞导航模式将设置 mission_finished 为 true
 	const bool ignore_any_link_loss_vtol_takeoff_fixedwing = state.user_intended_mode ==
 			vehicle_status_s::NAVIGATION_STATE_AUTO_VTOL_TAKEOFF
 			&& in_forward_flight && !state.mission_finished;
@@ -515,6 +517,7 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 	}
 
 	// VTOL transition failure (quadchute)
+	// VTOL 过渡失败（ ？）
 	if (state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION ||
 	    state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER ||
 	    state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_TAKEOFF ||

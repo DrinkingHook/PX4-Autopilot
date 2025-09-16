@@ -139,6 +139,7 @@ public:
 
 	/**
 	 * Update the struct
+	 * @brief Checks if there is a new update and copies the struct if there is one.
 	 * @param dst The uORB message struct we are updating.
 	 */
 	bool update(void *dst)
@@ -152,6 +153,7 @@ public:
 
 	/**
 	 * Copy the struct
+	 * @brief Copies the struct without checking for updates.
 	 * @param dst The uORB message struct we are updating.
 	 */
 	bool copy(void *dst)

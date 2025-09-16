@@ -54,13 +54,33 @@ using matrix::wrap_2pi;
  * formulas according to: http://mathworld.wolfram.com/AzimuthalEquidistantProjection.html
  */
 
+/**
+ * @brief Initializes the reference point for map projection. 初始化地图投影的参考点。
+ *
+ * Sets the reference latitude and longitude (in degrees) for the map projection,
+ * converting them to radians and precomputing sine and cosine values for efficiency.
+ * The timestamp is stored to track when the reference point was set.
+ * This function must be called before performing any coordinate transformations
+ * using the MapProjection class.
+ * 设置地图投影的参考纬度和经度（以度为单位），将其转换为弧度，并预先计算正弦和余弦值以提高效率。
+ * 存储时间戳以跟踪参考点的设置时间。在使用 MapProjection 类执行任何坐标转换之前，必须调用此函数。
+ * @param lat_0 Reference latitude in degrees.
+ * @param lon_0 Reference longitude in degrees.
+ * @param timestamp Timestamp of the reference point initialization (in microseconds).
+ */
 void MapProjection::initReference(double lat_0, double lon_0, uint64_t timestamp)
 {
+	// 存储时间戳
 	_ref_timestamp = timestamp;
+	// 将纬度从度转换为弧度
 	_ref_lat = math::radians(lat_0);
+	// 将经度从度转换为弧度
 	_ref_lon = math::radians(lon_0);
+	// 计算参考纬度的正弦值
 	_ref_sin_lat = sin(_ref_lat);
+	// 计算参考纬度的余弦值
 	_ref_cos_lat = cos(_ref_lat);
+	// 标记参考点初始化完成
 	_ref_init_done = true;
 }
 

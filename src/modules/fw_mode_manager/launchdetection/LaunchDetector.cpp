@@ -53,12 +53,14 @@ void LaunchDetector::update(const float dt, const float accel_x)
 		info_delay_counter_s_ += dt;
 
 		/* Inform user that launchdetection is running every kInfoDelay seconds */
+		/* 通知用户 launchdetection 每隔 kInfoDelay 秒运行一次 */
 		if (info_delay_counter_s_ >= kInfoDelay) {
 			events::send(events::ID("launch_detection_running_info"), events::Log::Info, "Launch detection running");
 			info_delay_counter_s_ = 0.f; // reset counter
 		}
 
 		/* Detect a acceleration that is longer and stronger as the minimum given by the params */
+		/* 检测一个加速度，该加速度更长，更强，作为参数给出的最小值 */
 		if (accel_x > param_fw_laun_ac_thld_.get()) {
 			acceleration_detected_counter_ += dt;
 
