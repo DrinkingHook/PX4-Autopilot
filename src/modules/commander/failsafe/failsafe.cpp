@@ -530,7 +530,9 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 		CHECK_FAILSAFE(status_flags, mission_failure, Action::RTL);
 
 		// If manual control loss and GCS connection loss are disabled and we lose both command links and the mission finished,
+		// 翻译：如果禁用手动控制丢失和 GCS 连接丢失，并且我们丢失了两个命令链接并且任务完成，
 		// trigger RTL to avoid losing the vehicle
+		// 翻译：则触发 RTL 以避免丢失车辆
 		if ((_param_com_rc_in_mode.get() == int32_t(RcInMode::StickInputDisabled) || rc_loss_ignored_mission)
 		    && _param_nav_dll_act.get() == int32_t(gcs_connection_loss_failsafe_mode::Disabled)
 		    && state.mission_finished) {
@@ -544,6 +546,7 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 	CHECK_FAILSAFE(status_flags, flight_time_limit_exceeded, ActionOptions(Action::RTL).cannotBeDeferred());
 
 	// trigger Low Position Accuracy Failsafe (only in auto mission and auto loiter)
+	// 翻译：触发低位置准确性故障安全（仅在汽车任务和自动降落中）
 	if (state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION ||
 	    state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER) {
 		CHECK_FAILSAFE(status_flags, position_accuracy_low, fromPosLowActParam(_param_com_pos_low_act.get()));
@@ -562,6 +565,7 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 	CHECK_FAILSAFE(status_flags, geofence_breached, fromGfActParam(_param_gf_action.get()).cannotBeDeferred());
 
 	// Battery flight time remaining failsafe
+	// 翻译：电池剩余飞行时间故障保护
 	CHECK_FAILSAFE(status_flags, battery_low_remaining_time,
 		       ActionOptions(fromRemainingFlightTimeLowActParam(_param_com_fltt_low_act.get())));
 
@@ -576,6 +580,7 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 
 	// Battery low failsafe
 	// If battery was low and arming was allowed through COM_ARM_BAT_MIN, don't failsafe immediately for the current low battery warning state
+	// 翻译：如果电池较低，并且通过COM_ARM_BAT_MIN允许武装，请不要立即失败电池警告状态
 	const bool warning_worse_than_at_arming = (status_flags.battery_warning > _battery_warning_at_arming);
 	const int32_t low_battery_action = warning_worse_than_at_arming ?
 					   _param_com_low_bat_act.get() : (int32_t)LowBatteryAction::Warning;

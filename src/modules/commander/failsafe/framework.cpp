@@ -298,6 +298,27 @@ void FailsafeBase::notifyUser(uint8_t user_intended_mode, Action action, Action 
 #endif /* EMSCRIPTEN_BUILD */
 }
 
+/**
+ * @brief Checks and manages failsafe actions based on current and previous state failures.
+ *	  翻译：基于当前和先前状态失败的检查和管理故障安全操作。
+ * This function evaluates whether a failsafe action should be added, updated, or removed from the
+ * `_actions` array based on the current fault state (`cur_state_failure`) and the previous fault state
+ * (`last_state_failure`). It handles fault conditions such as invalid sensor data or communication loss,
+ * and applies the specified action (e.g., Warn, RTL, Land, Hold) from the provided options.
+ *
+ * @param caller_id 调用者的唯一标识，用于区分不同的故障保护触发源（如 GPS 失效、电池低电量、四轴降落伞触发等）。
+ * @param last_state_failure 上一次循环中是否检测到故障状态（true 表示之前有故障）。
+ * @param cur_state_failure 当前是否检测到故障状态（true 表示当前有故障）。
+ * @param options 故障保护选项，包含动作（Action，如 Warn、RTL、Land、Hold）和清除条件（ClearCondition），通常由 Failsafe::fromQuadchuteActParam 等函数生成。
+ *
+ * @return bool，直接返回 cur_state_failure，表示当前是否处于故障状态。
+ *
+ * @note This function interacts with uORB topics such as `position_setpoint_triplet_s` and `trajectory_setpoint_s`
+ *       to apply failsafe actions like RTL or Land. It uses `PX4_ISFINITE` or `isAllFinite` to validate data.
+ * @warning Duplicate caller IDs may trigger a bug warning (`PX4_ERR`) if detected.
+ * @see Failsafe::fromQuadchuteActParam
+ * @see ActionOptions
+ */
 bool FailsafeBase::checkFailsafe(int caller_id, bool last_state_failure, bool cur_state_failure,
 				 const ActionOptions &options)
 {
@@ -394,6 +415,11 @@ bool FailsafeBase::checkFailsafe(int caller_id, bool last_state_failure, bool cu
 	return cur_state_failure;
 }
 
+/**
+ * @brief
+ *
+ * @param action
+ */
 void FailsafeBase::removeAction(ActionOptions &action) const
 {
 	// If failsafes are being deferred and the action can be deferred, remove it immediately independent of the
