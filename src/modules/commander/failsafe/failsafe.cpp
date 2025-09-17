@@ -579,6 +579,7 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 	}
 
 	// Battery low failsafe
+	// 翻译：电池低电压失败保护
 	// If battery was low and arming was allowed through COM_ARM_BAT_MIN, don't failsafe immediately for the current low battery warning state
 	// 翻译：如果电池较低，并且通过COM_ARM_BAT_MIN允许武装，请不要立即失败电池警告状态
 	const bool warning_worse_than_at_arming = (status_flags.battery_warning > _battery_warning_at_arming);

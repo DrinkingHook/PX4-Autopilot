@@ -322,17 +322,21 @@ void FailsafeBase::notifyUser(uint8_t user_intended_mode, Action action, Action 
 bool FailsafeBase::checkFailsafe(int caller_id, bool last_state_failure, bool cur_state_failure,
 				 const ActionOptions &options)
 {
+	// 如果当前有故障
 	if (cur_state_failure) {
 		// Invalid state: find or add action
+		// 翻译：无效状态：查找或添加操作
 		int free_idx = -1;
 		int found_idx = -1;
 
 		for (int i = 0; i < max_num_actions; ++i) {
+			// 查找空闲的action槽
 			if (!_actions[i].valid()) {
 				free_idx = i;
 
 			} else if (_actions[i].id == caller_id) {
 				found_idx = i;
+				// 只有这个else if中break出去
 				break;
 			}
 		}
