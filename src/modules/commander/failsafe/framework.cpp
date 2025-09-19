@@ -330,14 +330,20 @@ bool FailsafeBase::checkFailsafe(int caller_id, bool last_state_failure, bool cu
 		int found_idx = -1;
 
 		for (int i = 0; i < max_num_actions; ++i) {
-			// 查找空闲的action槽
-			if (!_actions[i].valid()) {
-				free_idx = i;
+			// // 查找空闲的action槽
+			// if (!_actions[i].valid()) {
+			// 	free_idx = i;
 
-			} else if (_actions[i].id == caller_id) {
-				found_idx = i;
-				// 只有这个else if中break出去
+                        // } else if (_actions[i].id == caller_id) {
+                        // 	found_idx = i;
+                        // 	// 只有这个else if中break出去
+                        // 	break;
+                        // }
+                        if (_actions[i].id == caller_id) {
+                        	found_idx = i;
 				break;
+                        } else if (!_actions[i].valid()) {
+				free_idx = i;
 			}
 		}
 
@@ -428,6 +434,7 @@ void FailsafeBase::removeAction(ActionOptions &action) const
 {
 	// If failsafes are being deferred and the action can be deferred, remove it immediately independent of the
 	// clear_condition to avoid triggering a failsafe after deferring is disabled.
+	// 翻译：如果故障保护被推迟并且可以推迟操作，则立即将其移除，而不考虑 clear_condition，以避免在禁用推迟后触发故障保护。
 	const bool remove_while_deferring = _defer_failsafes && action.can_be_deferred;
 
 	if (action.clear_condition == ClearCondition::WhenConditionClears || remove_while_deferring) {
@@ -465,6 +472,27 @@ void FailsafeBase::removeNonActivatedActions()
 }
 
 
+/**
+ * @brief 根据当前状态和标志选择合适的故障安全动作。
+ *
+ * 该函数用于计算并返回选定的故障安全动作状态，包括动作类型、原因、用户意图模式更新等。
+ * 它考虑了多种因素，如用户接管、延迟故障安全、模式可用性等，以确保系统安全。
+ * 逻辑流程：
+ * 1. 处理终止情况：如果用户意图为终止或已选择终止，直接返回终止动作。
+ * 2. 如果未武装，返回无动作。
+ * 3. 遍历所有动作，选择最严重的动作，并确定用户接管允许级别和是否可延迟。
+ * 4. 如果允许延迟故障安全，则可能延迟动作。
+ * 5. 处理延迟Hold：如果有延迟且条件满足，将动作设置为Hold。
+ * 6. 处理用户接管：如果允许，用户可通过模式切换或RC摇杆接管，动作降为警告。
+ * 7. 检查模式回退：确保选定动作对应的模式可运行，否则回退到更安全模式。
+ * 8. UX优化：避免在已处于某些模式（如着陆、RTL）时重复进入类似动作。
+ *
+ * @param state 当前车辆状态，包括用户意图模式等。
+ * @param status_flags 故障安全标志，用于检查模式可用性。
+ * @param user_intended_mode_updated 用户意图模式是否已更新。
+ * @param rc_sticks_takeover_request RC摇杆接管请求。
+ * @param[out] returned_state 返回的选定动作状态，包括动作、原因、延迟动作等。
+ */
 void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s &status_flags,
 				     bool user_intended_mode_updated,
 				     bool rc_sticks_takeover_request,
@@ -473,12 +501,14 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 	returned_state.updated_user_intended_mode = state.user_intended_mode;
 	returned_state.cause = Cause::Generic;
 
+        // 处理终止情况：如果用户意图为终止或已选择终止，直接返回终止动作
 	if (state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_TERMINATION
 	    || _selected_action == Action::Terminate) { // Terminate never clears
 		returned_state.action = Action::Terminate;
 		return;
 	}
 
+        // 如堕车辆未武装，则返回无动作
 	if (!state.armed) {
 		returned_state.action = Action::None;
 		return;
@@ -490,6 +520,7 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 	bool allow_failsafe_to_be_deferred{true};
 
 	// Select the worst action based on the current active actions
+	// 翻译：根据当前的活动动作选择最坏的动作
 	for (int action_idx = 0; action_idx < max_num_actions; ++action_idx) {
 		const ActionOptions &cur_action = _actions[action_idx];
 
@@ -556,6 +587,7 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 		}
 
 		// We must check for mode fallback again here
+		// 翻译：我们必须在此处再次检查模式后备
 		Action mode_fallback = checkModeFallback(status_flags, modeFromAction(selected_action,
 				       returned_state.updated_user_intended_mode));
 
@@ -565,6 +597,7 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 	}
 
 	// Check if the selected action is possible, and fall back if needed
+	// 翻译：检查选定的操作是否可能，并在需要时退回
 	switch (selected_action) {
 
 	case Action::FallbackPosCtrl:
@@ -684,6 +717,7 @@ void FailsafeBase::clearDelayIfNeeded(const State &state,
 				      const failsafe_flags_s &status_flags)
 {
 	// Clear delay if one of the following is true:
+	// 翻译：如果下列之一成立，则清除延迟：
 	// - Already in a failsafe
 	// - Hold not available
 	// - Takeover is active (due to a mode switch during the delay)
@@ -730,7 +764,9 @@ bool FailsafeBase::modeCanRun(const failsafe_flags_s &status_flags, uint8_t mode
 {
 	uint32_t mode_mask = 1u << mode;
 	// mode_req_wind_and_flight_time_compliance: does not need to be handled here (these are separate failsafe triggers)
+	// 翻译：mode_req_wind_and_flight_time_comliance：不需要在此处处理（这些是单独的故障安全触发器）
 	// mode_req_manual_control: is handled separately
+	// 翻译：MODE_REQ_MANUAL_CONTROL：单独处理
 	return
 		(!status_flags.angular_velocity_invalid || ((status_flags.mode_req_angular_velocity & mode_mask) == 0)) &&
 		(!status_flags.attitude_invalid || ((status_flags.mode_req_attitude & mode_mask) == 0)) &&

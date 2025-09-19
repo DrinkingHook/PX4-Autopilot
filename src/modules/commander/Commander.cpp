@@ -1804,38 +1804,50 @@ void Commander::run()
 
 		systemPowerUpdate();
 
+                // 更新着陆检测状态
 		landDetectorUpdate();
 
+                // 更新安全开关状态
 		safetyButtonUpdate();
 
+                // 多轴抛飞状态更新
 		_multicopter_throw_launch.update(isArmed());
 
+                // vtol状态更新
 		vtolStatusUpdate();
 
 		_mission_in_progress = (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION)
 				       && !_mission_result_sub.get().finished;
 
+                // 起飞点更新：当设置了自动刷新home位置参数，同时处于未解锁或已着陆并且不处于自动导航任务时刷新home位置
 		_home_position.update(_param_com_home_en.get(), !isArmed() && _vehicle_land_detected.landed && !_mission_in_progress);
 
+                // 处理自动解除武装
 		handleAutoDisarm();
 
 		battery_status_check();
 
+                // 检查任务更新
 		checkForMissionUpdate();
 
+                // 手动控制检查
 		manualControlCheck();
 
+                // 板外控制检查
 		offboardControlCheck();
 
 		// data link checks which update the status
+		// 翻译：数据链接检查更新状态
 		dataLinkCheck();
 
 		// Check for failure detector status
+		// 翻译：检查故障探测器状态
 		if (_failure_detector.update(_vehicle_status, _vehicle_control_mode)) {
 			_vehicle_status.failure_detector_status = _failure_detector.getStatus().value;
 			_status_changed = true;
 		}
 
+                // 模式管理更新
 		modeManagementUpdate();
 
 		const hrt_abstime now = hrt_absolute_time();
@@ -2135,7 +2147,9 @@ void Commander::landDetectorUpdate()
 
 void Commander::safetyButtonUpdate()
 {
+	// 判断安全开关状态是否改变
 	const bool safety_changed = _safety.safetyButtonHandler();
+	// 检测安全开关是否连接
 	_vehicle_status.safety_button_available = _safety.isButtonAvailable();
 	_vehicle_status.safety_off = _safety.isSafetyOff();
 
@@ -2157,6 +2171,7 @@ void Commander::safetyButtonUpdate()
 void Commander::vtolStatusUpdate()
 {
 	// Make sure that this is only adjusted if vehicle really is of type vtol
+	// 翻译：确保仅当车辆真正为VTOL时才调整
 	if (_vtol_vehicle_status_sub.update(&_vtol_vehicle_status) && is_vtol(_vehicle_status)) {
 
 		// Check if there has been any change while updating the flags (transition = rotary wing status)
@@ -2255,6 +2270,7 @@ void Commander::checkWorkerThread()
 void Commander::handleAutoDisarm()
 {
 	// Auto disarm when landed or kill switch engaged
+	// 翻译：降落或杀死开关时自动解除武装
 	if (isArmed()) {
 
 		// Check for auto-disarm on landing or pre-flight
@@ -2326,7 +2342,9 @@ bool Commander::handleModeIntentionAndFailsafe()
 	state.vehicle_type = _vehicle_status.vehicle_type;
 
 	// There might have been a mode change request without changing the user intended mode.
+	// 翻译：可能没有更改用户预期模式的模式更改请求。
 	// If a failsafe is active we must pass the request along as it might lead to a user-takeover.
+	// 翻译：如果失败安全处于活动状态，我们必须将请求传递，因为它可能会导致用户捕获。
 	bool mode_change_requested = _user_mode_intention.getHadModeChangeAndClear();
 
 	uint8_t updated_user_intented_mode = _failsafe.update(hrt_absolute_time(), state, mode_change_requested,

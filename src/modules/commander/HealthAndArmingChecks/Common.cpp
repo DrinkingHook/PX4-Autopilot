@@ -207,6 +207,7 @@ void Report::reset()
 	_results_changed = false;
 }
 
+
 void Report::prepare(uint8_t vehicle_type)
 {
 	// Get mode requirements before running any checks (in particular the mode checks require them)

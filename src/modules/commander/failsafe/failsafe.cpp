@@ -461,9 +461,14 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 	// Manual control (RC or joystick) loss
 	if (!status_flags.manual_control_signal_lost) {
 		// If manual control was lost and arming was allowed, consider it optional until we regain manual control
+		// 翻译：如果手动控制丢失并且允许布防，则将其视为可选操作，直到我们重新获得手动控制
 		_manual_control_lost_at_arming = false;
 	}
 
+	/**
+	 * @brief 与运算符若_param_com_rcl_except.get()和ManualControlLossExceptionBits：：相同那么结果就不为0
+	 *
+	 */
 	const bool rc_loss_ignored_mission = state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION
 					     && (_param_com_rcl_except.get() & (int)ManualControlLossExceptionBits::Mission);
 	const bool rc_loss_ignored_loiter = state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER
@@ -610,6 +615,7 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 
 
 	// Handle fails during spoolup just after arming
+	// 翻译：处理在刚完成准备后在 spoolup 过程中失败
 	if ((_armed_time != 0)
 	    && (time_us < _armed_time + static_cast<hrt_abstime>(_param_com_spoolup_time.get() * 1_s))
 	   ) {
@@ -662,6 +668,13 @@ void Failsafe::updateArmingState(const hrt_abstime &time_us, bool armed, const f
 	_was_armed = armed;
 }
 
+/**
+ * @brief 检查模式回调
+ *
+ * @param status_flags
+ * @param user_intended_mode
+ * @return FailsafeBase::Action
+ */
 FailsafeBase::Action Failsafe::checkModeFallback(const failsafe_flags_s &status_flags,
 		uint8_t user_intended_mode) const
 {
@@ -669,6 +682,7 @@ FailsafeBase::Action Failsafe::checkModeFallback(const failsafe_flags_s &status_
 
 	// offboard signal
 	if (status_flags.offboard_control_signal_lost && (status_flags.mode_req_offboard_signal & (1u << user_intended_mode))) {
+		// 在失去离板控制时要执行的动作
 		action = fromOffboardLossActParam(_param_com_obl_rc_act.get(), user_intended_mode);
 
 		// for this specific case, user_intended_mode is not modified, we shouldn't check additional fallbacks
@@ -705,6 +719,7 @@ uint8_t Failsafe::modifyUserIntendedMode(Action previous_action, Action current_
 		uint8_t user_intended_mode) const
 {
 	// If we switch from a failsafe back into orbit, switch to loiter instead
+	// 翻译：修改用户预期模式
 	if ((int)previous_action > (int)Action::Warn
 	    && modeFromAction(current_action, user_intended_mode) == vehicle_status_s::NAVIGATION_STATE_ORBIT) {
 		PX4_DEBUG("Failsafe cleared, switching from ORBIT to LOITER");

@@ -232,6 +232,7 @@ private:
 	};
 	UserModeIntention _user_mode_intention {_vehicle_status, _health_and_arming_checks, &_mode_management};
 
+        // 在src/modules/commander/HealthAndArmingChecks/HealthAndArmingChecks.hpp中定义
 	const failsafe_flags_s &_failsafe_flags{_health_and_arming_checks.failsafeFlags()};
 	HomePosition 		_home_position{_failsafe_flags};
 	config_overrides_s   _config_overrides{};

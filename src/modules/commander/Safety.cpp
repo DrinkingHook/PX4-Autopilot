@@ -53,6 +53,7 @@ Safety::Safety()
 
 bool Safety::safetyButtonHandler()
 {
+	// 如果安全开关被禁用则跳过执行
 	if (!_safety_disabled) {
 		if (!_button_available && _safety_button_sub.advertised()) {
 			_button_available = true;

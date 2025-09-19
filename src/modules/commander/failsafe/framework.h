@@ -186,6 +186,17 @@ protected:
 		Never,  ///< never allow takeover
 	};
 
+        /**
+         * @brief 例如以ActionOptions &allowUserTakeover开头的为例是链式调用的写法
+         *
+	 * @code
+	 *	ActionOptions options = ActionOptions(Action::RTL)
+    	 *	.causedBy(Cause::BatteryLow)
+    	 *	.allowUserTakeover(UserTakeoverAllowed::No)
+    	 *	.cannotBeDeferred();}
+	 * @endcode
+	 *
+         */
 	struct ActionOptions {
 		ActionOptions(Action action_ = Action::None) : action(action_) {}
 		ActionOptions &allowUserTakeover(UserTakeoverAllowed allow = UserTakeoverAllowed::Auto) { allow_user_takeover = allow; return *this; }
