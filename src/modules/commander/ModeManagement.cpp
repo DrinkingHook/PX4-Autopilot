@@ -628,6 +628,12 @@ void ModeManagement::checkConfigOverrides()
 	}
 }
 
+/**
+ * @brief 获取模式状态
+ *
+ * @param valid_nav_state_mask
+ * @param can_set_nav_state_mask
+ */
 void ModeManagement::getModeStatus(uint32_t &valid_nav_state_mask, uint32_t &can_set_nav_state_mask) const
 {
 	valid_nav_state_mask = mode_util::getValidNavStates();

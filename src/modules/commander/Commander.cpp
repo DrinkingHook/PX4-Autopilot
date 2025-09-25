@@ -230,6 +230,13 @@ static bool broadcast_vehicle_command(const uint32_t cmd, const float param1 = N
 }
 #endif
 
+/**
+ * @brief 用于处理终端中输入的命令
+ *
+ * @param argc
+ * @param argv
+ * @return int
+ */
 int Commander::custom_command(int argc, char *argv[])
 {
 	if (!is_running()) {
@@ -1553,9 +1560,11 @@ void Commander::handleCommandsFromModeExecutors()
 
 			// For commands from mode executors, we check if it is in charge and then publish it on the official
 			// command topic
+			// 翻译：对于模式执行者的命令，我们检查是否负责，然后将其发布在官方命令主题上
 			const int mode_executor_in_charge = _mode_management.modeExecutorInCharge();
 
 			// source_system is set to the mode executor
+			// 翻译：source_system设置为模式执行程序
 			if (cmd.source_component == vehicle_command_s::COMPONENT_MODE_EXECUTOR_START + mode_executor_in_charge) {
 				cmd.source_system = _vehicle_status.system_id;
 				cmd.timestamp = hrt_absolute_time();
@@ -1625,6 +1634,11 @@ unsigned Commander::handleCommandActuatorTest(const vehicle_command_s &cmd)
 	return vehicle_command_ack_s::VEHICLE_CMD_RESULT_ACCEPTED;
 }
 
+/**
+ * @brief 执行动作请求
+ *
+ * @param action_request
+ */
 void Commander::executeActionRequest(const action_request_s &action_request)
 {
 	arm_disarm_reason_t arm_disarm_reason{};
@@ -1868,10 +1882,12 @@ void Commander::run()
 			}
 
 			perf_end(_preflight_check_perf);
+			// 检查并告知准备起飞
 			checkAndInformReadyForTakeoff();
 		}
 
 		// handle commands last, as the system needs to be updated to handle them
+		// 翻译：最后处理命令，因为需要更新系统以处理它们
 		handleCommandsFromModeExecutors();
 
 		if (_vehicle_command_sub.updated()) {
@@ -1904,6 +1920,7 @@ void Commander::run()
 		}
 
 		// update actuator_armed
+		// 翻译：更新执行器武装
 		_actuator_armed.armed = isArmed();
 		_actuator_armed.prearmed = getPrearmState();
 		_actuator_armed.ready_to_arm = _vehicle_status.pre_flight_checks_pass || isArmed();
@@ -1913,27 +1930,33 @@ void Commander::run()
 		// _actuator_armed.in_esc_calibration_mode // VEHICLE_CMD_PREFLIGHT_CALIBRATION
 
 		// Send parachute command upon termination
+		// 翻译：在终止后发送降落伞命令
 		if (!actuator_armed_prev.termination && _actuator_armed.termination && isArmed()) {
 			send_parachute_command();
 		}
 
 		// publish states (armed, control_mode, vehicle_status, failure_detector_status) at 2 Hz or immediately when changed
+		// 翻译：以2hz或者状态改变时立刻发布状态（armed, control_mode, vehicle_status, failure_detector_status）
 		if ((now >= _vehicle_status.timestamp + 500_ms) || _status_changed || nav_state_or_failsafe_changed
 		    || !(_actuator_armed == actuator_armed_prev)) {
 
 			// publish actuator_armed first (used by output modules)
+			// 翻译：首先发布Actuator_armed（输出模块使用）
 			_actuator_armed.timestamp = hrt_absolute_time();
 			_actuator_armed_pub.publish(_actuator_armed);
 
 			// update and publish vehicle_control_mode
+			// 翻译：更新和发布vehicle_control_mode
 			updateControlMode();
 
 			// vehicle_status publish (after prearm/preflight updates above)
+			// 翻译：车辆状态发布（在上述预装/预检更新之后）
 			_mode_management.getModeStatus(_vehicle_status.valid_nav_states_mask, _vehicle_status.can_set_nav_states_mask);
 			_vehicle_status.timestamp = hrt_absolute_time();
 			_vehicle_status_pub.publish(_vehicle_status);
 
 			// failure_detector_status publish
+			// 翻译：失败检测器状态发布
 			failure_detector_status_s fd_status{};
 			fd_status.fd_roll = _failure_detector.getStatusFlags().roll;
 			fd_status.fd_pitch = _failure_detector.getStatusFlags().pitch;
@@ -1949,9 +1972,12 @@ void Commander::run()
 			_failure_detector_status_pub.publish(fd_status);
 		}
 
+		// 检查任务线程
 		checkWorkerThread();
 
+                // 更新调音
 		updateTunes();
+		// 控制状态灯
 		control_status_leds(_status_changed, _battery_warning);
 
 		_status_changed = false;
@@ -1984,6 +2010,7 @@ void Commander::checkForMissionUpdate()
 		_mission_result_sub.update();
 
 		// if mission_result is valid for the current mission
+		// 翻译：如果Mission_result对当前任务有效
 		const bool mission_result_ok = (mission_result.timestamp > _boot_timestamp)
 					       && (mission_result.mission_id > 0);
 
@@ -1991,6 +2018,7 @@ void Commander::checkForMissionUpdate()
 
 		if (mission_result_ok) {
 			/* Only evaluate mission state if home is set */
+			// 翻译：仅在设置了home位才评估任务状态
 			if (!_failsafe_flags.home_position_invalid &&
 			    (prev_mission_mission_id != mission_result.mission_id)) {
 
@@ -2017,19 +2045,23 @@ void Commander::checkForMissionUpdate()
 			if (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_TAKEOFF
 			    || _vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_VTOL_TAKEOFF) {
 				// Transition mode to loiter or auto-mission after takeoff is completed.
+				// 翻译：起飞完成后，过渡模式为徘徊或自动任务。
 				if ((_param_com_takeoff_act.get() == 1) && auto_mission_available) {
 					_user_mode_intention.change(vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION);
 
 				} else {
 					// Transition to loiter when the takeoff is completed (force into the Loiter, if mode is not executable then failsafe).
+					// 翻译：起飞完成后转换到徘徊模式（强制进入徘徊模式，如果模式不可执行则进入故障保护）。
 					_user_mode_intention.change(vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER, ModeChangeSource::ModeExecutor, false,
 								    true);
 				}
 
 			} else if (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION) {
 				// Transition to loiter when the mission is cleared and/or finished, and we are still in mission mode.
+				// 翻译：在清除任务和或完成任务时过渡到Loiter，我们仍处于任务模式。
 
 				// However, only do so if there's no pending mode change, so there isn't already a pending change (like RTL).
+				// 翻译：但是，只有在没有待处理的模式更改时才这样做，因此还没有待处理的更改（如 RTL）。
 				if (_user_mode_intention.get() == vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION) {
 					_user_mode_intention.change(vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER);
 				}
@@ -2739,6 +2771,7 @@ void Commander::dataLinkCheck()
 		}
 	}
 
+        // 循环处理多个radio模式
 	for (auto &telemetry_status :  _telemetry_status_subs) {
 		telemetry_status_s telemetry;
 
@@ -2751,6 +2784,7 @@ void Commander::dataLinkCheck()
 				_vehicle_status.usb_connected = true;
 				break;
 
+			// Iridium 链接类型。Iridium 是卫星通信系统，用于全球覆盖的高延迟遥测链接，适用于超出无线电范围的远程操作
 			case telemetry_status_s::LINK_TYPE_IRIDIUM: {
 
 					if ((_high_latency_datalink_timestamp > 0) &&
@@ -2773,6 +2807,7 @@ void Commander::dataLinkCheck()
 
 			if (telemetry.heartbeat_type_gcs) {
 				// Initial connection or recovery from data link lost
+				// 翻译：初始化连接或者数据链路丢失恢复
 				if (_vehicle_status.gcs_connection_lost) {
 					_vehicle_status.gcs_connection_lost = false;
 					_status_changed = true;

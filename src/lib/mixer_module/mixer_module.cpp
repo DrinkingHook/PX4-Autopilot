@@ -546,8 +546,10 @@ MixingOutput::limitAndUpdateOutputs(float outputs[MAX_ACTUATORS], bool has_updat
 	// 翻译：现在将输出返回驱动程序
 	if (_interface.updateOutputs(_current_output_value, _max_num_outputs, has_updates)) {
 		actuator_outputs_s actuator_outputs{};
+		// 发布执行器输出
 		setAndPublishActuatorOutputs(_max_num_outputs, actuator_outputs);
 
+                // 性能记录
 		updateLatencyPerfCounter(actuator_outputs);
 	}
 }
