@@ -40,6 +40,7 @@
  */
 
 #include "ControlAllocator.hpp"
+#include "ActuatorEffectivenessSpacecraft.hpp"
 
 #include <drivers/drv_hrt.h>
 #include <circuit_breaker/circuit_breaker.h>
@@ -257,9 +258,9 @@ ControlAllocator::update_effectiveness_source()
 			tmp = new ActuatorEffectivenessHelicopter(this, ActuatorType::MOTORS);
 			break;
 
-		case EffectivenessSource::HELICOPTER_TAIL_SERVO:
-			tmp = new ActuatorEffectivenessHelicopter(this, ActuatorType::SERVOS);
-			break;
+		// case EffectivenessSource::HELICOPTER_TAIL_SERVO:
+		// 	tmp = new ActuatorEffectivenessHelicopter(this, ActuatorType::SERVOS);
+		// 	break;
 
 		case EffectivenessSource::HELICOPTER_COAXIAL:
 			tmp = new ActuatorEffectivenessHelicopterCoaxial(this);
@@ -272,7 +273,9 @@ ControlAllocator::update_effectiveness_source()
 		case EffectivenessSource::SPACECRAFT_3D:
 			tmp = new ActuatorEffectivenessSpacecraft(this);
 			break;
-
+                case EffectivenessSource::Tandem:
+			tmp = new ActuatorEffectivenessTandem(this);
+			break;
 		default:
 			PX4_ERR("Unknown airframe");
 			break;

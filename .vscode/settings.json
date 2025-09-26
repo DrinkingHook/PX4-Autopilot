@@ -129,4 +129,7 @@
         "yaml.schemas": {
                 "${workspaceFolder}/validation/module_schema.yaml": "${workspaceFolder}/src/modules/*/module.yaml"
         },
+        "clangd.arguments": [
+                "--compile-commands-dir=build/px4_fmu-v5_default"
+        ],
 }
