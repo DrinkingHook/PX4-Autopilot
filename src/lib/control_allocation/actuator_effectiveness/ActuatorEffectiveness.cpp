@@ -56,6 +56,7 @@ int ActuatorEffectiveness::Configuration::addActuator(ActuatorType type, const m
 	effectiveness_matrices[selected_matrix](ActuatorEffectiveness::ControlAxis::THRUST_X, actuator_idx) = thrust(0);
 	effectiveness_matrices[selected_matrix](ActuatorEffectiveness::ControlAxis::THRUST_Y, actuator_idx) = thrust(1);
 	effectiveness_matrices[selected_matrix](ActuatorEffectiveness::ControlAxis::THRUST_Z, actuator_idx) = thrust(2);
+	// 数组用于记录每个执行器都是处于哪个效能矩阵上的，最大32
 	matrix_selection_indexes[totalNumActuators()] = selected_matrix;
 	++num_actuators[(int)type];
 	return num_actuators_matrix[selected_matrix]++;
@@ -73,6 +74,11 @@ void ActuatorEffectiveness::Configuration::actuatorsAdded(ActuatorType type, int
 	num_actuators_matrix[selected_matrix] += count;
 }
 
+/**
+ * @brief 用于返回两个效能矩阵一共用了多少个数量
+ *
+ * @return int
+ */
 int ActuatorEffectiveness::Configuration::totalNumActuators() const
 {
 	int total_count = 0;

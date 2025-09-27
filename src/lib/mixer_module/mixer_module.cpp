@@ -39,6 +39,26 @@
 using namespace time_literals;
 
 
+/**
+ * @brief
+ FunctionProvider提供了两个构造函数：
+ 
+   FunctionProvider(OutputFunction min_func_, OutputFunction max_func_, Constructor constructor_)
+       : min_func(min_func_), max_func(max_func_), constructor(constructor_) {}
+
+   - 接受三个参数：`min_func_`（最小功能标识）、`max_func_`（最大功能标识）、`constructor_`（构造函数指针）。
+   - 使用**初始化列表**（`: min_func(min_func_)` 等）将参数值赋值给成员变量。
+   - 这个构造函数适用于定义一个功能范围（从 `min_func_` 到 `max_func_`）以及对应的构造函数。
+
+   FunctionProvider(OutputFunction func, Constructor constructor_)
+       : min_func(func), max_func(func), constructor(constructor_) {}
+
+   - 接受两个参数：`func`（单一的功能标识）和 `constructor_`（构造函数指针）。
+   - 将 `min_func` 和 `max_func` 都设置为同一个 `func`，表示这个功能没有范围（最小值和最大值相同）。
+   - 同样使用初始化列表赋值。
+
+ *
+ */
 struct FunctionProvider {
 	using Constructor = FunctionProviderBase * (*)(const FunctionProviderBase::Context &context);
 	FunctionProvider(OutputFunction min_func_, OutputFunction max_func_, Constructor constructor_)

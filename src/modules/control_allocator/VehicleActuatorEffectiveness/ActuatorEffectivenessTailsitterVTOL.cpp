@@ -73,6 +73,7 @@ void ActuatorEffectivenessTailsitterVTOL::allocateAuxilaryControls(const float d
 {
 	if (matrix_index == 1) {
 		// apply flaps
+		// 翻译：应用襟翼
 		normalized_unsigned_setpoint_s flaps_setpoint;
 
 		if (_flaps_setpoint_sub.copy(&flaps_setpoint)) {
@@ -80,6 +81,7 @@ void ActuatorEffectivenessTailsitterVTOL::allocateAuxilaryControls(const float d
 		}
 
 		// apply spoilers
+		// 翻译：应用扰流器
 		normalized_unsigned_setpoint_s spoilers_setpoint;
 
 		if (_spoilers_setpoint_sub.copy(&spoilers_setpoint)) {

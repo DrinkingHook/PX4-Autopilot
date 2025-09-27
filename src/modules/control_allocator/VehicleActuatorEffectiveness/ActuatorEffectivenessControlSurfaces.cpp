@@ -152,6 +152,7 @@ bool ActuatorEffectivenessControlSurfaces::addActuators(Configuration &configura
 	for (int i = 0; i < _count; i++) {
 		int actuator_idx = configuration.addActuator(ActuatorType::SERVOS, _params[i].torque, Vector3f{});
 
+                // 大于0则表示注册成功
 		if (actuator_idx >= 0) {
 			configuration.trim[configuration.selected_matrix](actuator_idx) = _params[i].trim;
 		}
@@ -168,6 +169,7 @@ void ActuatorEffectivenessControlSurfaces::applyFlaps(float flaps_control, int f
 	for (int i = 0; i < _count; ++i) {
 		// map [0, 1] to [-1, 1]
 		// TODO: this currently only works for dedicated flaps, not flaperons
+		// 翻译：TODO：目前这只适用于专用襟翼，不适用于副翼
 		actuator_sp(i + first_actuator_idx) += (_flaps_setpoint_with_slewrate.getState() * 2.f - 1.f) * _params[i].scale_flap;
 	}
 }
@@ -179,6 +181,7 @@ void ActuatorEffectivenessControlSurfaces::applySpoilers(float spoilers_control,
 
 	for (int i = 0; i < _count; ++i) {
 		// TODO: this currently only works for spoilerons, not dedicated spoilers
+		// 翻译：TODO：该功能目前只适用于扰流板，不适用于专用扰流板
 		actuator_sp(i + first_actuator_idx) += _spoilers_setpoint_with_slewrate.getState() * _params[i].scale_spoiler;
 	}
 }

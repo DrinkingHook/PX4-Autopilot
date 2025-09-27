@@ -158,6 +158,11 @@ ControlAllocator::update_allocation_method(bool force)
 			_control_allocation[i] = nullptr;
 		}
 
+                /**
+                 * @brief 获取有效矩阵数量
+		 * 几个VTOL机型都是两个，其它的机型默认1个
+                 *
+                 */
 		_num_control_allocation = _actuator_effectiveness->numMatrices();
 
 		AllocationMethod desired_methods[ActuatorEffectiveness::MAX_NUM_MATRICES];
@@ -325,8 +330,9 @@ ControlAllocator::Run()
 
 		if (_handled_motor_failure_bitmask == 0) {
 			// We don't update the geometry after an actuator failure, as it could lead to unexpected results
-			// 翻译：我们不会在执行器故障后更新几何形状，因为它可能导致意外结果
+			// 翻译：执行器发生故障后，我们不会更新几何图形，因为这可能会导致意想不到的结果
 			// (e.g. a user could add/remove motors, such that the bitmask isn't correct anymore)
+			// 翻译：（例如，用户可以添加/删除电机，从而使位掩码不再正确）。
 			updateParams();
 			parameters_updated();
 		}
@@ -339,6 +345,7 @@ ControlAllocator::Run()
 	{
 		vehicle_status_s vehicle_status;
 
+                // 车辆状态更新
 		if (_vehicle_status_sub.update(&vehicle_status)) {
 
 			_armed = vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_ARMED;
@@ -354,6 +361,7 @@ ControlAllocator::Run()
 			}
 
 			// Special cases for VTOL in transition
+			// 翻译：过渡时期 VTOL 的特殊情况
 			if (vehicle_status.is_vtol && vehicle_status.in_transition_mode) {
 				if (vehicle_status.in_transition_to_fw) {
 					flight_phase = ActuatorEffectiveness::FlightPhase::TRANSITION_HF_TO_FF;
@@ -364,11 +372,14 @@ ControlAllocator::Run()
 			}
 
 			// Forward to effectiveness source
+			// 翻译：转发到有效性源
 			_actuator_effectiveness->setFlightPhase(flight_phase);
 		}
 	}
 
+        // 检查车辆模式更新
 	{
+		// 此变量离开{}便会因为作用域自动销毁
 		vehicle_control_mode_s vehicle_control_mode;
 
 		if (_vehicle_control_mode_sub.update(&vehicle_control_mode)) {
@@ -377,6 +388,7 @@ ControlAllocator::Run()
 	}
 
 	// Guard against too small (< 0.2ms) and too large (> 20ms) dt's.
+	// 翻译：防止过小（< 0.2 毫秒）和过大（> 20 毫秒）的 dt。
 	const hrt_abstime now = hrt_absolute_time();
 	const float dt = math::constrain(((now - _last_run) / 1e6f), 0.0002f, 0.02f);
 
@@ -385,6 +397,7 @@ ControlAllocator::Run()
 	vehicle_thrust_setpoint_s vehicle_thrust_setpoint;
 
 	// Run allocator on torque changes
+	// 翻译：在扭矩变化时运行分配器
 	if (_vehicle_torque_setpoint_sub.update(&vehicle_torque_setpoint)) {
 		_torque_sp = matrix::Vector3f(vehicle_torque_setpoint.xyz);
 
@@ -393,6 +406,7 @@ ControlAllocator::Run()
 
 	}
 
+	// 在推力变化时运行分配器
 	if (_vehicle_thrust_setpoint_sub.update(&vehicle_thrust_setpoint)) {
 		_thrust_sp = matrix::Vector3f(vehicle_thrust_setpoint.xyz);
 	}
@@ -400,11 +414,15 @@ ControlAllocator::Run()
 	if (do_update) {
 		_last_run = now;
 
+                // 检查电机故障
 		check_for_motor_failures();
 
+                // 必要时更新有效性矩阵
+                // 感觉这句代码在这里毫无作用，第一层进入函数会根据reason的值和更新时间判断是否退出，第二层大多数机型应该都会直接return
 		update_effectiveness_matrix_if_needed(EffectivenessUpdateReason::NO_EXTERNAL_UPDATE);
 
 		// Set control setpoint vector(s)
+		// 翻译：设置控制设定点矢量
 		matrix::Vector<float, NUM_AXES> c[ActuatorEffectiveness::MAX_NUM_MATRICES];
 		c[0](0) = _torque_sp(0);
 		c[0](1) = _torque_sp(1);
@@ -413,6 +431,7 @@ ControlAllocator::Run()
 		c[0](4) = _thrust_sp(1);
 		c[0](5) = _thrust_sp(2);
 
+		// 如果有效矩阵为2那么才执行
 		if (_num_control_allocation > 1) {
 			if (_vehicle_torque_setpoint1_sub.copy(&vehicle_torque_setpoint)) {
 				c[1](0) = vehicle_torque_setpoint.xyz[0];
@@ -432,8 +451,11 @@ ControlAllocator::Run()
 			_control_allocation[i]->setControlSetpoint(c[i]);
 
 			// Do allocation
+			// 翻译：进行分配
 			_control_allocation[i]->allocate();
+			// 执行襟翼和扰流板--现只有固定翼和vtol机型有，此函数为虚函数，其它机型则运行空函数
 			_actuator_effectiveness->allocateAuxilaryControls(dt, i, _control_allocation[i]->_actuator_sp); //flaps and spoilers
+			// 更新设定的目标值
 			_actuator_effectiveness->updateSetpoint(c[i], i, _control_allocation[i]->_actuator_sp,
 								_control_allocation[i]->getActuatorMin(), _control_allocation[i]->getActuatorMax());
 
@@ -441,6 +463,7 @@ ControlAllocator::Run()
 				_control_allocation[i]->applySlewRateLimit(dt);
 			}
 
+                        // 对传动机构限幅
 			_control_allocation[i]->clipActuatorSetpoint();
 		}
 	}
@@ -450,7 +473,10 @@ ControlAllocator::Run()
 	publish_actuator_controls();
 
 	// Publish status at limited rate, as it's somewhat expensive and we use it for slower dynamics
+	// 翻译：以有限的速度发布状态，因为它有点昂贵，我们用它来处理较慢的动态变化
 	// (i.e. anti-integrator windup)
+	// 翻译：（即反集成器卷绕）
+	// 用于诊断和记录
 	if (now - _last_status_pub >= 5_ms) {
 		publish_control_allocator_status(0);
 
@@ -469,18 +495,22 @@ ControlAllocator::update_effectiveness_matrix_if_needed(EffectivenessUpdateReaso
 {
 	ActuatorEffectiveness::Configuration config{};
 
+	// 如果为无外部更新则退出并且100ms内更新过则跳过
 	if (reason == EffectivenessUpdateReason::NO_EXTERNAL_UPDATE
 	    && hrt_elapsed_time(&_last_effectiveness_update) < 100_ms) { // rate-limit updates
 		return;
 	}
 
+        // 获取控制效果矩阵，若reason == EffectivenessUpdateReason::NO_EXTERNAL_UPDATE那么返回false
 	if (_actuator_effectiveness->getEffectivenessMatrix(config, reason)) {
 		_last_effectiveness_update = hrt_absolute_time();
 
+                // 拷贝用于记录每个执行器都是处于哪个效能矩阵上的数据到_control_allocation_selection_indexes
 		memcpy(_control_allocation_selection_indexes, config.matrix_selection_indexes,
 		       sizeof(_control_allocation_selection_indexes));
 
 		// Get the minimum and maximum depending on type and configuration
+		// 翻译：根据类型和配置获取最小值和最大值
 		ActuatorEffectiveness::ActuatorVector minimum[ActuatorEffectiveness::MAX_NUM_MATRICES];
 		ActuatorEffectiveness::ActuatorVector maximum[ActuatorEffectiveness::MAX_NUM_MATRICES];
 		ActuatorEffectiveness::ActuatorVector slew_rate[ActuatorEffectiveness::MAX_NUM_MATRICES];
@@ -491,15 +521,18 @@ ControlAllocator::update_effectiveness_matrix_if_needed(EffectivenessUpdateReaso
 		static_assert(actuator_servos_trim_s::NUM_CONTROLS == actuator_servos_s::NUM_CONTROLS, "size mismatch");
 
 		for (int actuator_type = 0; actuator_type < (int)ActuatorType::COUNT; ++actuator_type) {
+			// 分别计算不同致动器类型的数量
 			_num_actuators[actuator_type] = config.num_actuators[actuator_type];
 
 			for (int actuator_type_idx = 0; actuator_type_idx < config.num_actuators[actuator_type]; ++actuator_type_idx) {
+				// 检测是否超数量限制
 				if (actuator_idx >= NUM_ACTUATORS) {
 					_num_actuators[actuator_type] = 0;
 					PX4_ERR("Too many actuators");
 					break;
 				}
 
+                                // 判断是1号矩阵还是2号矩阵
 				int selected_matrix = _control_allocation_selection_indexes[actuator_idx];
 
 				if ((ActuatorType)actuator_type == ActuatorType::MOTORS) {
@@ -541,6 +574,7 @@ ControlAllocator::update_effectiveness_matrix_if_needed(EffectivenessUpdateReaso
 		}
 
 		// Handle failed actuators
+		// 翻译：处理故障执行器
 		if (_handled_motor_failure_bitmask) {
 			actuator_idx = 0;
 			memset(&actuator_idx_matrix, 0, sizeof(actuator_idx_matrix));
@@ -567,8 +601,11 @@ ControlAllocator::update_effectiveness_matrix_if_needed(EffectivenessUpdateReaso
 			_control_allocation[i]->setSlewRateLimit(slew_rate[i]);
 
 			// Set all the elements of a row to 0 if that row has weak authority.
+			// 翻译：如果某一行的权限较弱，则将该行的所有元素设置为 0。
 			// That ensures that the algorithm doesn't try to control axes with only marginal control authority,
+			// 翻译：这样就能确保算法不会尝试控制仅具有边缘控制权限的轴、
 			// which in turn would degrade the control of the main axes that actually should and can be controlled.
+			// 翻译：这反过来又会降低对实际应该控制和可以控制的主轴的控制。
 
 			ActuatorEffectiveness::EffectivenessMatrix &matrix = config.effectiveness_matrices[i];
 
@@ -587,6 +624,7 @@ ControlAllocator::update_effectiveness_matrix_if_needed(EffectivenessUpdateReaso
 			}
 
 			// Assign control effectiveness matrix
+			// 翻译：分配控制效果矩阵
 			int total_num_actuators = config.num_actuators_matrix[i];
 			_control_allocation[i]->setEffectivenessMatrix(config.effectiveness_matrices[i], config.trim[i],
 					config.linearization_point[i], total_num_actuators, reason == EffectivenessUpdateReason::CONFIGURATION_UPDATE);
@@ -606,9 +644,11 @@ ControlAllocator::publish_control_allocator_status(int matrix_index)
 	// TODO: disabled motors (?)
 
 	// Allocated control
+	// 翻译：分配控制权
 	const matrix::Vector<float, NUM_AXES> &allocated_control = _control_allocation[matrix_index]->getAllocatedControl();
 
 	// Unallocated control
+	// 翻译：未分配的控制权
 	const matrix::Vector<float, NUM_AXES> unallocated_control = _control_allocation[matrix_index]->getControlSetpoint() -
 			allocated_control;
 	control_allocator_status.unallocated_torque[0] = unallocated_control(0);

@@ -131,6 +131,6 @@
         },
         "clangd.arguments": [
                 "--pch-storage=memory",
-                "--compile-commands-dir=build/cuav_x7pro_default"
+                "--compile-commands-dir=build/px4_fmu-v5_default"
         ],
 }

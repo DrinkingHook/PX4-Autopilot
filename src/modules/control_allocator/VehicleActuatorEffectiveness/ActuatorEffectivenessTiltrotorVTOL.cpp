@@ -76,7 +76,9 @@ ActuatorEffectivenessTiltrotorVTOL::getEffectivenessMatrix(Configuration &config
 
 	// Update matrix with tilts in vertical position when update is triggered by a manual
 	// configuration (parameter) change. This is to make sure the normalization
+	// 翻译：当手动更改配置（参数）触发更新时，在垂直位置更新倾斜矩阵。这是为了确保正常化
 	// scales are tilt-invariant. Note: configuration updates are only possible when disarmed.
+	// 翻译：鳞片是倾斜不变的。注意：只有在解除警报时才能更新配置。
 	const float collective_tilt_control_applied = (external_update == EffectivenessUpdateReason::CONFIGURATION_UPDATE) ?
 			-1.f : _last_collective_tilt_control;
 	_untiltable_motors = _mc_rotors.updateAxisFromTilts(_tilts, collective_tilt_control_applied)
@@ -98,6 +100,7 @@ ActuatorEffectivenessTiltrotorVTOL::getEffectivenessMatrix(Configuration &config
 
 	// If it was an update coming from a config change, then make sure to update matrix in
 	// the next iteration again with the correct tilt (but without updating the normalization scale).
+	// 翻译：如果是配置更改引起的更新，则确保在下一次迭代中再次以正确的倾斜度更新矩阵（但不更新归一化比例）。
 	_collective_tilt_updated = (external_update == EffectivenessUpdateReason::CONFIGURATION_UPDATE);
 
 	return (mc_rotors_added_successfully && surfaces_added_successfully && tilts_added_successfully);
@@ -132,9 +135,11 @@ void ActuatorEffectivenessTiltrotorVTOL::updateSetpoint(const matrix::Vector<flo
 		tiltrotor_extra_controls_s tiltrotor_extra_controls;
 
 		if (_tiltrotor_extra_controls_sub.copy(&tiltrotor_extra_controls)) {
+			// 控制集体倾斜[-1,1] = 集体倾斜正常化设定点[0,1] * 2.f - 1.f
 			float control_collective_tilt = tiltrotor_extra_controls.collective_tilt_normalized_setpoint * 2.f - 1.f;
 
 			// set control_collective_tilt to exactly -1 or 1 if close to these end points
+			// 翻译：如果接近这些端点，将 control_collective_tilt 设置为精确的 -1 或 1
 			control_collective_tilt = control_collective_tilt < -0.99f ? -1.f : control_collective_tilt;
 			control_collective_tilt = control_collective_tilt > 0.99f ? 1.f : control_collective_tilt;
 
@@ -149,12 +154,16 @@ void ActuatorEffectivenessTiltrotorVTOL::updateSetpoint(const matrix::Vector<flo
 
 			// During transition to FF, only allow update thrust axis up to 45° as with a high tilt angle the effectiveness
 			// of the thrust axis in z is apporaching 0, and by that is increasing the motor output to max.
+			// 翻译：在向 FF 过渡期间，只允许更新推力轴至 45°，因为倾斜角度过大时，推力轴在 Z 轴上的效率将趋近于 0，从而将电机输出功率提高到最大值。
 			// Transition to HF: disable thrust axis tilting, and assume motors are vertical. This is to avoid
 			// a thrust spike when the transition is initiated (as then the tilt is fully forward).
+			// 翻译：过渡到高频：禁用推力轴倾斜，并假定电机垂直。这样做是为了避免过渡启动时出现推力峰值（因为此时倾斜完全向前）。
 			if (_flight_phase == FlightPhase::TRANSITION_HF_TO_FF) {
+				// 悬停模式切换到固定翼前飞模式的过渡阶段
 				_last_collective_tilt_control = math::constrain(_last_collective_tilt_control, -1.f, 0.f);
 
 			} else if (_flight_phase == FlightPhase::TRANSITION_FF_TO_HF) {
+				// 从固定翼前飞模式切换回悬停模式的过渡阶段
 				_last_collective_tilt_control = -1.f;
 			}
 
@@ -165,6 +174,7 @@ void ActuatorEffectivenessTiltrotorVTOL::updateSetpoint(const matrix::Vector<flo
 				if (_tilts.config(i).tilt_direction == ActuatorEffectivenessTilts::TiltDirection::TowardsFront) {
 
 					// as long as throttle spoolup is not completed, leave the tilts in the disarmed position (in hover)
+					// 翻译：只要节流阀未启动，就将倾斜装置置于解除位置（悬停）。
 					if (throttleSpoolupFinished() || _flight_phase != FlightPhase::HOVER_FLIGHT) {
 						actuator_sp(i + _first_tilt_idx) += control_collective_tilt;
 
@@ -174,6 +184,7 @@ void ActuatorEffectivenessTiltrotorVTOL::updateSetpoint(const matrix::Vector<flo
 				}
 
 				// custom yaw saturation logic: only declare yaw saturated if all tilts are at the negative or positive yawing limit
+				// 翻译：自定义偏航饱和逻辑：只有当所有倾斜都处于负偏航极限或正偏航极限时，才宣布偏航饱和
 				if (_tilts.getYawTorqueOfTilt(i) > FLT_EPSILON) {
 
 					if (yaw_saturated_positive && actuator_sp(i + _first_tilt_idx) < actuator_max(i + _first_tilt_idx) - FLT_EPSILON) {
@@ -199,13 +210,20 @@ void ActuatorEffectivenessTiltrotorVTOL::updateSetpoint(const matrix::Vector<flo
 			_yaw_tilt_saturation_flags.tilt_yaw_pos = yaw_saturated_positive;
 
 			// in FW directly use throttle sp
+			// 翻译：在 FW 中直接使用节流阀 sp
 			if (_flight_phase == FlightPhase::FORWARD_FLIGHT) {
+				/**
+				 * @brief
+				 *
+				 * @param _first_tilt_id 与电机在同一个能效矩阵，_first_tilt_idx的值就表示motors的数量
+				 */
 				for (int i = 0; i < _first_tilt_idx; ++i) {
 					actuator_sp(i) = tiltrotor_extra_controls.collective_thrust_normalized_setpoint;
 				}
 			}
 		}
 
+                // 如果处于向前飞模式，那么停止无倾转电机的动力
 		if (_flight_phase == FlightPhase::FORWARD_FLIGHT) {
 			stopMaskedMotorsWithZeroThrust(_motors & ~_untiltable_motors, actuator_sp);
 		}
@@ -237,6 +255,7 @@ void ActuatorEffectivenessTiltrotorVTOL::setFlightPhase(const FlightPhase &fligh
 void ActuatorEffectivenessTiltrotorVTOL::getUnallocatedControl(int matrix_index, control_allocator_status_s &status)
 {
 	// only handle matrix 0 (motors and tilts)
+	// 翻译：只处理矩阵 0（电机和倾斜装置）
 	if (matrix_index == 1) {
 		return;
 	}

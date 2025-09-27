@@ -110,6 +110,7 @@ public:
 		int totalNumActuators() const;
 
 		/// Configured effectiveness matrix. Actuators are expected to be filled in order, motors first, then servos
+		// 翻译：配置有效性矩阵。执行器应按顺序填充，首先是电机，然后是伺服系统
 		EffectivenessMatrix effectiveness_matrices[MAX_NUM_MATRICES];
 
 		int num_actuators_matrix[MAX_NUM_MATRICES]; ///< current amount, and next actuator index to fill in to effectiveness_matrices
@@ -120,6 +121,7 @@ public:
 		int selected_matrix;
 
 		uint8_t matrix_selection_indexes[NUM_ACTUATORS * MAX_NUM_MATRICES];
+
 		int num_actuators[(int)ActuatorType::COUNT];
 	};
 
@@ -141,6 +143,7 @@ public:
 
 	/**
 	 * Get the desired allocation method(s) for each matrix, if configured as AUTO
+	 * 翻译：如果配置为自动，则为每个矩阵获取所需的分配方法
 	 */
 	virtual void getDesiredAllocationMethod(AllocationMethod allocation_method_out[MAX_NUM_MATRICES]) const
 	{
@@ -151,6 +154,7 @@ public:
 
 	/**
 	 * Query if the roll, pitch and yaw columns of the mixing matrix should be normalized
+	 * 翻译：查询混合矩阵的滚动、俯仰和偏航列是否应标准化
 	 */
 	virtual void getNormalizeRPY(bool normalize[MAX_NUM_MATRICES]) const
 	{
