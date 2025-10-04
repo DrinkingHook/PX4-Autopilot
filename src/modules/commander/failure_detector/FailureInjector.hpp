@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2020-2023 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2025 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,54 +31,29 @@
  *
  ****************************************************************************/
 
-/**
- * @file Sensor.hpp
- * Abstract class for sensors
- *
- * @author Mathieu Bresciani <brescianimathieu@gmail.com>
- *
- */
+#pragma once
 
-#ifndef EKF_SENSOR_HPP
-#define EKF_SENSOR_HPP
+#include <uORB/Subscription.hpp>
+#include <uORB/Publication.hpp>
+#include <uORB/topics/esc_status.h>
+#include <uORB/topics/vehicle_command_ack.h>
+#include <uORB/topics/vehicle_command.h>
 
-#include <cstdint>
-
-namespace estimator
-{
-namespace sensor
-{
-
-class Sensor
+class FailureInjector
 {
 public:
-	virtual ~Sensor() {};
+	FailureInjector();
 
-	/*
-	 * run sanity checks on the current data
-	 * this has to be called immediately after
-	 * setting new data
-	 */
-	virtual void runChecks() {};
+	void update();
 
-	/*
-	 * return true if the sensor is healthy
-	 */
-	virtual bool isHealthy() const = 0;
+	void manipulateEscStatus(esc_status_s &status);
+	uint32_t getMotorStopMask() { return _motor_stop_mask; }
+private:
+	uORB::Subscription _vehicle_command_sub{ORB_ID(vehicle_command)};
+	uORB::Publication<vehicle_command_ack_s> _command_ack_pub{ORB_ID(vehicle_command_ack)};
 
-	/*
-	 * return true if the delayed sample is healthy
-	 * and can be fused in the estimator
-	 */
-	virtual bool isDataHealthy() const = 0;
-
-	/*
-	 * return true if the sensor data rate is
-	 * stable and high enough
-	 */
-	virtual bool isRegularlySendingData() const = 0;
+	bool _failure_injection_enabled = false;
+	uint32_t _motor_stop_mask{};
+	uint32_t _esc_telemetry_blocked_mask{};
+	uint32_t _esc_telemetry_wrong_mask{};
 };
-
-} // namespace sensor
-} // namespace estimator
-#endif // !EKF_SENSOR_HPP

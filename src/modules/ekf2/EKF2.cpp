@@ -1955,6 +1955,7 @@ void EKF2::PublishStatusFlags(const hrt_abstime &timestamp)
 		status_flags.cs_gnss_vel            = _ekf.control_status_flags().gnss_vel;
 		status_flags.cs_gnss_fault          = _ekf.control_status_flags().gnss_fault;
 		status_flags.cs_yaw_manual          = _ekf.control_status_flags().yaw_manual;
+		status_flags.cs_gnss_hgt_fault      = _ekf.control_status_flags().gnss_hgt_fault;
 
 		status_flags.fault_status_changes     = _filter_fault_status_changes;
 		status_flags.fs_bad_mag_x             = _ekf.fault_status_flags().bad_mag_x;
@@ -2085,10 +2086,10 @@ void EKF2::UpdateAirspeedSample(ekf2_timestamps_s &ekf2_timestamps)
 		if (_airspeed_validated_sub.update(&airspeed_validated)) {
 
 			if (PX4_ISFINITE(airspeed_validated.true_airspeed_m_s)
-			    && (airspeed_validated.airspeed_source > airspeed_validated_s::GROUND_MINUS_WIND)
+			    && (airspeed_validated.airspeed_source > airspeed_validated_s::SOURCE_GROUND_MINUS_WIND)
 			   ) {
 
-				_ekf.setSyntheticAirspeed(airspeed_validated.airspeed_source == airspeed_validated_s::SYNTHETIC);
+				_ekf.setSyntheticAirspeed(airspeed_validated.airspeed_source == airspeed_validated_s::SOURCE_SYNTHETIC);
 
 				float cas2tas = 1.f;
 
