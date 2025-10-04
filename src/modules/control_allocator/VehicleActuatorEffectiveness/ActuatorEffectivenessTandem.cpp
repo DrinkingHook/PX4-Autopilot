@@ -57,7 +57,9 @@ ActuatorEffectivenessTandem::ActuatorEffectivenessTandem(ModuleParams *parent)
 		snprintf(buffer, sizeof(buffer), "CA_HELI_THR_C%u", i);
 		_param_handles.throttle_curve[i] = param_find(buffer);
 		snprintf(buffer, sizeof(buffer), "CA_HELI_PITCH_C%u", i);
-		_param_handles.pitch_curve[i] = param_find(buffer);
+                _param_handles.pitch_curve[i] = param_find(buffer);
+                snprintf(buffer, sizeof(buffer), "CA2_HLP_C%u", i);
+		_param_handles_1.pitch_curve[i] = param_find(buffer);
 	}
 
 	_param_handles.yaw_collective_pitch_scale = param_find("CA_HELI_YAW_CP_S");
@@ -193,7 +195,7 @@ void ActuatorEffectivenessTandem::updateSetpoint(const matrix::Vector<float, NUM
 	const float throttle = (math::interpolateN(-control_sp(ControlAxis::THRUST_Z), _geometry.throttle_curve)
 				+ rpm_control_output) * spoolup_progress;
 	const float collective_pitch = math::interpolateN(-control_sp(ControlAxis::THRUST_Z), _geometry.pitch_curve);
-
+	const float collective2_pitch = math::interpolateN(-control_sp(ControlAxis::THRUST_Z), _geometry_1.pitch_curve);
 	// actuator mapping
 	actuator_sp(0) = mainMotorEnaged() ? throttle : NAN;
 
@@ -219,14 +221,14 @@ void ActuatorEffectivenessTandem::updateSetpoint(const matrix::Vector<float, NUM
 		float roll_coeff = sinf(_geometry.swash_plate_servos[i].angle) * _geometry.swash_plate_servos[i].arm_length;
 		float pitch_coeff = cosf(_geometry.swash_plate_servos[i].angle) * _geometry.swash_plate_servos[i].arm_length;
 		actuator_sp(_first_swash_plate_servo_index + i) = collective_pitch
-				+ control_sp(ControlAxis::PITCH) * 0.3f
-				- control_sp(ControlAxis::ROLL) * roll_coeff *0.3f
+				+ control_sp(ControlAxis::PITCH) * 0.9f
+				- control_sp(ControlAxis::ROLL) * roll_coeff * 0.9f
 				+ (control_sp(ControlAxis::YAW) * -roll_coeff) * 0.3f
 				+ _geometry.swash_plate_servos[i].trim;
 
-		actuator_sp(_first_swash_plate_servo_index + _geometry.num_swash_plate_servos + i) = collective_pitch
-				- control_sp(ControlAxis::PITCH) * 0.3f
-				- control_sp(ControlAxis::ROLL) * roll_coeff * 0.3f
+		actuator_sp(_first_swash_plate_servo_index + _geometry.num_swash_plate_servos + i) = collective2_pitch
+				- control_sp(ControlAxis::PITCH) * 0.9f
+				- control_sp(ControlAxis::ROLL) * roll_coeff * 0.9f
 				+ (control_sp(ControlAxis::YAW) * roll_coeff) * 0.3f
 				+ _geometry_1.swash_plate_servos[i].trim;
 
