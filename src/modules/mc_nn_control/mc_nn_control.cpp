@@ -87,9 +87,11 @@ bool MulticopterNeuralNetworkControl::init()
 int MulticopterNeuralNetworkControl::InitializeNetwork()
 {
 	// Initialize the neural network
+	// 翻译:初始化神经网络
 	const tflite::Model *control_model = ::tflite::GetModel(control_net_tflite);
 
 	// Set up the interpreter
+	// 翻译：设置解释器
 	static NNControlOpResolver resolver;
 
 	if (RegisterOps(resolver) != kTfLiteOk) {
@@ -102,6 +104,7 @@ int MulticopterNeuralNetworkControl::InitializeNetwork()
 	_interpreter = new tflite::MicroInterpreter(control_model, resolver, tensor_arena, kTensorArenaSize);
 
 	// Allocate memory for the model's tensors
+	// 翻译：为模型的张量分配内存
 	TfLiteStatus allocate_status = _interpreter->AllocateTensors();
 
 	if (allocate_status != kTfLiteOk) {

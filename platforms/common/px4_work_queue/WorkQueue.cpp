@@ -128,17 +128,22 @@ void WorkQueue::Detach(WorkItem *item)
 
 void WorkQueue::Add(WorkItem *item)
 {
+	// 获取队列锁
 	work_lock();
 
 #if defined(ENABLE_LOCKSTEP_SCHEDULER)
 
+        // 在启用 lockstep 调度时，注册 lockstep 组件（仅第一次）。
 	if (_lockstep_component == -1) {
 		_lockstep_component = px4_lockstep_register_component();
 	}
 
 #endif // ENABLE_LOCKSTEP_SCHEDULER
 
+        // 将 item push 到内部队列 _q
 	_q.push(item);
+
+        // 解锁并调用 SignalWorkerThread()，该函数会根据信号量状态发出一次信号，唤醒工作线程处理队列（避免重复 post）
 	work_unlock();
 
 	SignalWorkerThread();

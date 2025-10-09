@@ -1197,7 +1197,9 @@ Mavlink::configure_stream(const char *stream_name, const float rate)
 	}
 
 	// search for stream with specified name in supported streams list
+	// 翻译：在支持的流列表中搜索具有指定名称的流
 	// create new instance if found
+	// 翻译：如果找到，创建新实例
 	MavlinkStream *stream = create_mavlink_stream(stream_name, this);
 
 	if (stream != nullptr) {
@@ -1404,6 +1406,10 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 	int ret = 0;
 	bool stream_configured = false;
 
+	/**
+	 * @brief lambda 表达式or函数
+	 * []里为捕获列表->固定传入参数 ()里为调用时可更改的传入参数
+	 */
 	auto configure_stream_local =
 	[&stream_configured, configure_single_stream, &ret, this](const char *stream_name, float rate) {
 		if (!configure_single_stream || strcmp(configure_single_stream, stream_name) == 0) {
@@ -2951,9 +2957,13 @@ Mavlink::start(int argc, char *argv[])
 	// Instantiate thread
 
 	// This is where the control flow splits
+	// 翻译：这就是控制流分裂的地方
 	// between the starting task and the spawned
+	// 翻译：在启动任务和生成的
 	// task - start_helper() only returns
+	// 翻译：任务 - start_helper() 只返回
 	// when the started task exits.
+	// 翻译：当启动的任务退出时。
 	px4_task_spawn_cmd("mavlink_main",
 			   SCHED_DEFAULT,
 			   SCHED_PRIORITY_DEFAULT,
@@ -2965,8 +2975,10 @@ Mavlink::start(int argc, char *argv[])
 	// does not return before the instance
 	// is fully initialized. As this is also
 	// the only path to create a new instance,
+	// 翻译：确保该 shell 命令在实例完全初始化之前不会返回.因为这也是创建新实例的唯一路径、因为这也是创建新实例的唯一路径
 	// this is effectively a lock on concurrent
 	// instance starting. XXX do a real lock.
+	// 翻译：这实际上是对同时启动的实例加锁。XXX 做了一个真正的锁。
 
 	// Sleep 500 us between each attempt
 	const unsigned sleeptime = 500;

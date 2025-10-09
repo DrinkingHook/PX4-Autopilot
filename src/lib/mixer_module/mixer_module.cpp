@@ -42,7 +42,7 @@ using namespace time_literals;
 /**
  * @brief
  FunctionProvider提供了两个构造函数：
- 
+
    FunctionProvider(OutputFunction min_func_, OutputFunction max_func_, Constructor constructor_)
        : min_func(min_func_), max_func(max_func_), constructor(constructor_) {}
 
@@ -509,7 +509,7 @@ bool MixingOutput::update()
 			_actuator_test.overrideValues(outputs, _max_num_outputs);
 		}
 
-                // 输出限制
+                // 输出限制-也是实际的输出
 		limitAndUpdateOutputs(outputs, has_updates);
 	}
 

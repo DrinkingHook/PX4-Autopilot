@@ -641,6 +641,7 @@ int I2CSPIDriverBase::module_start(const BusCLIArguments &cli, BusInstanceIterat
 		const int runtime_instance = iterator.runningInstancesCount();
 		I2CSPIDriverInitializing initializer_data{driver_config, instantiate, runtime_instance};
 		// initialize the object and bus on the work queue thread - this will also probe for the device
+		// 翻译：在工作队列线程上初始化对象和总线 - 这也将探测设备
 		px4::WorkItemSingleShot initializer(wq_config, initializer_trampoline, &initializer_data);
 		initializer.ScheduleNow();
 		initializer.wait();

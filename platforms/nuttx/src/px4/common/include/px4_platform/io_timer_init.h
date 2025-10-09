@@ -51,6 +51,7 @@ static inline constexpr io_timers_channel_mapping_t initIOTimerChannelMapping(co
 	io_timers_channel_mapping_t ret{};
 
 	// requirement: channels of the same timer must be grouped together, but the ordering does not matter
+	// 翻译：要求：同一计时器的频道必须分组在一起，但是订购并不重要
 
 	for (unsigned i = 0; i < MAX_IO_TIMERS; ++i) {
 		if (io_timers_conf[i].base == 0) {
