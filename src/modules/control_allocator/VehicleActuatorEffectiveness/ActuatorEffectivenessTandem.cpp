@@ -69,12 +69,12 @@ ActuatorEffectivenessTandem::ActuatorEffectivenessTandem(ModuleParams *parent)
 	_param_handles.spoolup_time = param_find("COM_SPOOLUP_TIME");
         _param_handles.max_servo_throw = param_find("CA_MAX_SVO_THROW");
 
-        _param_handles_1.yaw_collective_pitch_scale = param_find("CA_HELI_YAW_CP_S");
-	_param_handles_1.yaw_collective_pitch_offset = param_find("CA_HELI_YAW_CP_O");
-	_param_handles_1.yaw_throttle_scale = param_find("CA_HELI_YAW_TH_S");
-	_param_handles_1.yaw_ccw = param_find("CA_HELI_YAW_CCW");
-	_param_handles_1.spoolup_time = param_find("COM_SPOOLUP_TIME");
-        _param_handles_1.max_servo_throw = param_find("CA_MAX_SVO_THROW");
+        // _param_handles_1.yaw_collective_pitch_scale = param_find("CA_HELI_YAW_CP_S");
+	// _param_handles_1.yaw_collective_pitch_offset = param_find("CA_HELI_YAW_CP_O");
+	// _param_handles_1.yaw_throttle_scale = param_find("CA_HELI_YAW_TH_S");
+	// _param_handles_1.yaw_ccw = param_find("CA_HELI_YAW_CCW");
+	// _param_handles_1.spoolup_time = param_find("COM_SPOOLUP_TIME");
+        // _param_handles_1.max_servo_throw = param_find("CA_MAX_SVO_THROW");
 
         updateParams();
 }
@@ -91,7 +91,7 @@ void ActuatorEffectivenessTandem::updateParams()
 	_geometry.num_swash_plate_servos = math::constrain(_geometry.num_swash_plate_servos,
 					   (int32_t)2, (int32_t)NUM_SWASH_PLATE_SERVOS_MAX);
 
-	_geometry_1.num_swash_plate_servos = math::constrain(_geometry_1.num_swash_plate_servos,
+	_geometry_1.num_swash_plate_servos = math::constrain(_geometry.num_swash_plate_servos,
 					(int32_t)2, (int32_t)NUM_SWASH_PLATE_SERVOS_MAX);
 
 	for (int i = 0; i < _geometry.num_swash_plate_servos; ++i) {
@@ -101,35 +101,29 @@ void ActuatorEffectivenessTandem::updateParams()
 		param_get(_param_handles.swash_plate_servos[i].arm_length, &_geometry.swash_plate_servos[i].arm_length);
 		param_get(_param_handles.swash_plate_servos[i].trim, &_geometry.swash_plate_servos[i].trim);
 
-                param_get(_param_handles_1.swash_plate_servos[i].angle, &angle_deg);
-		_geometry_1.swash_plate_servos[i].angle = math::radians(angle_deg);
-		param_get(_param_handles_1.swash_plate_servos[i].arm_length, &_geometry_1.swash_plate_servos[i].arm_length);
-		param_get(_param_handles_1.swash_plate_servos[i].trim, &_geometry_1.swash_plate_servos[i].trim);
+                // param_get(_param_handles_1.swash_plate_servos[i].angle, &angle_deg);
+		// _geometry_1.swash_plate_servos[i].angle = math::radians(angle_deg);
+		// param_get(_param_handles_1.swash_plate_servos[i].arm_length, &_geometry_1.swash_plate_servos[i].arm_length);
+		// param_get(_param_handles_1.swash_plate_servos[i].trim, &_geometry_1.swash_plate_servos[i].trim);
 	}
 
-	for (int i = 0; i < NUM_CURVE_POINTS; ++i) {
-		param_get(_param_handles.throttle_curve[i], &_geometry.throttle_curve[i]);
-		param_get(_param_handles.pitch_curve[i], &_geometry.pitch_curve[i]);
 
-                param_get(_param_handles_1.throttle_curve[i], &_geometry_1.throttle_curve[i]);
-		param_get(_param_handles_1.pitch_curve[i], &_geometry_1.pitch_curve[i]);
-	}
 
 	param_get(_param_handles.yaw_collective_pitch_scale, &_geometry.yaw_collective_pitch_scale);
 	param_get(_param_handles.yaw_collective_pitch_offset, &_geometry.yaw_collective_pitch_offset);
 	param_get(_param_handles.yaw_throttle_scale, &_geometry.yaw_throttle_scale);
         param_get(_param_handles.spoolup_time, &_geometry.spoolup_time);
 
-        param_get(_param_handles_1.yaw_collective_pitch_scale, &_geometry_1.yaw_collective_pitch_scale);
-	param_get(_param_handles_1.yaw_collective_pitch_offset, &_geometry_1.yaw_collective_pitch_offset);
-	param_get(_param_handles_1.yaw_throttle_scale, &_geometry_1.yaw_throttle_scale);
-	param_get(_param_handles_1.spoolup_time, &_geometry_1.spoolup_time);
+        // param_get(_param_handles_1.yaw_collective_pitch_scale, &_geometry_1.yaw_collective_pitch_scale);
+	// param_get(_param_handles_1.yaw_collective_pitch_offset, &_geometry_1.yaw_collective_pitch_offset);
+	// param_get(_param_handles_1.yaw_throttle_scale, &_geometry_1.yaw_throttle_scale);
+	// param_get(_param_handles_1.spoolup_time, &_geometry_1.spoolup_time);
 	int32_t yaw_ccw = 0;
 	param_get(_param_handles.yaw_ccw, &yaw_ccw);
         _geometry.yaw_sign = (yaw_ccw == 1) ? -1.f : 1.f;
 
-        param_get(_param_handles_1.yaw_ccw, &yaw_ccw);
-        _geometry_1.yaw_sign = (yaw_ccw == 1) ? -1.f : 1.f;
+        // param_get(_param_handles_1.yaw_ccw, &yaw_ccw);
+        // _geometry_1.yaw_sign = (yaw_ccw == 1) ? -1.f : 1.f;
 
 	float max_servo_throw_deg = 0.f;
         param_get(_param_handles.max_servo_throw, &max_servo_throw_deg);
@@ -146,6 +140,15 @@ void ActuatorEffectivenessTandem::updateParams()
 		// handle any undefined behaviour if disabled
 		_geometry.linearize_servos = 0;
 		_geometry.max_servo_height = _geometry.inverse_max_servo_throw = 0.f;
+        }
+
+	_geometry_1 = _geometry;
+        for (int i = 0; i < NUM_CURVE_POINTS; ++i) {
+		param_get(_param_handles.throttle_curve[i], &_geometry.throttle_curve[i]);
+		param_get(_param_handles.pitch_curve[i], &_geometry.pitch_curve[i]);
+
+                param_get(_param_handles_1.throttle_curve[i], &_geometry_1.throttle_curve[i]);
+		param_get(_param_handles_1.pitch_curve[i], &_geometry_1.pitch_curve[i]);
 	}
 }
 
