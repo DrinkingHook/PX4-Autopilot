@@ -48,7 +48,7 @@
 
 uORB::Manager *uORB::Manager::_Instance = nullptr;
 
-bool uORB::Manager::initialize()
+bool uORB::Man1ager::initialize()
 {
 	if (_Instance == nullptr) {
 		_Instance = new uORB::Manager();

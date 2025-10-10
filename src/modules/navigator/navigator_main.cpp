@@ -240,23 +240,34 @@ void Navigator::run()
 		_home_pos_sub.update(&_home_pos);
 
 		// Handle Vehicle commands
+		// 翻译：处理车辆命令
 		int vehicle_command_updates = 0;
 
+                // while循环处理车辆命令
+                // 同时限制每周期的 vehicle_command 订阅更新，这是一种预防措施，以避免在试图跟上来自更高优先级任务的高速率发布时陷入循环的可能性
 		while (_wait_for_vehicle_status_timestamp == 0 && _vehicle_command_sub.updated()
 		       && (vehicle_command_updates < vehicle_command_s::ORB_QUEUE_LENGTH)) {
 			vehicle_command_updates++;
+			// 获取缓存的generation值
 			const unsigned last_generation = _vehicle_command_sub.get_last_generation();
 
 			vehicle_command_s cmd{};
 			_vehicle_command_sub.copy(&cmd);
 
+                        // 打印命令数量丢失情况
+                        /**
+                         * @brief 发布者每发布一次generation自增一次，在_vehicle_command_sub.copy(&cmd)更新为最新的数据后判断是否丢失数据
+                         *
+                         */
 			if (_vehicle_command_sub.get_last_generation() != last_generation + 1) {
 				PX4_ERR("vehicle_command lost, generation %d -> %d", last_generation, _vehicle_command_sub.get_last_generation());
 			}
 
+                        // 如果命令为安全终止自动着陆命令
 			if (cmd.command == vehicle_command_s::VEHICLE_CMD_DO_GO_AROUND) {
 
 				// DO_GO_AROUND is currently handled by the position controller (unacknowledged)
+				// DO_GO_AROUND 是目前由位置控制器处理（未确认）
 				// TODO: move DO_GO_AROUND handling to navigator
 				publish_vehicle_command_ack(cmd, vehicle_command_ack_s::VEHICLE_CMD_RESULT_ACCEPTED);
 
@@ -264,12 +275,25 @@ void Navigator::run()
 				   && _vstatus.arming_state == vehicle_status_s::ARMING_STATE_ARMED) {
 				// only update the reposition setpoint if armed, as it otherwise won't get executed until the vehicle switches to loiter,
 				// which can lead to dangerous and unexpected behaviors (see loiter.cpp, there is an if(armed) in there too)
+				// 翻译：只有在武装状态下才更新重新定位设定点，否则在车辆切换到闲逛状态之前不会执行，
+				// 这可能会导致危险和意外的行为（参见 loiter.cpp，其中也有 if(armed) 功能）
 
+                                /**
+                                 * @brief 重新定位 1.任务暂停时临时悬停的定位点 2.单一定位点goto 3.机载电脑发送goto命令
+                                 *
+                                 */
 				// Wait for vehicle_status before handling the next command, otherwise the setpoint could be overwritten
+				// 翻译：处理下一条命令前等待车辆状态，否则设定点可能会被覆盖
 				_wait_for_vehicle_status_timestamp = hrt_absolute_time();
 
 				vehicle_global_position_s position_setpoint{};
 
+                                /**
+                                 * lat：经度
+                                 * lon：纬度
+				 * alt：高度
+                                 * @brief 获取cmd参数,如果参数异常则使用global_position
+                                 */
 				if (PX4_ISFINITE(cmd.param5) && PX4_ISFINITE(cmd.param6)) {
 					position_setpoint.lat = cmd.param5;
 					position_setpoint.lon = cmd.param6;
@@ -281,11 +305,17 @@ void Navigator::run()
 
 				position_setpoint.alt = PX4_ISFINITE(cmd.param7) ? cmd.param7 : get_global_position()->alt;
 
+                                // 地理围栏允许位置判断
 				if (geofence_allows_position(position_setpoint)) {
+					/**
+					 * @brief triplet 名为三元组 表示为纬度 Lat, 经度 Lon, 高度 Alt
+					 *
+					 */
 					position_setpoint_triplet_s *rep = get_reposition_triplet();
 					position_setpoint_triplet_s *curr = get_position_setpoint_triplet();
 
 					// store current position as previous position and goal as next
+					// 翻译：将当前位置存为上一个位置，目标位置存为下一个位置
 					rep->previous.yaw = get_local_position()->heading;
 					rep->previous.lat = get_global_position()->lat;
 					rep->previous.lon = get_global_position()->lon;
@@ -297,6 +327,7 @@ void Navigator::run()
 					bool only_alt_change_requested = false;
 
 					// If no argument for ground speed, use default value.
+					// 翻译：如果没有地面速度参数，则使用默认值。
 					if (cmd.param1 <= 0 || !PX4_ISFINITE(cmd.param1)) {
 						// on entering Loiter mode, reset speed setpoint to default
 						if (_navigation_mode != &_loiter) {
@@ -310,10 +341,13 @@ void Navigator::run()
 						rep->current.cruising_speed = cmd.param1;
 					}
 
+                                        // rep当前巡航油门
 					rep->current.cruising_throttle = get_cruising_throttle();
+					// rep当前接受半径
 					rep->current.acceptance_radius = get_acceptance_radius();
 
 					// Go on and check which changes had been requested
+					// 翻译：继续检查已申请的更改
 					if (PX4_ISFINITE(cmd.param4)) {
 						rep->current.yaw = cmd.param4;
 
@@ -323,6 +357,7 @@ void Navigator::run()
 
 					if (PX4_ISFINITE(cmd.param5) && PX4_ISFINITE(cmd.param6)) {
 						// Position change with optional altitude change
+						// 翻译：位置变化，可选择高度变化
 						rep->current.lat = cmd.param5;
 						rep->current.lon = cmd.param6;
 
@@ -335,6 +370,7 @@ void Navigator::run()
 
 					} else if (PX4_ISFINITE(cmd.param7) || PX4_ISFINITE(cmd.param4)) {
 						// Position is not changing, thus we keep the setpoint
+						// 翻译：位置没有改变，因此我们保留设定点
 						rep->current.lat = PX4_ISFINITE(curr->current.lat) ? curr->current.lat : get_global_position()->lat;
 						rep->current.lon = PX4_ISFINITE(curr->current.lon) ? curr->current.lon : get_global_position()->lon;
 
@@ -353,10 +389,12 @@ void Navigator::run()
 						if (_vstatus.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING
 						    && (get_position_setpoint_triplet()->current.type != position_setpoint_s::SETPOINT_TYPE_TAKEOFF)) {
 
+							// 预测制动距离
 							preproject_stop_point(rep->current.lat, rep->current.lon);
 
 						} else {
 							// For fixedwings we can use the current vehicle's position to define the loiter point
+							// 翻译：对于固定翼飞机，我们可以使用当前飞行器的位置来定义闲逛点
 							rep->current.lat = get_global_position()->lat;
 							rep->current.lon = get_global_position()->lon;
 						}
@@ -1188,6 +1226,7 @@ void Navigator::reset_position_setpoint(position_setpoint_s &sp)
 float Navigator::get_cruising_throttle()
 {
 	/* Return the mission-requested cruise speed, or default FW_THR_TRIM value */
+	// 翻译：返回任务要求的巡航速度或默认 FW_THR_TRIM 值
 	if (_mission_throttle > FLT_EPSILON) {
 		return _mission_throttle;
 
@@ -1586,9 +1625,11 @@ bool Navigator::geofence_allows_position(const vehicle_global_position_s &pos)
 void Navigator::preproject_stop_point(double &lat, double &lon)
 {
 	// For multirotors we need to account for the braking distance, otherwise the vehicle will overshoot and go back
+	// 翻译：对于多旋翼飞行器，我们需要考虑制动距离，否则飞行器将超速并返回。
 	const float course_over_ground = atan2f(_local_pos.vy, _local_pos.vx);
 
 	// predict braking distance
+	// 翻译：预测制动距离
 
 	const float velocity_hor_abs = sqrtf(_local_pos.vx * _local_pos.vx + _local_pos.vy * _local_pos.vy);
 

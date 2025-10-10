@@ -157,6 +157,10 @@ public:
 	/**
 	 * Getters
 	 */
+        /**
+         * 函数指针返回设定的结构体方便其它文件调用
+	 * 因为这些结构体均为私有成员类型，所以这种是非常好的一种解决方法
+	 */
 	home_position_s             *get_home_position() { return &_home_pos; }
 	mission_result_s            *get_mission_result() { return &_mission_result; }
 	position_setpoint_triplet_s *get_position_setpoint_triplet() { return &_pos_sp_triplet; }
