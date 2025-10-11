@@ -384,8 +384,11 @@ void Navigator::run()
 
 					} else {
 						// All three set to NaN - pause vehicle
+						// 翻译：三项都设置为 NaN - 暂停车辆
+						// 如果经纬度,高度或偏航值都无效则锁定当前高度.
 						rep->current.alt = get_global_position()->alt;
 
+						// 如果机型为旋翼机型
 						if (_vstatus.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING
 						    && (get_position_setpoint_triplet()->current.type != position_setpoint_s::SETPOINT_TYPE_TAKEOFF)) {
 
@@ -400,6 +403,7 @@ void Navigator::run()
 						}
 					}
 
+                                        // 当经纬度命令值无效,但是高度值有效的情况下启用，因为对于固定翼来说需要盘旋上升高度
 					if (only_alt_change_requested) {
 						if (PX4_ISFINITE(curr->current.loiter_radius) && curr->current.loiter_radius > FLT_EPSILON) {
 							rep->current.loiter_radius = curr->current.loiter_radius;
@@ -531,6 +535,7 @@ void Navigator::run()
 
 				// DO_CHANGE_ALTITUDE is acknowledged by commander
 
+                        // 开始在参数定义的圆的圆周上绕行.
 			} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_DO_ORBIT &&
 				   get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) {
 
@@ -579,6 +584,7 @@ void Navigator::run()
 					mavlink_log_critical(&_mavlink_log_pub, "Orbit is outside geofence");
 				}
 
+			// 在参数定义的八字形轮廓上开始飞行.
 			} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_DO_FIGUREEIGHT &&
 				   get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) {
 #ifdef CONFIG_FIGURE_OF_EIGHT
@@ -633,6 +639,7 @@ void Navigator::run()
 
 #endif // CONFIG_FIGURE_OF_EIGHT
 
+                        // 起飞命令
 			} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_NAV_TAKEOFF) {
 				position_setpoint_triplet_s *rep = get_takeoff_triplet();
 
@@ -697,6 +704,7 @@ void Navigator::run()
 				_vtol_takeoff.setLoiterHeight(cmd.param1);
 #endif //CONFIG_MODE_NAVIGATOR_VTOL_TAKEOFF
 
+                        // 标记任务着陆模式开始的任务项目，或使用任务着陆模式着陆的命令。
 			} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_DO_LAND_START) {
 
 				// find NAV_CMD_DO_LAND_START in the mission and
@@ -790,20 +798,25 @@ void Navigator::run()
 			} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_DO_VTOL_TRANSITION
 				   && get_vstatus()->nav_state != vehicle_status_s::NAVIGATION_STATE_AUTO_VTOL_TAKEOFF) {
 				// reset cruise speed and throttle to default when transitioning (VTOL Takeoff handles it separately)
+				// 翻译：过渡时将巡航速度和节流阀重置为默认值（VTOL 起飞单独处理）。
 				reset_cruising_speed();
 				set_cruising_throttle();
 			}
 		}
 
+
+                // adsb模块支持--类似空管
 #if CONFIG_NAVIGATOR_ADSB
 		/* Check for traffic */
 		check_traffic();
 #endif // CONFIG_NAVIGATOR_ADSB
 
 		/* Check geofence violation */
+		// 翻译：检查违反地理围栏的情况
 		geofence_breach_check();
 
 		/* Do stuff according to navigation state set by commander */
+		// 翻译：根据指挥官设置的导航状态执行任务
 		NavigatorMode *navigation_mode_new{nullptr};
 
 		switch (_vstatus.nav_state) {
@@ -822,6 +835,7 @@ void Navigator::run()
 		case vehicle_status_s::NAVIGATION_STATE_AUTO_RTL:
 
 			// If we are already in mission landing, do not switch.
+			// 翻译：如果我们已经在任务着陆阶段,请不要切换.
 			if (_navigation_mode == &_mission && _mission.isLanding()) {
 				navigation_mode_new = &_mission;
 				break;
@@ -873,11 +887,13 @@ void Navigator::run()
 		}
 
 		// Do not execute any state machine while we are disarmed
+		// 翻译：未解除武装时不执行任何状态机
 		if (_vstatus.arming_state != vehicle_status_s::ARMING_STATE_ARMED) {
 			navigation_mode_new = nullptr;
 		}
 
 		/* we have a new navigation mode: reset triplet */
+		// 翻译：我们有了新的导航模式：重置三连音
 		if (_navigation_mode != navigation_mode_new) {
 			// We don't reset the triplet in the following two cases:
 			// 1)  if we just did an auto-takeoff and are now
@@ -890,6 +906,12 @@ void Navigator::run()
 			// FIXME: a better solution would be to add reset where they are needed and remove
 			//        this general reset here.
 
+                        // 翻译：
+                        // 在以下两种情况下，我们不会重置三元组：
+			// 1) 如果我们刚刚完成自动起飞，现在要进行盘旋。否则，我们将失去起飞高度，最终低于我们想要飞到的位置。
+			// 2) 我们切换到盘旋，并且当前位置设定点已经有一个有效的盘旋点。在这种情况下，我们可以假设飞行器已经建立了盘旋点，我们不需要设置新的盘旋位置。
+			// FIXME：更好的解决方案是在需要的地方添加重置，并删除此处的通用重置。
+			// 注意：这里的两种情况是针对于固定翼机型，对于固定翼机型通常需要在刚完成起飞后需要盘旋以增加高度
 			const bool current_mode_is_takeoff = _navigation_mode == &_takeoff;
 			const bool new_mode_is_loiter = navigation_mode_new == &_loiter;
 			const bool valid_loiter_setpoint = (_pos_sp_triplet.current.valid
@@ -904,6 +926,7 @@ void Navigator::run()
 		}
 
 		// VTOL: transition to hover in Descend mode if force_vtol() is true
+		// 翻译：VTOL：如果 force_vtol() 为 true，则在下降模式下过渡到悬停模式
 		if (_vstatus.nav_state == vehicle_status_s::NAVIGATION_STATE_DESCEND &&
 		    _vstatus.is_vtol && _vstatus.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING &&
 		    force_vtol()) {
@@ -923,30 +946,42 @@ void Navigator::run()
 		}
 
 		/* iterate through navigation modes and set active/inactive for each */
+		// 翻译：遍历导航模式，并为每种模式设置活动/非活动
 		for (unsigned int i = 0; i < NAVIGATOR_MODE_ARRAY_SIZE; i++) {
 			if (_navigation_mode_array[i]) {
+				/**
+				 * @brief _navigation_mode_array[i]中存储的子类的指针,调用子函数的run函数，但由于子类没有重写run函数
+				 * 所以还是调用父类的run函数.在run函数中因为还是处于子类作用域所以可以直接调用子类的函数
+				 *
+				 */
 				_navigation_mode_array[i]->run(_navigation_mode == _navigation_mode_array[i]);
 			}
 		}
 
 		/* if nothing is running, set position setpoint triplet invalid once */
+		// 翻译：如果没有任何运行，位置设定点三元组设置一次无效
 		if (_navigation_mode == nullptr && !_pos_sp_triplet_published_invalid_once) {
 			_pos_sp_triplet_published_invalid_once = true;
 			reset_triplets();
 		}
 
+                // 发布位置设定点三元组
 		if (_pos_sp_triplet_updated) {
 			publish_position_setpoint_triplet();
 		}
 
+                // 发布任务结果（Mission Result）消息
 		if (_mission_result_updated) {
 			publish_mission_result();
 		}
 
+                // 临时禁用云台的自动跟踪或姿态控制（如 ROI 跟踪）
 		neutralize_gimbal_if_control_activated();
 
+                // 发布导航器状态（Navigator Status）消息
 		publish_navigator_status();
 
+                // 发布距离传感器模式请求,自动任务或rtl模式下的降落阶段
 		publish_distance_sensor_mode_request();
 
 		_geofence.run();
@@ -1535,6 +1570,7 @@ void Navigator::publish_vehicle_command(vehicle_command_s &vehicle_command)
 void Navigator::publish_distance_sensor_mode_request()
 {
 	// Send request to enable distance sensor when in the landing phase of a mission or RTL
+	// 翻译：在任务或 RTL 着陆阶段，发送启用距离传感器的请求
 	if (((_navigation_mode == &_rtl) && _rtl.isLanding()) || ((_navigation_mode == &_mission) && _mission.isLanding())) {
 
 		if (_distance_sensor_mode_change_request_pub.get().request_on_off !=

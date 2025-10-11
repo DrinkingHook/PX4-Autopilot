@@ -366,6 +366,14 @@ void RTL::setRtlTypeAndDestination()
 
 }
 
+/**
+ * @brief 寻找目的地类型
+ *
+ * @param destination_type 目的地类型结构体
+ * @param rtl_position 返航点位置信息
+ * @param rtl_alt 返航点高度
+ * @param safe_point_index 安全点数量
+ */
 void RTL::findRtlDestination(DestinationType &destination_type, PositionYawSetpoint &rtl_position, float &rtl_alt,
 			     uint8_t &safe_point_index)
 {

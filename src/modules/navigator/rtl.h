@@ -78,8 +78,11 @@ public:
 		RTL_MISSION_FAST_REVERSE,
 	};
 
+        // 未激活状态
 	void on_inactive() override;
+	// 激活状态
 	void on_activation() override;
+	// 活跃状态
 	void on_active() override;
 
 	void initialize() override {};
@@ -92,8 +95,11 @@ public:
 
 private:
 	enum class DestinationType {
+		// 目的地为home
 		DESTINATION_TYPE_HOME,
+		// 目的地为任务地点
 		DESTINATION_TYPE_MISSION_LAND,
+		// 目的地为安全点
 		DESTINATION_TYPE_SAFE_POINT,
 	};
 
