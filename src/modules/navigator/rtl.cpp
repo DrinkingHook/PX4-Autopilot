@@ -378,6 +378,7 @@ void RTL::findRtlDestination(DestinationType &destination_type, PositionYawSetpo
 			     uint8_t &safe_point_index)
 {
 	// set destination to home per default, then check if other valid landing spot is closer
+	// 翻译：按默认设置将目的地设为home，然后检查是否有其他更近的有效着陆点
 	rtl_position.alt = _home_pos_sub.get().alt;
 	rtl_position.lat = _home_pos_sub.get().lat;
 	rtl_position.lon = _home_pos_sub.get().lon;
@@ -391,21 +392,29 @@ void RTL::findRtlDestination(DestinationType &destination_type, PositionYawSetpo
 				     && (_vehicle_status_sub.get().vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING);
 
 	// get distance to home position
+	// 翻译：获取到home的距离
 	float home_dist{get_distance_to_next_waypoint(_global_pos_sub.get().lat, _global_pos_sub.get().lon, rtl_position.lat, rtl_position.lon)};
 	float min_dist;
 
+	// 将默认的home坐标点传入判断是否符合固定翼机型的滑翔降落
 	_home_has_land_approach = hasVtolLandApproach(rtl_position);
 
 	if (((_param_rtl_type.get() == 1) && !vtol_in_rw_mode) || (vtol_in_fw_mode && (_param_rtl_approach_force.get() == 1)
 			&& !_home_has_land_approach)) {
 		// Set minimum distance to maximum value when RTL_TYPE is set to 1 and we are not in RW mode or we forces approach landing for vtol in fw and it is not defined for home.
+		// 翻译：当 RTL_TYPE 设置为 1 且不在 RW 模式下，或者我们在 fw 中强制 vtol 接近着陆，而原点未定义 vtol 时，将最小距离设置为最大值。
 		min_dist = FLT_MAX;
 
 	} else {
 		min_dist = home_dist;
 	}
 
+        /**
+         * @brief 当rtl_type设置为1或3或则上方的判断将min_dist设置为FLT_MAX,就强制将返回点变为任务降落点
+         *
+         */
 	// consider the mission landing if available and allowed
+	// 翻译：在条件允许的情况下，考虑任务着陆
 	if (((_param_rtl_type.get() == 1) || (_param_rtl_type.get() == 3) || (fabsf(FLT_MAX - min_dist) < FLT_EPSILON))
 	    && hasMissionLandStart()) {
 		mission_item_s land_mission_item;
@@ -649,6 +658,13 @@ bool RTL::reverseIsFurther() const
 }
 
 
+/**
+ * @brief 判断传入的坐标点是否符合固定翼的滑翔降落
+ *
+ * @param rtl_position 坐标点
+ * @return true
+ * @return false
+ */
 bool RTL::hasVtolLandApproach(const PositionYawSetpoint &rtl_position) const
 {
 	return readVtolLandApproaches(rtl_position).isAnyApproachValid();
