@@ -115,6 +115,7 @@ public:
 	}
 };
 
+// 这个和上方这个方法本质都是基本相同的，只是这个类有一个私有的变量_data，在传入参数后会赋值给这个参数
 /**
  * The publication class with data embedded.
  */

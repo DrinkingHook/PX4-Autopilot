@@ -160,6 +160,15 @@ public:
         /**
          * 函数指针返回设定的结构体方便其它文件调用
 	 * 因为这些结构体均为私有成员类型，所以这种是非常好的一种解决方法
+	 * @param _home_pos home点位置信息
+	 * @param _mission_result 任务执行状态信息
+	 * @param _pos_sp_triplet 目标位置集
+	 * @param _reposition_triplet 重新定位目标---飞行过程中中断任务，手动设定新目标点
+	 * @param _takeoff_triplet 起飞阶段的目标点集
+	 * @param _global_pos 全局位置
+	 * @param _land_detected 降落检测
+	 * @param _local_pos 本地坐标
+	 * @param _vstatus 飞行器总体状态
 	 */
 	home_position_s             *get_home_position() { return &_home_pos; }
 	mission_result_s            *get_mission_result() { return &_mission_result; }

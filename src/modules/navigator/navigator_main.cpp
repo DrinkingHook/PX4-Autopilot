@@ -457,12 +457,15 @@ void Navigator::run()
 			} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_DO_CHANGE_ALTITUDE
 				   && _vstatus.arming_state == vehicle_status_s::ARMING_STATE_ARMED) {
 				// only update the setpoint if armed, as it otherwise won't get executed until the vehicle switches to loiter,
+				// 翻译：只有在布防时才会更新设定点，否则在车辆切换到闲逛状态之前不会执行、
 				// which can lead to dangerous and unexpected behaviors (see loiter.cpp, there is an if(armed) in there too)
+				// 翻译：这可能会导致危险和意外的行为（请参阅 loiter.cpp，其中也有 if(武装)）。
 
 				// A VEHICLE_CMD_DO_CHANGE_ALTITUDE has the exact same effect as a VEHICLE_CMD_DO_REPOSITION with only the altitude
 				// field populated, this logic is copied from above.
 
 				// only supports MAV_FRAME_GLOBAL and MAV_FRAMEs with absolute altitude amsl
+				// 翻译：仅支持 MAV_FRAME_GLOBAL 和 MAV_FRAME 的绝对高度 amsl
 
 				vehicle_global_position_s position_setpoint{};
 				position_setpoint.lat = get_global_position()->lat;
@@ -470,6 +473,7 @@ void Navigator::run()
 				position_setpoint.alt = PX4_ISFINITE(cmd.param1) ? cmd.param1 : get_global_position()->alt;
 
 				// Wait for vehicle_status before handling the next command, otherwise the setpoint could be overwritten
+				// 翻译：等待车辆状态后再处理下一条命令，否则设定点可能会被覆盖
 				_wait_for_vehicle_status_timestamp = hrt_absolute_time();
 
 				if (geofence_allows_position(position_setpoint)) {
@@ -477,6 +481,7 @@ void Navigator::run()
 					position_setpoint_triplet_s *curr = get_position_setpoint_triplet();
 
 					// store current position as previous position and goal as next
+					// 翻译：将当前位置存为上一个位置，目标位置存为下一个位置
 					rep->previous.yaw = get_local_position()->heading;
 					rep->previous.lat = get_global_position()->lat;
 					rep->previous.lon = get_global_position()->lon;
@@ -485,6 +490,7 @@ void Navigator::run()
 					rep->current.type = position_setpoint_s::SETPOINT_TYPE_LOITER;
 
 					// on entering Loiter mode, reset speed setpoint to default
+					// 翻译：进入 Loiter 模式时，将速度设置点重置为默认值
 					if (_navigation_mode != &_loiter) {
 						rep->current.cruising_speed = -1.f;
 
@@ -497,10 +503,12 @@ void Navigator::run()
 					rep->current.yaw = NAN;
 
 					// Position is not changing, thus we keep the setpoint
+					// 翻译:位置没有变化，因此我们保留设定点
 					rep->current.lat = PX4_ISFINITE(curr->current.lat) ? curr->current.lat : get_global_position()->lat;
 					rep->current.lon = PX4_ISFINITE(curr->current.lon) ? curr->current.lon : get_global_position()->lon;
 
 					// set the altitude corresponding to command
+					// 翻译：设置与命令相对应的高度
 					rep->current.alt = PX4_ISFINITE(cmd.param1) ? cmd.param1 : get_global_position()->alt;
 
 					if (_vstatus.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING
@@ -834,6 +842,7 @@ void Navigator::run()
 
 		case vehicle_status_s::NAVIGATION_STATE_AUTO_RTL:
 
+			// 这里主要针对于固定翼机型，因为isLanding()用于判断的是固定翼机型
 			// If we are already in mission landing, do not switch.
 			// 翻译：如果我们已经在任务着陆阶段,请不要切换.
 			if (_navigation_mode == &_mission && _mission.isLanding()) {
@@ -1362,6 +1371,7 @@ void Navigator::check_traffic()
 bool Navigator::abort_landing()
 {
 	// only abort if currently landing and position controller status updated
+	// 翻译：只有在当前着陆和位置控制器状态更新时才中止
 	bool should_abort = false;
 
 	if (_pos_sp_triplet.current.valid
@@ -1371,6 +1381,7 @@ bool Navigator::abort_landing()
 			position_controller_landing_status_s landing_status{};
 
 			// landing status from position controller must be newer than navigator's last position setpoint
+			// 翻译：位置控制器的着陆状态必须比导航仪的最后位置设定点新
 			if (_pos_ctrl_landing_status_sub.copy(&landing_status)) {
 				if (landing_status.timestamp > _pos_sp_triplet.timestamp) {
 					should_abort = (landing_status.abort_status > 0);

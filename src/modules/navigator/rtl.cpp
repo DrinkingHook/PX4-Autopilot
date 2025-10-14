@@ -62,6 +62,11 @@ RTL::RTL(Navigator *navigator) :
 	_rtl_direct.initialize();
 }
 
+/**
+ * @brief 更新数据缓存
+ * 在地面站做好路径规划后，会将导航数据存储至SD卡中，数据量较为庞大
+ *
+ */
 void RTL::updateDatamanCache()
 {
 	bool success;
@@ -168,6 +173,7 @@ void RTL::on_inactive()
 
 	updateDatamanCache();
 
+        // 参数更新
 	parameters_update();
 
 	if (_rtl_mission_type_handle) {
@@ -187,6 +193,10 @@ void RTL::on_inactive()
 
 }
 
+/**
+ * @brief 发布剩余时间估计
+ *
+ */
 void RTL::publishRemainingTimeEstimate()
 {
 	const bool global_position_recently_updated = _global_pos_sub.get().timestamp > 0
@@ -275,6 +285,7 @@ void RTL::on_active()
 	}
 
 	// Keep publishing remaining time estimates every 2 seconds
+	// 翻译：保持每 2 秒钟发布一次剩余时间估计值
 	hrt_abstime now{hrt_absolute_time()};
 
 	if ((now - _destination_check_time) > 2_s) {
@@ -308,6 +319,10 @@ bool RTL::isLanding()
 	return is_landing;
 }
 
+/**
+ * @brief 设置RTL和目的地类型
+ *
+ */
 void RTL::setRtlTypeAndDestination()
 {
 
@@ -317,13 +332,16 @@ void RTL::setRtlTypeAndDestination()
 
 	if (_param_rtl_type.get() != 2 && _param_rtl_type.get() != 4) {
 		// check the closest allowed destination.
+		// 翻译：检查最近的允许目的地。
 		DestinationType destination_type{DestinationType::DESTINATION_TYPE_HOME};
 		PositionYawSetpoint rtl_position;
 		float rtl_alt;
+		// 寻找目的地类型
 		findRtlDestination(destination_type, rtl_position, rtl_alt, safe_point_index);
 
 		switch (destination_type) {
 		case DestinationType::DESTINATION_TYPE_MISSION_LAND:
+			// 导航到设定的mission_land
 			_rtl_type = RtlType::RTL_DIRECT_MISSION_LAND;
 			_rtl_mission_type_handle->setRtlAlt(rtl_alt);
 			break;
@@ -342,9 +360,11 @@ void RTL::setRtlTypeAndDestination()
 			if (_vehicle_status_sub.get().is_vtol
 			    && (_vehicle_status_sub.get().vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING)
 			    && rtl_land_approaches.isAnyApproachValid()) {
+				// 针对于VTOL选择最佳着陆方式
 				landing_loiter = chooseBestLandingApproach(rtl_land_approaches);
 			}
 
+			// 导航到home
 			_rtl_type = RtlType::RTL_DIRECT;
 			_rtl_direct.setRtlAlt(rtl_alt);
 			_rtl_direct.setRtlPosition(rtl_position, landing_loiter);
@@ -354,6 +374,7 @@ void RTL::setRtlTypeAndDestination()
 	}
 
 	// Publish rtl status
+	// 发布rtl状态
 	_rtl_status_pub.get().timestamp = hrt_absolute_time();
 	_rtl_status_pub.get().safe_points_id = _safe_points_id;
 	_rtl_status_pub.get().is_evaluation_pending = _dataman_state != DatamanState::UpdateRequestWait;
@@ -462,6 +483,7 @@ void RTL::findRtlDestination(DestinationType &destination_type, PositionYawSetpo
 			}
 
 			// Ignore safepoints which are too close to the homepoint
+			// 翻译：忽略太靠近原点的安全点
 			const float dist_to_home = get_distance_to_next_waypoint(_home_pos_sub.get().lat, _home_pos_sub.get().lon,
 						   mission_safe_point.lat, mission_safe_point.lon);
 
@@ -469,6 +491,7 @@ void RTL::findRtlDestination(DestinationType &destination_type, PositionYawSetpo
 				float dist{get_distance_to_next_waypoint(_global_pos_sub.get().lat, _global_pos_sub.get().lon, mission_safe_point.lat, mission_safe_point.lon)};
 
 				PositionYawSetpoint safepoint_position;
+				// 设置安全点作为目标地
 				setSafepointAsDestination(safepoint_position, mission_safe_point);
 
 				bool current_safe_point_has_approaches{hasVtolLandApproach(safepoint_position)};
@@ -641,6 +664,7 @@ void RTL::parameters_update()
 		updateParams();
 
 		if (!isActive()) {
+			// 设置RTL和目的地类型
 			setRtlTypeAndDestination();
 		}
 	}
@@ -670,6 +694,12 @@ bool RTL::hasVtolLandApproach(const PositionYawSetpoint &rtl_position) const
 	return readVtolLandApproaches(rtl_position).isAnyApproachValid();
 }
 
+/**
+ * @brief 选择最佳着陆方式
+ *
+ * @param vtol_land_approaches
+ * @return loiter_point_s
+ */
 loiter_point_s RTL::chooseBestLandingApproach(const land_approaches_s &vtol_land_approaches)
 {
 	const float wind_direction = atan2f(_wind_sub.get().windspeed_east, _wind_sub.get().windspeed_north);
@@ -706,6 +736,8 @@ land_approaches_s RTL::readVtolLandApproaches(PositionYawSetpoint rtl_position) 
 	// go through all mission items in the rally point storage. If we find a mission item of type NAV_CMD_RALLY_POINT
 	// which is within MAX_DIST_FROM_HOME_FOR_LAND_APPROACHES of our current home position then treat ALL following mission items of type NAV_CMD_LOITER_TO_ALT which come
 	// BEFORE the next mission item of type NAV_CMD_RALLY_POINT as land approaches for the home position
+	// 翻译：遍历集合点存储中的所有任务项。如果我们发现一个 NAV_CMD_RALLY_POINT 类型的任务项位于当前起始位置的 MAX_DIST_FROM_HOME_FOR_LAND_APPROACHES 范围内，
+	// 则将下一个 NAV_CMD_RALLY_POINT 类型的任务项之前的所有 NAV_CMD_LOITER_TO_ALT 类型的任务项视为着陆接近起始位置。
 	land_approaches_s vtol_land_approaches{};
 
 	if (!_safe_points_updated) {

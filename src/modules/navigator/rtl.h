@@ -80,7 +80,7 @@ public:
 
         // 未激活状态
 	void on_inactive() override;
-	// 激活状态
+	// 处于激活状态中
 	void on_activation() override;
 	// 活跃状态
 	void on_active() override;
@@ -202,6 +202,7 @@ private:
 	loiter_point_s chooseBestLandingApproach(const land_approaches_s &vtol_land_approaches);
 
 	enum class DatamanState {
+		// 更新请求等待
 		UpdateRequestWait,
 		Read,
 		ReadWait,

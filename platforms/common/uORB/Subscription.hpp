@@ -53,6 +53,7 @@ namespace uORB
 class SubscriptionCallback;
 
 // Base subscription wrapper class
+// 翻译：基本订阅包装类
 class Subscription
 {
 public:
@@ -193,6 +194,7 @@ protected:
 };
 
 // Subscription wrapper class with data
+// 翻译：带有数据的订阅封装类
 template<class T>
 class SubscriptionData : public Subscription
 {

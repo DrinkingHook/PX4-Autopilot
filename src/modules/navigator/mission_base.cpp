@@ -383,9 +383,18 @@ MissionBase::on_active()
 	updateAltToAvoidTerrainCollisionAndRepublishTriplet(_mission_item);
 }
 
+/**
+ * @brief 此函数用于固定翼机型的判断在其它机型的任务规划中没有land_start_index这个概念
+ *	  函数hasMissionLandStart()始终返回false
+ *
+ * @return true
+ * @return false
+ */
 bool
 MissionBase::isLanding()
 {
+
+	// 如果定义了定义了一个降落段并且执行的任务项（current_seq）已经超过降落段的起点，但还没有超过降落终点（LAND 指令项）。
 	if (hasMissionLandStart() && (_mission.current_seq > _mission.land_start_index)
 	    && (_mission.current_seq <= _mission.land_index)) {
 		static constexpr size_t max_num_next_items{1u};
@@ -396,10 +405,12 @@ MissionBase::isLanding()
 
 		// vehicle is currently landing if
 		//  mission valid, still flying, and in the landing portion of mission (past land start marker)
+		// 翻译：如果任务有效，飞行器仍在飞行，并处于任务的着陆部分（过了着陆起始标记），则飞行器目前正在着陆
 		bool on_landing_stage = (num_found_items > 0U) &&  _mission.current_seq > next_mission_items_index[0U];
 
 		// special case: if the land start index is at a LOITER_TO_ALT WP, then we're in the landing sequence already when the
 		// distance to the WP is below the loiter radius + acceptance.
+		// 翻译：特殊情况：如果着陆起始索引位于 LOITER_TO_ALT WP，那么当到 WP 的距离小于闲逛半径+接受度时，我们已经进入着陆序列。
 		if ((num_found_items > 0U) && _mission.current_seq == next_mission_items_index[0U]
 		    && _mission_item.nav_cmd == NAV_CMD_LOITER_TO_ALT) {
 			const float d_current = get_distance_to_next_waypoint(_mission_item.lat, _mission_item.lon,
@@ -511,6 +522,7 @@ MissionBase::set_mission_items()
 
 	if (_is_current_planned_mission_item_valid && _mission_type == MissionType::MISSION_TYPE_MISSION && isMissionValid()) {
 		/* By default set the mission item to the current planned mission item. Depending on request, it can be altered. */
+		// 翻译:默认情况下，任务项目设置为当前计划的任务项目。可根据要求进行更改。
 		if (loadCurrentMissionItem()) {
 			/* force vtol land */
 			if (_navigator->force_vtol() && _mission_item.nav_cmd == NAV_CMD_LAND) {
@@ -622,6 +634,7 @@ void MissionBase::handleLanding(WorkItemType &new_work_item_type, mission_item_s
 				  !_land_detected_sub.get().landed;
 
 	/* ignore yaw for landing items */
+	// 翻译：着陆时忽略偏航
 	/* XXX: if specified heading for landing is desired we could add another step before the descent
 		* that aligns the vehicle first */
 	if (_mission_item.nav_cmd == NAV_CMD_LAND || _mission_item.nav_cmd == NAV_CMD_VTOL_LAND) {
@@ -664,6 +677,7 @@ void MissionBase::handleLanding(WorkItemType &new_work_item_type, mission_item_s
 
 	} else if (needs_to_land) {
 		/* move to landing waypoint before descent if necessary */
+		// 翻译：必要时，在下降前移至着陆航点
 		if ((_vehicle_status_sub.get().vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) &&
 		    do_need_move_to_item() &&
 		    (_work_item_type == WorkItemType::WORK_ITEM_TYPE_DEFAULT ||
@@ -695,11 +709,14 @@ void MissionBase::handleLanding(WorkItemType &new_work_item_type, mission_item_s
 			_mission_item.autocontinue = true;
 
 			// have to reset here because these field were used in set_vtol_transition_item
+			// 翻译：必须在此处重置，因为这些字段在 set_vtol_transition_item 中使用过
 			_mission_item.time_inside = 0.f;
 			_mission_item.acceptance_radius = _navigator->get_acceptance_radius();
 
 			// make previous setpoint invalid, such that there will be no prev-current line following.
+			// 翻译：使前一个设定点失效，这样就不会有前一个-当前设定点之间的连线。
 			// if the vehicle drifted off the path during back-transition it should just go straight to the landing point
+			// 翻译：如果车辆在后退过程中偏离了路径，它应该直接到达着陆点
 			_navigator->reset_position_setpoint(pos_sp_triplet->previous);
 
 			_navigator->activate_set_gimbal_neutral_timer(hrt_absolute_time());
@@ -1092,6 +1109,14 @@ void MissionBase::getPreviousPositionItems(int32_t start_index, int32_t items_in
 	}
 }
 
+/**
+ * @brief 获取下一个位置项
+ *
+ * @param start_index
+ * @param items_index
+ * @param num_found_items
+ * @param max_num_items
+ */
 void MissionBase::getNextPositionItems(int32_t start_index, int32_t items_index[],
 				       size_t &num_found_items, uint8_t max_num_items)
 {

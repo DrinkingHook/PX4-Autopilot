@@ -56,6 +56,7 @@ NavigatorMode::run(bool active)
 {
 	if (active) {
 		if (!_active) {
+			// 激活--启动
 			on_activation();
 
 		} else {
@@ -67,9 +68,11 @@ NavigatorMode::run(bool active)
 	} else {
 		/* periodic updates when inactive */
 		if (_active) {
+			// 注销
 			on_inactivation();
 
 		} else {
+			// 闲置--未激活
 			on_inactive();
 		}
 	}

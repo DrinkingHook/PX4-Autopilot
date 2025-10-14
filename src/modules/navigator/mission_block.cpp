@@ -613,6 +613,14 @@ MissionBlock::item_contains_marker(const mission_item_s &item)
 	return item.nav_cmd == NAV_CMD_DO_LAND_START;
 }
 
+/**
+ * @brief 把任务航点（mission item）转换成当前要导航到的目标位置点（position setpoint）。
+ *
+ * @param item
+ * @param sp
+ * @return true
+ * @return false
+ */
 bool
 MissionBlock::mission_item_to_position_setpoint(const mission_item_s &item, position_setpoint_s *sp)
 {
@@ -782,6 +790,7 @@ void
 MissionBlock::set_land_item(struct mission_item_s *item)
 {
 	/* VTOL transition to RW before landing */
+	// 翻译：着陆前 VTOL 过渡到 RW
 	if (_navigator->force_vtol()) {
 
 		vehicle_command_s vehicle_command{};
@@ -795,6 +804,7 @@ MissionBlock::set_land_item(struct mission_item_s *item)
 	item->nav_cmd = NAV_CMD_LAND;
 
 	// set land item to current position
+	// 翻译：将陆地项目设置到当前位置
 	if (_navigator->get_local_position()->xy_global) {
 		item->lat = _navigator->get_global_position()->lat;
 		item->lon = _navigator->get_global_position()->lon;

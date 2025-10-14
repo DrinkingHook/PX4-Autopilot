@@ -149,13 +149,19 @@ Mission::do_need_move_to_takeoff()
 	return false;
 }
 
+/**
+ * @brief 根据当前任务执行状态（current_seq），确定并设置当前激活的任务项、下一个任务项，并更新导航目标点。
+ *
+ */
 void Mission::setActiveMissionItems()
 {
 	/* Get mission item that comes after current if available */
+	// 翻译：获取在当前项目之后的任务项目（如果有的话）
 	static constexpr size_t max_num_next_items{2u};
 	int32_t next_mission_items_index[max_num_next_items];
 	size_t num_found_items;
 
+	// 获取下一个任务点
 	getNextPositionItems(_mission.current_seq + 1, next_mission_items_index, num_found_items, max_num_next_items);
 
 	mission_item_s next_mission_items[max_num_next_items];
