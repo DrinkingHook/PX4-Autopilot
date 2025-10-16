@@ -41,6 +41,16 @@ UserModeIntention::UserModeIntention(const vehicle_status_s &vehicle_status,
 {
 }
 
+/**
+ * @brief 
+ *
+ * @param user_intended_nav_state
+ * @param source 任务请求来源 user or ModeExecutor
+ * @param allow_fallback
+ * @param force
+ * @return true
+ * @return false
+ */
 bool UserModeIntention::change(uint8_t user_intended_nav_state, ModeChangeSource source, bool allow_fallback,
 			       bool force)
 {
@@ -48,10 +58,12 @@ bool UserModeIntention::change(uint8_t user_intended_nav_state, ModeChangeSource
 
 	if (_handler) {
 		// If a replacement mode is selected, select the internal one instead. The replacement will be selected after.
+		// 翻译：如果选择了替换模式，请选择内部模式。之后将选择替换模式。
 		user_intended_nav_state = _handler->getReplacedModeIfAny(user_intended_nav_state);
 	}
 
 	// Always allow mode change while disarmed
+	// 翻译：始终允许在撤防时更改模式
 	bool always_allow = force || !isArmed();
 	bool allow_change = true;
 

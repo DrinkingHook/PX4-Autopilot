@@ -217,6 +217,7 @@ void Mission::setActiveMissionItems()
 
 		// prevent fixed wing lateral guidance from loitering at a waypoint as part of a mission landing if the altitude
 		// is not achieved.
+		// 翻译：防止固定翼横向制导在高度达不到的情况下在航点闲逛，作为任务降落的一部分。
 		const bool fw_on_mission_landing = _vehicle_status_sub.get().vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING
 						   && isLanding() &&
 						   _mission_item.nav_cmd == NAV_CMD_WAYPOINT;
@@ -225,6 +226,7 @@ void Mission::setActiveMissionItems()
 				new_work_item_type == WorkItemType::WORK_ITEM_TYPE_MOVE_TO_LAND;
 
 		if (fw_on_mission_landing || mc_landing_after_transition) {
+			// 设置当前高度接受半径为无穷大
 			pos_sp_triplet->current.alt_acceptance_radius = FLT_MAX;
 		}
 
@@ -233,6 +235,10 @@ void Mission::setActiveMissionItems()
 		// which makes the FlightTask disregard the next position
 		// TODO: Setting the next waypoint's validity flag to handle braking / correct waypoint behavior
 		// seems hacky, handle this more properly.
+		// 翻译：允许旋翼飞行器在到达具有保持时间或超时的航点之前减速。
+		// 这是通过将位置三元组的下一个位置的有效标志设置为 false 来实现的，这使得 FlightTask 忽略下一个位置。
+		// TODO：设置下一个航点的有效性标志以处理制动/纠正航点行为。
+		// 这似乎有点老套，请更妥善地处理这个问题。
 		const bool brake_for_hold = _vehicle_status_sub.get().vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING
 					    && (get_time_inside(_mission_item) > FLT_EPSILON || item_has_timeout(_mission_item));
 

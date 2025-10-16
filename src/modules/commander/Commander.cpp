@@ -843,7 +843,9 @@ Commander::handle_command(const vehicle_command_s &cmd)
 							desired_nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER;
 							break;
 
+						// 路径导航任务真正的开始--包含起飞降落等阶段
 						case PX4_CUSTOM_SUB_MODE_AUTO_MISSION:
+							// mavlink_log_info(&_mavlink_log_pub, "mission ----- start\t");
 							desired_nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION;
 							break;
 
@@ -851,7 +853,9 @@ Commander::handle_command(const vehicle_command_s &cmd)
 							desired_nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_RTL;
 							break;
 
+                                                // 可能是已经弃用的模式,若是mission模式内部有起飞逻辑,若是手动触发由VEHICLE_CMD_NAV_TAKEOFF处理
 						case PX4_CUSTOM_SUB_MODE_AUTO_TAKEOFF:
+							// mavlink_log_info(&_mavlink_log_pub, " mission_takeoff ----- start\t");
 							desired_nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_TAKEOFF;
 							break;
 
@@ -920,6 +924,7 @@ Commander::handle_command(const vehicle_command_s &cmd)
 				const bool force = desired_nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_LAND;
 
 				if (_user_mode_intention.change(desired_nav_state, getSourceFromCommand(cmd), false, force)) {
+				// mavlink_log_info(&_mavlink_log_pub, "change ----- start\t");
 					main_ret = TRANSITION_CHANGED;
 
 				} else {
@@ -1068,9 +1073,11 @@ Commander::handle_command(const vehicle_command_s &cmd)
 		}
 		break;
 
+	// 常规起飞命令
 	case vehicle_command_s::VEHICLE_CMD_NAV_TAKEOFF: {
 			/* ok, home set, use it to take off */
 			if (_user_mode_intention.change(vehicle_status_s::NAVIGATION_STATE_AUTO_TAKEOFF, getSourceFromCommand(cmd))) {
+				// mavlink_log_info(&_mavlink_log_pub, "takeoff ----- start\t");
 				cmd_result = vehicle_command_ack_s::VEHICLE_CMD_RESULT_ACCEPTED;
 
 			} else {
@@ -1136,15 +1143,20 @@ Commander::handle_command(const vehicle_command_s &cmd)
 			cmd_result = vehicle_command_ack_s::VEHICLE_CMD_RESULT_DENIED;
 
 			// check if current mission and first item are valid
+			// 翻译：检查当前任务和第一个项目是否有效
 			if (!_failsafe_flags.auto_mission_missing) {
 
 				// requested first mission item valid
+				// 翻译：申请的第一个任务项目有效
+				// _mission_result_sub.get().seq_total表示为总航点数
 				if (PX4_ISFINITE(cmd.param1) && (cmd.param1 >= -1) && (cmd.param1 < _mission_result_sub.get().seq_total)) {
 
 					// switch to AUTO_MISSION and ARM
+					// 翻译：切换到自动任务 和 ARM
 					if (_user_mode_intention.change(vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION, getSourceFromCommand(cmd))
 					    && (TRANSITION_DENIED != arm(arm_disarm_reason_t::mission_start))) {
 
+						// mavlink_log_info(&_mavlink_log_pub, "missionstart ----- missionstart\t");
 						cmd_result = vehicle_command_ack_s::VEHICLE_CMD_RESULT_ACCEPTED;
 
 					} else {
@@ -2025,6 +2037,7 @@ void Commander::run()
 	buzzer_deinit();
 }
 
+// 检查任务更新
 void Commander::checkForMissionUpdate()
 {
 	if (_mission_result_sub.updated()) {

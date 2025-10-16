@@ -652,6 +652,7 @@ void Navigator::run()
 				position_setpoint_triplet_s *rep = get_takeoff_triplet();
 
 				// store current position as previous position and goal as next
+				// 翻译：将当前位置作为上一个位置，将目标作为下一个位置
 				rep->previous.yaw = get_local_position()->heading;
 				rep->previous.lat = get_global_position()->lat;
 				rep->previous.lon = get_global_position()->lon;
@@ -827,6 +828,7 @@ void Navigator::run()
 		// 翻译：根据指挥官设置的导航状态执行任务
 		NavigatorMode *navigation_mode_new{nullptr};
 
+		// 任务状态在commander.cpp中的checkForMissionUpdate()更新
 		switch (_vstatus.nav_state) {
 		case vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION:
 			_pos_sp_triplet_published_invalid_once = false;

@@ -61,6 +61,7 @@ MissionBlock::MissionBlock(Navigator *navigator, uint8_t navigator_state_id) :
 
 }
 
+// 是否到达或完成任务项目
 bool
 MissionBlock::is_mission_item_reached_or_completed()
 {
@@ -616,8 +617,8 @@ MissionBlock::item_contains_marker(const mission_item_s &item)
 /**
  * @brief 把任务航点（mission item）转换成当前要导航到的目标位置点（position setpoint）。
  *
- * @param item
- * @param sp
+ * @param item 任务航点
+ * @param sp 目标位置点
  * @return true
  * @return false
  */

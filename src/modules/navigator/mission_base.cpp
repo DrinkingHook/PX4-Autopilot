@@ -281,9 +281,12 @@ MissionBase::on_active()
 	}
 
 	// check if heading alignment is necessary, and add it to the current mission item if necessary
+	// 翻译：检查是否有必要进行航向调整，并在必要时将其添加到当前任务项目中
+	// 一般任务不会触发，可能是处理异常情况
 	if (_align_heading_necessary && is_mission_item_reached_or_completed()) {
 
 		// add yaw alignment requirement on the current mission item
+		// 翻译：为当前任务项目添加偏航校准要求
 		int32_t next_mission_item_index;
 		size_t num_found_items{0U};
 		getNextPositionItems(_mission.current_seq + 1, &next_mission_item_index, num_found_items, 1U);
@@ -297,10 +300,13 @@ MissionBase::on_active()
 			if (success) {
 				_mission_item.yaw = matrix::wrap_pi(get_bearing_to_next_waypoint(_mission_item.lat, _mission_item.lon,
 								    next_position_mission_item.lat, next_position_mission_item.lon));
+				// 强制更改航向
 				_mission_item.force_heading = true; // note: doesn't have effect in fixed-wing mode
+				mavlink_log_info(_navigator->get_mavlink_log_pub(), "Forced change of course\t");
 			}
 		}
 
+                // 任务点转换为导航点
 		mission_item_to_position_setpoint(_mission_item, &_navigator->get_position_setpoint_triplet()->current);
 
 		reset_mission_item_reached();
@@ -310,16 +316,19 @@ MissionBase::on_active()
 	}
 
 	// Replay camera mode commands immediately upon mission resume
+	// 翻译：任务恢复后立即重放摄像机模式指令
 	if (haveCachedCameraModeItems()) {
 		replayCachedCameraModeItems();
 	}
 
 	// Replay cached gimbal commands immediately upon mission resume, but only after the vehicle has reached the final target altitude
+	// 翻译：任务恢复后立即重放缓存的万向节指令，但只有在飞行器达到最终目标高度后才能重放缓存的万向节指令
 	if (haveCachedGimbalItems() && _work_item_type != WorkItemType::WORK_ITEM_TYPE_CLIMB) {
 		replayCachedGimbalItems();
 	}
 
 	// Replay cached trigger commands once the last mission waypoint is re-reached after the mission resume
+	// 翻译：任务恢复后重新到达最后一个任务航点时，重放缓存的触发命令
 	if (_mission.current_seq > _mission_activation_index) {
 		// replay trigger commands
 		if (cameraWasTriggering()) {
@@ -1112,15 +1121,16 @@ void MissionBase::getPreviousPositionItems(int32_t start_index, int32_t items_in
 /**
  * @brief 获取下一个位置项
  *
- * @param start_index
- * @param items_index
- * @param num_found_items
- * @param max_num_items
+ * @param start_index 任务项索引开始位置
+ * @param items_index 用于存储下一个位置的任务项索引号
+ * @param num_found_items 记录找到的满足条件的任务项数量
+ * @param max_num_items 指定最多查找的任务项数量
  */
 void MissionBase::getNextPositionItems(int32_t start_index, int32_t items_index[],
 				       size_t &num_found_items, uint8_t max_num_items)
 {
 	// Make sure vector does not contain any preexisting elements.
+	// 翻译：确保向量不包含任何已存在的元素。
 	num_found_items = 0u;
 
 	int32_t next_mission_index{start_index};

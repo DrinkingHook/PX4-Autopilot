@@ -109,7 +109,7 @@ Land::on_active()
 		_navigator->mode_completed(getNavigatorStateId());
 		set_idle_item(&_mission_item);
 
-                mavlink_log_info(_navigator->get_mavlink_log_pub(), "Land start\t");
+                // mavlink_log_info(_navigator->get_mavlink_log_pub(), "Land start\t");
                 // 获取全局共享的导航目标点
 		struct position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
 		// 航点转换为目标点

@@ -177,6 +177,15 @@ void waypoint_from_heading_and_distance(double lat_start, double lon_start, floa
 	*lon_target = math::degrees(*lon_target);
 }
 
+/**
+ * @brief Get the bearing to next waypoint object 获取下一个航点的方位
+ *
+ * @param lat_now 现在的经度
+ * @param lon_now 现在的纬度
+ * @param lat_next 下一个的纬度
+ * @param lon_next 下一个经度
+ * @return float
+ */
 float get_bearing_to_next_waypoint(double lat_now, double lon_now, double lat_next, double lon_next)
 {
 	const double lat_now_rad = math::radians(lat_now);
