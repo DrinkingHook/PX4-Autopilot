@@ -118,6 +118,10 @@ void FlightTask::_resetSetpoints()
 	_yawspeed_setpoint = NAN;
 }
 
+/**
+ * @brief 评估车辆本地位置
+ *
+ */
 void FlightTask::_evaluateVehicleLocalPosition()
 {
 	_position.setAll(NAN);

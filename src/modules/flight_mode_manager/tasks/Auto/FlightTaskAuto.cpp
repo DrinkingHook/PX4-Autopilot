@@ -346,6 +346,21 @@ bool FlightTaskAuto::_evaluateTriplets()
 
 	// Check if triplet is valid. There must be at least a valid altitude.
 
+        // TODO：修复以下提到的问题
+	// 我们在此添加一些仅因以下原因而必需的条件：
+	// 1. 导航器在任务期间由于偏航设定点而持续发送三元组。此
+	// 应在导航器中移除，并且仅在当前设定点实际发生变化时才更新。
+	//
+	// 2. 导航器应始终发送三个有效的设定点。如果只有一个设定点，
+	// 则上一个将设置为当前车辆位置，下一个将设置为等于设定点。
+	//
+	// 3. 导航器最初仅支持 GPS 引导的机动。但是，它现在也支持一些特定于流程的功能
+	// 例如着陆和起飞。导航器应使用在启动起飞/着陆时 xy 方向上的位置进行自动起飞/着陆。
+	// 起飞/着陆开始的时刻。在此之前，我们在此执行此类逻辑。
+
+        // 检查三元组是否有效。必须至少有一个有效的高度。
+
+        // 获取到的数据无效或者有误
 	if (!_sub_triplet_setpoint.get().current.valid || !PX4_ISFINITE(_sub_triplet_setpoint.get().current.alt)) {
 		// Best we can do is to just set all waypoints to current state
 		_prev_prev_wp = _triplet_prev_wp = _triplet_target = _triplet_next_wp = _position;
