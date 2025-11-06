@@ -56,12 +56,16 @@ bool HealthAndArmingChecks::update(bool force_reporting, bool is_arming_request)
 	_reporter.reset();
 
 	// treat VTOLs in transition mode as fixed-wing - this is not in line with what's published as vehicle_status_s::vehicle_type
+	// 翻译：将处于过渡模式的垂直起降飞行器视为固定翼飞机 - 这与 vehicle_status_s::vehicle_type 中发布的内容不一致。
 	const uint8_t vehicle_type = _context.status().in_transition_mode ? vehicle_status_s::VEHICLE_TYPE_FIXED_WING :
 				     _context.status().vehicle_type;
+	// 获取模式要求
 	_reporter.prepare(vehicle_type);
 
+	// 如果有arming请求那么设置 _is_arming_request 为true
 	_context.setIsArmingRequest(is_arming_request);
 
+	// 循环检查所有任务项
 	for (unsigned i = 0; i < sizeof(_checks) / sizeof(_checks[0]); ++i) {
 		if (!_checks[i]) {
 			break;

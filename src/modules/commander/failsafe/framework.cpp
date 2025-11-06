@@ -99,6 +99,7 @@ uint8_t FailsafeBase::update(const hrt_abstime &time_us, const State &state, boo
 	_last_user_intended_mode = modifyUserIntendedMode(_selected_action, action_state.action,
 				   action_state.updated_user_intended_mode);
 	_user_takeover_active = action_state.user_takeover;
+	// 最终得到的故障保护action,Commander()函数调用selectedAction()以实现具体功能
 	_selected_action = action_state.action;
 	_last_update = time_us;
 	_last_status_flags = status_flags;
@@ -300,7 +301,7 @@ void FailsafeBase::notifyUser(uint8_t user_intended_mode, Action action, Action 
 
 /**
  * @brief Checks and manages failsafe actions based on current and previous state failures.
- *	  翻译：基于当前和先前状态失败的检查和管理故障安全操作。
+ *	  翻译：基于当前和先前状态失败来检查和管理故障安全动作。
  * This function evaluates whether a failsafe action should be added, updated, or removed from the
  * `_actions` array based on the current fault state (`cur_state_failure`) and the previous fault state
  * (`last_state_failure`). It handles fault conditions such as invalid sensor data or communication loss,
@@ -339,14 +340,18 @@ bool FailsafeBase::checkFailsafe(int caller_id, bool last_state_failure, bool cu
                         // 	// 只有这个else if中break出去
                         // 	break;
                         // }
+
+			// 寻找相匹配的 action
                         if (_actions[i].id == caller_id) {
                         	found_idx = i;
 				break;
+			// 寻找空闲的 action
                         } else if (!_actions[i].valid()) {
 				free_idx = i;
 			}
 		}
 
+		// 找到已有的 action
 		if (found_idx != -1) {
 			if (_actions[found_idx].activated && !_duplicate_reported_once) {
 				PX4_ERR("BUG: duplicate check for caller_id %i", caller_id);
@@ -362,10 +367,12 @@ bool FailsafeBase::checkFailsafe(int caller_id, bool last_state_failure, bool cu
 			}
 
 		} else {
+			// 没有找到现成的action，且无空闲的action位置.
 			if (free_idx == -1) {
 				PX4_ERR("No free failsafe action idx");
 
 				// replace based on action severity
+				// 翻译：根据操作严重性进行替换
 				for (int i = 0; i < max_num_actions; ++i) {
 					if (options.action > _actions[i].action) {
 						free_idx = i;
@@ -373,6 +380,7 @@ bool FailsafeBase::checkFailsafe(int caller_id, bool last_state_failure, bool cu
 				}
 			}
 
+			// 找到空闲位置
 			if (free_idx != -1) {
 				_actions[free_idx] = options;
 				_actions[free_idx].id = caller_id;
@@ -475,6 +483,7 @@ void FailsafeBase::removeNonActivatedActions()
 /**
  * @brief 根据当前状态和标志选择合适的故障安全动作。
  *
+ * 在函数 CHECK_FAILSAFE() 中根据配置和故障类型注册了action，此函数就是根据所有的故障选择最终需要执行的action
  * 该函数用于计算并返回选定的故障安全动作状态，包括动作类型、原因、用户意图模式更新等。
  * 它考虑了多种因素，如用户接管、延迟故障安全、模式可用性等，以确保系统安全。
  * 逻辑流程：
@@ -498,6 +507,7 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 				     bool rc_sticks_takeover_request,
 				     SelectedActionState &returned_state) const
 {
+	// 保底设置避免故障
 	returned_state.updated_user_intended_mode = state.user_intended_mode;
 	returned_state.cause = Cause::Generic;
 
@@ -508,7 +518,7 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 		return;
 	}
 
-        // 如堕车辆未武装，则返回无动作
+        // 如果车辆未武装，则返回无动作
 	if (!state.armed) {
 		returned_state.action = Action::None;
 		return;
@@ -541,6 +551,7 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 		}
 	}
 
+	// 推迟failsafe保护
 	if (_defer_failsafes && allow_failsafe_to_be_deferred && selected_action != Action::None) {
 		returned_state.failsafe_deferred = selected_action > Action::Warn;
 		returned_state.action = Action::None;
@@ -548,6 +559,8 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 	}
 
 	// Check if we should enter delayed Hold
+	// 翻译：检查是否应进入延迟保持状态。
+	// e.g. 当rc连接断开，不应该立即触发保护，而是超过一段时间还没有恢复才执行保护.
 	const bool action_can_be_delayed = selected_action != Action::None &&
 					   selected_action != Action::Disarm &&
 					   selected_action != Action::Terminate &&
@@ -555,13 +568,22 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 
 	if (_current_delay > 0 && !_user_takeover_active && allow_user_takeover <= UserTakeoverAllowed::AlwaysModeSwitchOnly
 	    && action_can_be_delayed) {
+		// 保存目标动作
 		returned_state.delayed_action = selected_action;
+		// 延迟保护,所以将action替换为Hold
 		selected_action = Action::Hold;
 		allow_user_takeover = UserTakeoverAllowed::AlwaysModeSwitchOnly;
 	}
 
 	// User takeover is activated on user intented mode update (w/o action change, so takeover is not immediately
 	// requested when entering failsafe) or rc stick movements
+	// 翻译：用户接管功能在用户有意更新模式（不更改操作，因此进入故障保护模式时不会立即请求接管）或遥控器摇杆移动时激活。
+	/**
+	 * @brief
+	 * @param want_user_takeover_mode_switch 用户切换模式 e.g. 检测到用户更改了模式并且模式相同
+	 * @param want_user_takeover 切换模式或者摇杆移动 e.g. want_user_takeover_mode_switch 为真或者检测到用户想操作遥控器
+	 * @param takeover_allowed 是否允许接管 e.g. 满足
+	 */
 	bool want_user_takeover_mode_switch = user_intended_mode_updated && _selected_action == selected_action;
 	bool want_user_takeover = want_user_takeover_mode_switch || rc_sticks_takeover_request;
 	bool takeover_allowed =
@@ -569,9 +591,11 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 		|| (allow_user_takeover == UserTakeoverAllowed::AlwaysModeSwitchOnly && (_user_takeover_active
 				|| want_user_takeover_mode_switch));
 
+	// action 允许用户接管
 	if (actionAllowsUserTakeover(selected_action) && takeover_allowed) {
 		if (!_user_takeover_active && rc_sticks_takeover_request) {
 			// TODO: if the user intended mode is a stick-controlled mode, switch back to that instead
+			// 翻译：TODO：如果用户意图更新模式为摇杆控制模式，则切换回该模式。
 			returned_state.updated_user_intended_mode = vehicle_status_s::NAVIGATION_STATE_POSCTL;
 		}
 
@@ -679,6 +703,13 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 
 	// UX improvement (this is optional for safety): change failsafe to a warning in certain situations.
 	// If already landing, do not go into RTL
+
+	/**
+	 * @brief 下方的作用是,如果在用户期望的模式为特殊模式如(LAND,RTL等)，但是由于安全故障导致action为其他任务,而导致的不安全行为
+	 * @param updated_user_intended_mode 在此函数中,只可能赋值为 NAVIGATION_STATE_POSCTL 切换为手动控制。否则不改变值。
+	 */
+	// 翻译：用户体验改进（出于安全考虑，此项为可选）：在某些情况下将故障保护更改为警告。
+	// 	如果已在着陆，则不要进入返航状态
 	if (returned_state.updated_user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_LAND) {
 		if ((selected_action == Action::RTL || returned_state.delayed_action == Action::RTL)
 		    && modeCanRun(status_flags, vehicle_status_s::NAVIGATION_STATE_AUTO_LAND)) {

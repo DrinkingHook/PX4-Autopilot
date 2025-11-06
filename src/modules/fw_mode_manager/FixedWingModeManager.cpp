@@ -1069,10 +1069,12 @@ FixedWingModeManager::control_auto_takeoff(const hrt_abstime &now, const float c
 
 	// for now taking current position setpoint altitude as clearance altitude. this is the altitude we need to
 	// clear all occlusions in the takeoff path
+	// 翻译：目前，将当前位置设定点高度作为起飞高度。这是我们需要清除起飞路径上所有遮挡物的高度。
 	const float clearance_altitude_amsl = pos_sp_curr.alt;
 
 	// set the altitude to something above the clearance altitude to ensure the vehicle climbs past the value
 	// (navigator will accept the takeoff as complete once crossing the clearance altitude)
+	// 翻译：将高度设置为高于起飞高度，以确保飞行器爬升超过该值（导航器将在飞行器越过起飞高度后确认起飞完成）。
 	const float altitude_setpoint_amsl = clearance_altitude_amsl + kClearanceAltitudeBuffer;
 
 	const Vector2f local_2D_position{_local_pos.x, _local_pos.y};

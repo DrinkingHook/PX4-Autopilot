@@ -442,6 +442,13 @@ FailsafeBase::ActionOptions Failsafe::fromRemainingFlightTimeLowActParam(int par
 	return options;
 }
 
+/**
+ * @brief 检查状态和模式
+ *
+ * @param time_us
+ * @param state
+ * @param status_flags
+ */
 void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 				 const failsafe_flags_s &status_flags)
 {
@@ -466,7 +473,7 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 	}
 
 	/**
-	 * @brief 与运算符若_param_com_rcl_except.get()和ManualControlLossExceptionBits：：相同那么结果就不为0
+	 * @brief &:与运算符. 若 _param_com_rcl_except.get() 和 ManualControlLossExceptionBits:: 有一个位的值相同那么结果就不为0
 	 *
 	 */
 	const bool rc_loss_ignored_mission = state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION
@@ -497,12 +504,19 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 				     rc_loss_ignored_takeoff || rc_loss_ignored_external_mode || ignore_any_link_loss_vtol_takeoff_fixedwing
 				     || _manual_control_lost_at_arming || rc_loss_ignored_altitude_cruise;
 
+	/**
+	 * @brief 当rc的模式不为关闭手动控制且不忽略rc丢失，那么就运行故障检查。(当关闭了rc手动控制，且丢失rc信号时就不为故障)
+	 *	  fromNavDllOrRclActParam(_param_nav_rcl_act.get()).causedBy(Cause::ManualControlLoss)属于方法链
+	 *	  fromNavDllOrRclActParam(_param_nav_rcl_act.get())作为前段返回ActionOptions类，而causedBy为ActionOptions类的成员函数
+	 *
+	 */
 	if (_param_com_rc_in_mode.get() != int32_t(RcInMode::DisableManualControl) && !rc_loss_ignored) {
 		CHECK_FAILSAFE(status_flags, manual_control_signal_lost,
 			       fromNavDllOrRclActParam(_param_nav_rcl_act.get()).causedBy(Cause::ManualControlLoss));
 	}
 
 	// GCS connection loss
+	// 翻译：地面站链接丢失
 	const bool dll_loss_ignored_land = state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_LAND
 					   || state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_PRECLAND;
 
@@ -540,6 +554,7 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 		// If manual control loss and GCS connection loss are disabled and we lose both command links and the mission finished,
 		// 翻译：如果禁用手动控制丢失和 GCS 连接丢失，并且我们丢失了两个命令链接并且任务完成，
 		// trigger RTL to avoid losing the vehicle
+		// 翻译：触发RTL避免丢失车辆
 		if ((_param_com_rc_in_mode.get() == int32_t(RcInMode::DisableManualControl) || rc_loss_ignored_mission)
 		    && _param_nav_dll_act.get() == int32_t(gcs_connection_loss_failsafe_mode::Disabled)
 		    && state.mission_finished) {

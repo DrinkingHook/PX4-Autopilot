@@ -1187,6 +1187,7 @@ Commander::handle_command(const vehicle_command_s &cmd)
 
 	case vehicle_command_s::VEHICLE_CMD_CONTROL_HIGH_LATENCY: {
 			// if no high latency telemetry exists send a failed acknowledge
+			// 翻译：如果没有高延迟遥测数据，则发送失败确认信息。
 			if (_high_latency_datalink_timestamp < _boot_timestamp) {
 				cmd_result = vehicle_command_ack_s::VEHICLE_CMD_RESULT_FAILED;
 				mavlink_log_critical(&_mavlink_log_pub, "Control high latency failed! Telemetry unavailable\t");
@@ -1200,11 +1201,13 @@ Commander::handle_command(const vehicle_command_s &cmd)
 
 			transition_result_t main_ret;
 
+			// 如果车辆状态处于模式转换期间，则main_ret设置为拒绝转换
 			if (_vehicle_status.in_transition_mode) {
 				main_ret = TRANSITION_DENIED;
 
 			} else if (_vehicle_status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) {
 				// for fixed wings the behavior of orbit is the same as loiter
+				// 翻译：对于固定翼飞机而言，轨道飞行行为与盘旋飞行行为相同。
 				if (_user_mode_intention.change(vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER, getSourceFromCommand(cmd))) {
 					main_ret = TRANSITION_CHANGED;
 
@@ -1214,6 +1217,7 @@ Commander::handle_command(const vehicle_command_s &cmd)
 
 			} else {
 				// Switch to orbit state and let the orbit task handle the command further
+				// 翻译：切换到轨道状态，让轨道任务进一步处理该命令。
 				if (_user_mode_intention.change(vehicle_status_s::NAVIGATION_STATE_ORBIT, getSourceFromCommand(cmd))) {
 					main_ret = TRANSITION_CHANGED;
 
@@ -1232,6 +1236,7 @@ Commander::handle_command(const vehicle_command_s &cmd)
 		}
 		break;
 
+	// 处理车辆命令：沿着由参数定义的“8”字形轮廓开始飞行
 	case vehicle_command_s::VEHICLE_CMD_DO_FIGUREEIGHT: {
 #ifdef CONFIG_FIGURE_OF_EIGHT
 
@@ -2273,6 +2278,7 @@ void Commander::vtolStatusUpdate()
 void Commander::updateTunes()
 {
 	// play arming and battery warning tunes
+	// 播放布防和电池警告音乐
 	if (!_arm_tune_played && isArmed()) {
 
 		/* play tune when armed */

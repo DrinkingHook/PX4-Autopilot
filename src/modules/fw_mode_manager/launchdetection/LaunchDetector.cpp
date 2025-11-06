@@ -87,6 +87,7 @@ void LaunchDetector::update(const float dt, const float accel_x)
 	case launch_detection_status_s::STATE_LAUNCH_DETECTED_DISABLED_MOTOR:
 		/* Vehicle is currently controlling attitude but at idle throttle. Waiting until delay is
 		 * over to allow full throttle */
+		// 翻译：车辆当前正在控制姿态，但油门处于怠速状态。等待延迟结束后再允许全油门。
 		motor_delay_counter_ += dt;
 
 		if (motor_delay_counter_ > param_fw_laun_mot_del_.get()) {

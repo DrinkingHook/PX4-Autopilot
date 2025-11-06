@@ -415,6 +415,7 @@ void ModeManagement::update(bool armed, uint8_t user_intended_nav_state, UpdateR
 void ModeManagement::onUserIntendedNavStateChange(ModeChangeSource source, uint8_t user_intended_nav_state)
 {
 	// Update mode executor in charge
+	// 翻译：负责更新模式的执行器
 	int mode_executor_for_intended_nav_state = -1;
 
 	if (_modes.valid(user_intended_nav_state)) {
@@ -423,13 +424,16 @@ void ModeManagement::onUserIntendedNavStateChange(ModeChangeSource source, uint8
 
 	if (mode_executor_for_intended_nav_state == -1) {
 		// Not an owned mode: check source
+		// 翻译：并非自有模式：请查看来源
 		if (source == ModeChangeSource::User) {
 			// Give control to the pilot
+			// 翻译：将控制权交给飞行员
 			_mode_executor_in_charge = ModeExecutors::AUTOPILOT_EXECUTOR_ID;
 		}
 
 	} else {
 		// Switched into an owned mode: put executor in charge
+		// 翻译：已切换到所有权模式：将执行者置于控制之下
 		_mode_executor_in_charge = mode_executor_for_intended_nav_state;
 	}
 }

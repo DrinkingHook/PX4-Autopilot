@@ -298,6 +298,7 @@ private:
 
 		void reset() { health.reset(); arming_checks.reset(); num_events = 0; event_id_hash = 0; }
 
+		// 重载运算
 		bool operator!=(const Results &other)
 		{
 			return health != other.health || arming_checks != other.arming_checks ||

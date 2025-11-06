@@ -131,6 +131,6 @@
         },
         "clangd.arguments": [
                 "--pch-storage=memory",
-                "--compile-commands-dir=build/px4_fmu-v5_default"
+                "--compile-commands-dir=build/px4_fmu-v6c_default"
         ],
 }

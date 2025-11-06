@@ -52,6 +52,7 @@ class FigureEight : public ModuleParams
 public:
 	/**
 	 * @brief Figure eight pattern points strust
+	 *        8字图形点
 	 *
 	 * Struct defining all relevant points for the figure eight pattern.
 	 *

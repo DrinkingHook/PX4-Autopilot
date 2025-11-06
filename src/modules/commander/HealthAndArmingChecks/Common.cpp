@@ -211,6 +211,7 @@ void Report::reset()
 void Report::prepare(uint8_t vehicle_type)
 {
 	// Get mode requirements before running any checks (in particular the mode checks require them)
+	// 翻译：在运行任何检查之前获取模式要求（特别是模式检查需要这些要求）。
 	mode_util::getModeRequirements(vehicle_type, _failsafe_flags);
 }
 
@@ -231,6 +232,7 @@ bool Report::finalize()
 bool Report::report(bool force)
 {
 	const hrt_abstime now = hrt_absolute_time();
+	// 如果存在尚未报告的差异（由于速率限制）或两次检查的结果不一致(在函数finalize中赋值)，那么 has_difference 为真
 	const bool has_difference = _had_unreported_difference || _results_changed;
 
 	if ((now < _last_report + _min_reporting_interval) && !force) {
@@ -252,6 +254,7 @@ bool Report::report(bool force)
 	const Results &current_results = _results[_current_result];
 
 	// If we have too many events, the result is still correct, we just don't report everything
+	// 翻译：如果我们有太多事件，结果还始终正确，我们就不要报告所有事情
 	const int max_num_events = event_s::ORB_QUEUE_LENGTH - 2;
 
 	if (_buffer_overflowed || current_results.num_events > max_num_events) {
