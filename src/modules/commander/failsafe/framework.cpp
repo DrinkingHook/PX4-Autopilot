@@ -86,10 +86,16 @@ uint8_t FailsafeBase::update(const hrt_abstime &time_us, const State &state, boo
 	SelectedActionState action_state{};
 	getSelectedAction(state, status_flags, user_intended_mode_updated, rc_sticks_takeover_request, action_state);
 
+	/**
+	 * @brief 更新开始延迟的故障保护action
+	 * @param action_state.delayed_action 此参数的值在 getSelectedAction()函数中赋值,用于存储需要延迟操作的action
+	 */
+
 	updateStartDelay(time_us - _last_update, action_state.delayed_action != Action::None);
 	updateFailsafeDeferState(time_us, action_state.failsafe_deferred);
 
 	// Notify user if the action is worse than before, or a new action got added
+	// 翻译：如果操作结果比以前更糟，或者添加了新操作，则通知用户。
 	if (action_state.action > _selected_action || (action_state.action != Action::None && _notification_required)) {
 		notifyUser(state.user_intended_mode, action_state.action, action_state.delayed_action, action_state.cause);
 	}
@@ -122,7 +128,9 @@ void FailsafeBase::updateFailsafeDeferState(const hrt_abstime &time_us, bool def
 void FailsafeBase::updateStartDelay(const hrt_abstime &dt, bool delay_active)
 {
 	// Ensure that even with a toggling state the delayed action is executed at some point.
+	// 翻译：确保即使在状态切换的情况下，延迟的操作最终也能执行。
 	// This is done by increasing the delay slower than reducing it.
+	// 翻译：这是通过增加延迟的速度比减少延迟的速度慢来实现的。
 	if (delay_active) {
 		if (dt < _current_start_delay) {
 			_current_start_delay -= dt;
@@ -525,6 +533,12 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 	}
 
 	returned_state.action = Action::None;
+	/**
+	 * @param selected_action 用于存储 _actions[] 的值
+	 * 这里不是简单的赋值而是类似c语言的指针用法，表示引用，修改 selected_action 等同于修改 returned_state.action
+	 * c写法为：Action *selected_action = &returned_state->action; // 取地址
+         *         *selected_action = Disarm; // 解引用修改
+	 */
 	Action &selected_action = returned_state.action;
 	UserTakeoverAllowed allow_user_takeover = UserTakeoverAllowed::Always;
 	bool allow_failsafe_to_be_deferred{true};
@@ -570,7 +584,7 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 	    && action_can_be_delayed) {
 		// 保存目标动作
 		returned_state.delayed_action = selected_action;
-		// 延迟保护,所以将action替换为Hold
+		// 延迟保护,所以将 selected_action 替换为Hold
 		selected_action = Action::Hold;
 		allow_user_takeover = UserTakeoverAllowed::AlwaysModeSwitchOnly;
 	}
