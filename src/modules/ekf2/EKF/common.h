@@ -177,6 +177,15 @@ enum class FlowGyroSource : uint8_t {
 	Internal = 1
 };
 
+/**
+ * @brief
+ * @param time_us μsec (微秒),时间戳。 记录的是这个测量样本的有效时间，用于时间同步和日志记录。
+ * @param delta_ang rad (弧度),增量角度（角速度积分）。 记录了在积分周期内，飞行器在 机体坐标系 (Body Frame) 下，绕 X、Y、Z 三轴旋转的总角度变化量。这是陀螺仪数据的积分结果。
+ * @param delta_vel m/sec (米/秒),增量速度（加速度积分）。 记录了在积分周期内，飞行器在 机体坐标系 下，沿 X、Y、Z 三轴的总速度变化量。这是加速度计数据的积分结果。
+ * @param delta_ang_dt sec (秒),增量角度积分周期。 用于计算 delta_ang 的实际时间长度。通常等于 IMU 的采样周期。
+ * @param delta_vel_dt sec (秒),增量速度积分周期。 用于计算 delta_vel 的实际时间长度。通常与 delta_ang_dt 相同，但理论上可以不同。
+ * @param delta_vel_clipping N/A,加速度计削波标志。 这是一个布尔数组，逐轴记录在这个采样周期内，加速度计的原始数据是否达到了传感器的量程上限（Clipping）。如果为 true，表明加速度计可能已饱和，测量值不可信。
+ */
 struct imuSample {
 	uint64_t    time_us{};                ///< timestamp of the measurement (uSec)
 	Vector3f    delta_ang{};              ///< delta angle in body frame (integrated gyro measurements) (rad)

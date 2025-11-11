@@ -118,8 +118,11 @@ ControlAllocator::parameters_updated()
 	}
 
 	// Allocation method & effectiveness source
+	// 翻译：分配方法及效果来源
 	// Do this first: in case a new method is loaded, it will be configured below
+	// 翻译：首先执行此操作：如果加载了新方法，则将在下方进行配置
 	bool updated = update_effectiveness_source();
+	// 在函数 update_effectiveness_source() 后必须被调用
 	update_allocation_method(updated); // must be called after update_effectiveness_source()
 
 	if (_num_control_allocation == 0) {
@@ -418,11 +421,11 @@ ControlAllocator::Run()
 		check_for_motor_failures();
 
                 // 必要时更新有效性矩阵
-                // 感觉这句代码在这里毫无作用，第一层进入函数会根据reason的值和更新时间判断是否退出，第二层大多数机型应该都会直接return
+                // 感觉这句代码在这里毫无作用，第一层进入函数会根据reason的值和更新时间判断是否退出，第二层大多数机型都还是会因为传入的reason直接return
 		update_effectiveness_matrix_if_needed(EffectivenessUpdateReason::NO_EXTERNAL_UPDATE);
 
 		// Set control setpoint vector(s)
-		// 翻译：设置控制设定点矢量
+		// 翻译：设置控制设定点矢量(适用于非VTOL机型)
 		matrix::Vector<float, NUM_AXES> c[ActuatorEffectiveness::MAX_NUM_MATRICES];
 		c[0](0) = _torque_sp(0);
 		c[0](1) = _torque_sp(1);
@@ -431,7 +434,7 @@ ControlAllocator::Run()
 		c[0](4) = _thrust_sp(1);
 		c[0](5) = _thrust_sp(2);
 
-		// 如果有效矩阵为2那么才执行
+		// 如果有效矩阵为2那么才执行(针对于VTOL类机型)
 		if (_num_control_allocation > 1) {
 			if (_vehicle_torque_setpoint1_sub.copy(&vehicle_torque_setpoint)) {
 				c[1](0) = vehicle_torque_setpoint.xyz[0];

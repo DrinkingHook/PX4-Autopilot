@@ -583,6 +583,7 @@ transition_result_t Commander::arm(arm_disarm_reason_t calling_reason, bool run_
 	}
 
 	// allow a grace period for re-arming: preflight checks don't need to pass during that time, for example for accidental in-air disarming
+	// 翻译：允许重新武装的宽限期：在此期间，飞行前检查无需通过，例如，对于意外的空中解除武装的情况。
 	if (calling_reason == arm_disarm_reason_t::rc_switch
 	    && ((_last_disarmed_timestamp != 0) && (hrt_elapsed_time(&_last_disarmed_timestamp) < 5_s))) {
 
@@ -1678,6 +1679,7 @@ unsigned Commander::handleCommandActuatorTest(const vehicle_command_s &cmd)
 	}
 
 	// enforce a timeout and a maximum limit
+	// 翻译：强制执行超时和最大限制
 	if (actuator_test.timeout_ms == 0 || actuator_test.timeout_ms > 3000) {
 		actuator_test.timeout_ms = 3000;
 	}
@@ -1687,7 +1689,7 @@ unsigned Commander::handleCommandActuatorTest(const vehicle_command_s &cmd)
 }
 
 /**
- * @brief 执行动作请求
+ * @brief 执行动作请求,处理遥控器的不同动作请求
  *
  * @param action_request
  */
@@ -1696,6 +1698,7 @@ void Commander::executeActionRequest(const action_request_s &action_request)
 	arm_disarm_reason_t arm_disarm_reason{};
 
 	// Silently ignore RC actions during RC calibration
+	// 翻译：在遥控器校准期间静默忽略遥控器操作
 	if (_vehicle_status.rc_calibration_in_progress
 	    && (action_request.source == action_request_s::SOURCE_STICK_GESTURE
 		|| action_request.source == action_request_s::SOURCE_RC_SWITCH
@@ -1704,19 +1707,26 @@ void Commander::executeActionRequest(const action_request_s &action_request)
 		return;
 	}
 
+	// 动作来源
 	switch (action_request.source) {
+	// 摇杆手势
 	case action_request_s::SOURCE_STICK_GESTURE: arm_disarm_reason = arm_disarm_reason_t::stick_gesture; break;
 
+	// 遥控器开关
 	case action_request_s::SOURCE_RC_SWITCH: arm_disarm_reason = arm_disarm_reason_t::rc_switch; break;
 
+	// 遥控器按钮
 	case action_request_s::SOURCE_RC_BUTTON: arm_disarm_reason = arm_disarm_reason_t::rc_button; break;
 	}
 
 	switch (action_request.action) {
+	// 上锁
 	case action_request_s::ACTION_DISARM: disarm(arm_disarm_reason); break;
 
+	// 解锁
 	case action_request_s::ACTION_ARM: arm(arm_disarm_reason); break;
 
+	// 切换解锁/上锁状态
 	case action_request_s::ACTION_TOGGLE_ARMING:
 		if (isArmed()) {
 			disarm(arm_disarm_reason);
@@ -1727,6 +1737,7 @@ void Commander::executeActionRequest(const action_request_s &action_request)
 
 		break;
 
+	// 解除终止状态
 	case action_request_s::ACTION_UNKILL:
 		if (_actuator_armed.kill) {
 			mavlink_log_info(&_mavlink_log_pub, "Kill disengaged\t");
@@ -1737,6 +1748,7 @@ void Commander::executeActionRequest(const action_request_s &action_request)
 
 		break;
 
+	// 进入终止状态(立刻杀死电机输出) --- 坠机！！！！
 	case action_request_s::ACTION_KILL:
 		if (!_actuator_armed.kill) {
 			const char kill_switch_string[] = "Kill engaged\t";
@@ -1758,11 +1770,13 @@ void Commander::executeActionRequest(const action_request_s &action_request)
 
 		break;
 
+	// 将NAVIGATION切换为终止状态
 	case action_request_s::ACTION_TERMINATION:
 		_user_mode_intention.change(vehicle_status_s::NAVIGATION_STATE_TERMINATION);
 
 		break;
 
+	// 切换模式
 	case action_request_s::ACTION_SWITCH_MODE:
 
 		if (!_user_mode_intention.change(action_request.mode, ModeChangeSource::User, false)) {
@@ -1918,6 +1932,7 @@ void Commander::run()
 
 		const hrt_abstime now = hrt_absolute_time();
 
+		// 导航状态或故障保护已更改标志位
 		const bool nav_state_or_failsafe_changed = handleModeIntentionAndFailsafe();
 
 		// Run arming checks @ 10Hz
@@ -1942,6 +1957,7 @@ void Commander::run()
 		// 翻译：最后处理命令，因为需要更新系统以处理它们
 		handleCommandsFromModeExecutors();
 
+		// 车辆命令处理
 		if (_vehicle_command_sub.updated()) {
 			// got command
 			const unsigned last_generation = _vehicle_command_sub.get_last_generation();
@@ -1958,6 +1974,13 @@ void Commander::run()
 			}
 		}
 
+		/**
+		 * @brief 遥控器动作执行处理
+		 *        此部分也包含解锁or上锁等功能,回调用函数：
+		 *				_health_and_arming_checks.update();
+		 *				_health_and_arming_checks.canArm();
+		 *	  感觉和上方的块Run arming checks @ 10Hz 功能相重叠了
+		 */
 		if (_action_request_sub.updated()) {
 			const unsigned last_generation = _action_request_sub.get_last_generation();
 			action_request_s action_request;
@@ -2383,9 +2406,15 @@ void Commander::handleAutoDisarm()
 		_auto_disarm_killed.set_state_and_update(false, hrt_absolute_time());
 	}
 }
-
+/**
+ * @brief 处理模式意图和故障安全
+ *
+ * @return true
+ * @return false
+ */
 bool Commander::handleModeIntentionAndFailsafe()
 {
+	// 记录当前的状态到上一次状态变量中
 	const uint8_t prev_nav_state = _vehicle_status.nav_state;
 	const FailsafeBase::Action prev_failsafe_action = _failsafe.selectedAction();
 	const uint8_t prev_failsafe_defer_state = _vehicle_status.failsafe_defer_state;
@@ -2398,7 +2427,7 @@ bool Commander::handleModeIntentionAndFailsafe()
 	state.vehicle_type = _vehicle_status.vehicle_type;
 
 	// There might have been a mode change request without changing the user intended mode.
-	// 翻译：可能没有更改用户预期模式的模式更改请求。
+	// 翻译：可能存在模式更改请求，但并未更改用户预期的模式。
 	// If a failsafe is active we must pass the request along as it might lead to a user-takeover.
 	// 翻译：如果失败安全处于活动状态，我们必须将请求传递，因为它可能会导致用户捕获。
 	bool mode_change_requested = _user_mode_intention.getHadModeChangeAndClear();
@@ -2409,6 +2438,7 @@ bool Commander::handleModeIntentionAndFailsafe()
 	_failsafe_user_override_request = false;
 
 	// Force intended mode if changed by the failsafe state machine
+	// 翻译：如果故障保护状态机更改了操作，则强制使用预期模式。
 	if (state.user_intended_mode != updated_user_intented_mode) {
 		_user_mode_intention.change(updated_user_intented_mode, ModeChangeSource::User, false, true);
 		_user_mode_intention.getHadModeChangeAndClear();
@@ -2445,6 +2475,7 @@ bool Commander::handleModeIntentionAndFailsafe()
 	_mode_management.updateActiveConfigOverrides(_vehicle_status.nav_state, _config_overrides);
 
 	// Apply failsafe deferring & get the current state
+	// 翻译：应用故障保护延迟并获取当前状态。
 	_failsafe.deferFailsafes(_config_overrides.defer_failsafes, _config_overrides.defer_failsafes_timeout_s);
 
 	if (_failsafe.failsafeDeferred()) {

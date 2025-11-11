@@ -87,6 +87,13 @@ public:
 	 */
 	bool everHadModeChange() const { return _ever_had_mode_change; }
 
+	/**
+	 * @brief Get the Had Mode Change And Clear object
+	 *	  获取已更改模式并清除
+	 * @param _had_mode_change 在函数UserModeIntention::change()中置为True
+	 * @return true
+	 * @return false
+	 */
 	bool getHadModeChangeAndClear() { bool ret = _had_mode_change; _had_mode_change = false; return ret; }
 
 private:

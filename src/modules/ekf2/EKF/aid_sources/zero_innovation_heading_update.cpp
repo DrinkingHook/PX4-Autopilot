@@ -38,6 +38,10 @@
 
 #include "ekf.h"
 
+/**
+ * @brief 控制静止或没有其他航向源时 EKF 航向更新的功能
+ *
+ */
 void Ekf::controlZeroInnovationHeadingUpdate()
 {
 	const bool yaw_aiding = _control_status.flags.mag_hdg || _control_status.flags.mag_3D

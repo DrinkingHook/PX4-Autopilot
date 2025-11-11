@@ -137,20 +137,26 @@ void Ekf::reset()
 bool Ekf::update()
 {
 	// Only run the filter if IMU data in the buffer has been updated
+	// 翻译：仅当缓冲区中的 IMU 数据已更新时才运行滤波器
 	if (_imu_updated) {
 		_imu_updated = false;
 
 		// get the oldest IMU data from the buffer
 		// TODO: explicitly pop at desired time horizon
+		// 翻译：从缓冲区获取最早的IMU数据
+		// 	TODO：在所需的时间范围内显式弹出数据
 		const imuSample imu_sample_delayed = _imu_buffer.get_oldest();
 
 		// protect against zero data
+		// 翻译：防止出现 0 数据
 		if (imu_sample_delayed.delta_vel_dt < 1e-4f || imu_sample_delayed.delta_ang_dt < 1e-4f) {
 			return false;
 		}
 
 		// calculate an average filter update time
 		// limit input between -50% and +100% of nominal value
+		// 翻译：计算平均滤波器更新时间
+		// 	将输入限制在标称值的 -50% 到 +100% 之间
 		const float filter_update_s = 1e-6f * _params.ekf2_predict_us;
 		const float input = math::constrain(0.5f * (imu_sample_delayed.delta_vel_dt + imu_sample_delayed.delta_ang_dt),
 						    0.5f * filter_update_s,
@@ -180,10 +186,12 @@ bool Ekf::update()
 		updateIMUBiasInhibit(imu_sample_delayed);
 
 		// perform state and covariance prediction for the main filter
+		// 翻译：对主滤波器进行状态和协方差预测
 		predictCovariance(imu_sample_delayed);
 		predictState(imu_sample_delayed);
 
 		// control fusion of observation data
+		// 翻译：控制观测数据的融合
 		controlFusionModes(imu_sample_delayed);
 
 		_output_predictor.correctOutputStates(imu_sample_delayed.time_us, _state.quat_nominal, _state.vel, _gpos,

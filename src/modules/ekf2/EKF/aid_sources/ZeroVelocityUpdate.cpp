@@ -45,6 +45,14 @@ void ZeroVelocityUpdate::reset()
 	_time_last_fuse = 0;
 }
 
+/**
+ * @brief 零速度更新
+ *
+ * @param ekf
+ * @param imu_delayed
+ * @return true
+ * @return false
+ */
 bool ZeroVelocityUpdate::update(Ekf &ekf, const estimator::imuSample &imu_delayed)
 {
 	// Fuse zero velocity at a limited rate (every 200 milliseconds)

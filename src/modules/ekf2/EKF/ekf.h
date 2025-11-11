@@ -597,9 +597,12 @@ private:
 #endif // CONFIG_EKF2_AUXVEL
 
 	// Variables used by the initial filter alignment
+	// 翻译：初始滤波器校准使用的变量
 	bool _is_first_imu_sample{true};
 	static constexpr float _kSensorLpfTimeConstant = 0.09f;
+	// 翻译：用于校准倾斜的滤波加速度计测量值（米/秒²）
 	AlphaFilter<Vector3f> _accel_lpf{_dt_ekf_avg, _kSensorLpfTimeConstant};	///< filtered accelerometer measurement used to align tilt (m/s/s)
+	// 翻译：用于校准过度运动检查的滤波陀螺仪测量值（rad/sec）
 	AlphaFilter<Vector3f> _gyro_lpf{_dt_ekf_avg, _kSensorLpfTimeConstant};	///< filtered gyro measurement used for alignment excessive movement check (rad/sec)
 
 #if defined(CONFIG_EKF2_BAROMETER)

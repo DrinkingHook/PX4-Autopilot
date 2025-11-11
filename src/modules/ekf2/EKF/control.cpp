@@ -46,6 +46,7 @@
 void Ekf::controlFusionModes(const imuSample &imu_delayed)
 {
 	// Store the status to enable change detection
+	// 翻译：存储状态以实现变化检测
 	_control_status_prev.value = _control_status.value;
 	_state_reset_count_prev = _state_reset_status.reset_count;
 
@@ -68,14 +69,19 @@ void Ekf::controlFusionModes(const imuSample &imu_delayed)
 	}
 
 	// monitor the tilt alignment
+	// 翻译：检测倾斜对准情况
 	if (!_control_status.flags.tilt_align) {
 		// whilst we are aligning the tilt, monitor the variances
 		// Once the tilt variances have reduced to equivalent of 3 deg uncertainty
 		// and declare the tilt alignment complete
+		// 翻译：在进行倾斜对准时，监控方差
+		// 翻译：一旦倾斜方差减小到相当于 3 度的不确定性
+		// 翻译：并宣布倾斜对准完成
 		if (getTiltVariance() < sq(math::radians(3.f))) {
 			_control_status.flags.tilt_align = true;
 
 			// send alignment status message to the console
+			// 翻译：向控制台发送对准状态消息
 			const char *height_source = "unknown";
 
 			if (_control_status.flags.baro_hgt) {
@@ -102,19 +108,24 @@ void Ekf::controlFusionModes(const imuSample &imu_delayed)
 		}
 	}
 
+// 磁力计融合(主要用于航向的估计)
 #if defined(CONFIG_EKF2_MAGNETOMETER)
 	// control use of observations for aiding
+	// 翻译：控制观测数据的辅助使用
 	controlMagFusion(imu_delayed);
 #endif // CONFIG_EKF2_MAGNETOMETER
 
+// ！主要为室内. 光流融合(主要用于水平速度的融合)
 #if defined(CONFIG_EKF2_OPTICAL_FLOW)
 	controlOpticalFlowFusion(imu_delayed);
 #endif // CONFIG_EKF2_OPTICAL_FLOW
 
+// !室外 GNSS(位置和速度)
 #if defined(CONFIG_EKF2_GNSS)
 	controlGpsFusion(imu_delayed);
 #endif // CONFIG_EKF2_GNSS
 
+// 辅助全局定位融合(外部视觉定位系统或运动捕捉系统)
 #if defined(CONFIG_EKF2_AUX_GLOBAL_POSITION) && defined(MODULE_NAME)
 	_aux_global_position.update(*this, imu_delayed);
 #endif // CONFIG_EKF2_AUX_GLOBAL_POSITION
@@ -123,30 +134,36 @@ void Ekf::controlFusionModes(const imuSample &imu_delayed)
 	controlAirDataFusion(imu_delayed);
 #endif // CONFIG_EKF2_AIRSPEED
 
+// 启用侧滑角度估计的融合（通常与固定翼相关），用于改进对风和飞行状态的估计
 #if defined(CONFIG_EKF2_SIDESLIP)
 	controlBetaFusion(imu_delayed);
 #endif // CONFIG_EKF2_SIDESLIP
 
+// 启用基于空气动力学阻力模型的融合。主要用于多旋翼的风估计和改进水平速度估计。
 #if defined(CONFIG_EKF2_DRAG_FUSION)
 	controlDragFusion(imu_delayed);
 #endif // CONFIG_EKF2_DRAG_FUSION
 
 	controlHeightFusion(imu_delayed);
 
+// EKF2的基本组成部分，确保惯性测量单元 (IMU) 测量的重力分量用于估计飞行器的姿态（Roll/Pitch）
 #if defined(CONFIG_EKF2_GRAVITY_FUSION)
 	controlGravityFusion(imu_delayed);
 #endif // CONFIG_EKF2_GRAVITY_FUSION
 
+// 启用外部视觉系统（如 VIO 或 MoCap）数据的融合。
 #if defined(CONFIG_EKF2_EXTERNAL_VISION)
 	// Additional data odometry data from an external estimator can be fused.
 	controlExternalVisionFusion(imu_delayed);
 #endif // CONFIG_EKF2_EXTERNAL_VISION
 
+// 启用 辅助速度数据（如来自 外部视觉里程计 (VIO) 或其他外部源）的融合
 #if defined(CONFIG_EKF2_AUXVEL)
 	// Additional horizontal velocity data from an auxiliary sensor can be fused
 	controlAuxVelFusion(imu_delayed);
 #endif // CONFIG_EKF2_AUXVEL
 
+// 启用基于测距仪或 GNSS 地形数据的 地形高度 估计和跟踪。
 #if defined(CONFIG_EKF2_TERRAIN)
 	controlTerrainFakeFusion();
 	updateTerrainValidity();
@@ -161,9 +178,13 @@ void Ekf::controlFusionModes(const imuSample &imu_delayed)
 	}
 
 	// Fake position measurement for constraining drift when no other velocity or position measurements
+	// 翻译：在没有其他速度或位置测量值时，使用伪位置测量来约束漂移
+	// 伪位置
 	controlFakePosFusion();
+	// 伪高度
 	controlFakeHgtFusion();
 
 	// check if we are no longer fusing measurements that directly constrain velocity drift
+	// 翻译：检查是否不再融合测量值而直接约束速度漂移
 	updateDeadReckoningStatus();
 }

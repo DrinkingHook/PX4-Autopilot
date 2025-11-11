@@ -60,6 +60,12 @@ enum class ActuatorType {
 	COUNT
 };
 
+/**
+ * @brief
+ * @param NO_EXTERNAL_UPDATE 没有外部更新. 默认状态.表示在最近的控制周期中,没有任何需要重新计算执行器有效性的外部因素发生.
+ * @param CONFIGURATION_UPDATE 配置更新. 配置参数发生变化.例如,用户通过地面站修改了像推力曲线,混控矩阵的增益,或者更改了飞行器类型等参数.
+ * @param MOTOR_ACTIVATION_UPDATE 电机激活更新 电机状态发生变化(电机故障,关闭冗余电机)
+ */
 enum class EffectivenessUpdateReason {
 	NO_EXTERNAL_UPDATE = 0,
 	CONFIGURATION_UPDATE = 1, ///< config changes (parameter)

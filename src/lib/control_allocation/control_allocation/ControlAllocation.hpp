@@ -238,7 +238,9 @@ protected:
 	ActuatorVector _actuator_max; 	///< Maximum actuator values
 	ActuatorVector _actuator_slew_rate_limit; 	///< Slew rate limit
 	ActuatorVector _prev_actuator_sp;  	///< Previous actuator setpoint
+	// 以各个伺服输出为坐标系.控制分配算法（未在代码片段中显示）运行后生成的,表示分配到具体执行器的输出
 	ActuatorVector _actuator_sp;  	///< Actuator setpoint
+	// 以整个车辆为坐标系.作为上层控制器可以专注于计算飞行器的力学需求
 	matrix::Vector<float, NUM_AXES> _control_sp;   		///< Control setpoint
 	matrix::Vector<float, NUM_AXES> _control_trim; 		///< Control at trim actuator values
 	int _num_actuators{0};

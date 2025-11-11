@@ -102,6 +102,7 @@ uint8_t FailsafeBase::update(const hrt_abstime &time_us, const State &state, boo
 
 	_notification_required = false;
 
+	// 修改用户意图模式
 	_last_user_intended_mode = modifyUserIntendedMode(_selected_action, action_state.action,
 				   action_state.updated_user_intended_mode);
 	_user_takeover_active = action_state.user_takeover;
@@ -177,6 +178,14 @@ void FailsafeBase::removeActions(ClearCondition condition)
 	}
 }
 
+/**
+ * @brief 通知用户 如果最新一次的故障action比上一次的更加严重便会执行
+ *
+ * @param user_intended_mode 用户期望的模式
+ * @param action 故障保护动作
+ * @param delayed_action 延迟的故障保护动作
+ * @param cause 故障保护原因
+ */
 void FailsafeBase::notifyUser(uint8_t user_intended_mode, Action action, Action delayed_action, Cause cause)
 {
 	if (_on_notify_user_cb) {
@@ -468,6 +477,10 @@ void FailsafeBase::removeAction(ActionOptions &action) const
 	}
 }
 
+/**
+ * @brief 删除无效的不活跃的action
+ *
+ */
 void FailsafeBase::removeNonActivatedActions()
 {
 	// A non-activated action means the check was not called during the last update:
@@ -758,6 +771,12 @@ bool FailsafeBase::actionAllowsUserTakeover(Action action) const
 	return action == Action::Hold || action == Action::RTL || action == Action::Land || action == Action::Descend;
 }
 
+/**
+ * @brief 如果需要,删除延迟
+ *
+ * @param state
+ * @param status_flags
+ */
 void FailsafeBase::clearDelayIfNeeded(const State &state,
 				      const failsafe_flags_s &status_flags)
 {
