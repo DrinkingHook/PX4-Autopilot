@@ -2432,6 +2432,10 @@ bool Commander::handleModeIntentionAndFailsafe()
 	// 翻译：如果失败安全处于活动状态，我们必须将请求传递，因为它可能会导致用户捕获。
 	bool mode_change_requested = _user_mode_intention.getHadModeChangeAndClear();
 
+	/**
+	 * @brief 我们从 _user_mode_intention.getHadModeChangeAndClear()函数中获取用户是否更改了预期模式,如果更改了那么需要告诉故障保护以更新
+	 *
+	 */
 	uint8_t updated_user_intented_mode = _failsafe.update(hrt_absolute_time(), state, mode_change_requested,
 					     _failsafe_user_override_request,
 					     _failsafe_flags);
@@ -2472,6 +2476,7 @@ bool Commander::handleModeIntentionAndFailsafe()
 		_vehicle_status.nav_state_timestamp = hrt_absolute_time();
 	}
 
+	// 更新活动配置覆盖覆盖配置
 	_mode_management.updateActiveConfigOverrides(_vehicle_status.nav_state, _config_overrides);
 
 	// Apply failsafe deferring & get the current state

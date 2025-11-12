@@ -557,6 +557,7 @@ void ModeManagement::updateActiveConfigOverrides(uint8_t nav_state, config_overr
 	}
 
 	// Apply the overrides from executors on top (executors take precedence)
+	// 翻译：首先应用执行器中的覆盖设置（执行器优先）.
 	const int executor_in_charge = modeExecutorInCharge();
 
 	if (_mode_executors.valid(executor_in_charge)) {
@@ -573,6 +574,7 @@ void ModeManagement::updateActiveConfigOverrides(uint8_t nav_state, config_overr
 	}
 
 	// Publish if changed or at low rate
+	// 翻译：如果改变或者发布频率过低,那么发布
 	current_overrides.timestamp = overrides_in_out.timestamp;
 
 	if (memcmp(&overrides_in_out, &current_overrides, sizeof(current_overrides)) != 0

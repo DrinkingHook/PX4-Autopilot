@@ -64,12 +64,21 @@ uint8_t FailsafeBase::update(const hrt_abstime &time_us, const State &state, boo
 		_user_takeover_active = false;
 	}
 
+	// 当上次的用户期望模式和现在的期望模式不同或 user_intended_mode_updated 本身就为True时user_intended_mode_updated为True
 	user_intended_mode_updated |= _last_user_intended_mode != state.user_intended_mode;
 
+	// 切换用户期望模式或者用户正在接管则移除action
 	if (user_intended_mode_updated || _user_takeover_active) {
 		removeActions(ClearCondition::OnModeChangeOrDisarm);
 	}
 
+	/**
+	 * @brief
+	 * @param _defer_failsafes 延迟标志位
+	 * @param _failsafe_defer_started 延迟开始时间,如不为0则表示已经开始
+	 * @param _defer_timeout 延迟时间
+	 */
+	// 判断故障保护延迟时间是否已经结束
 	if (_defer_failsafes && _failsafe_defer_started != 0 && _defer_timeout > 0
 	    && time_us > _failsafe_defer_started + _defer_timeout) {
 		_defer_failsafes = false;
@@ -79,10 +88,12 @@ uint8_t FailsafeBase::update(const hrt_abstime &time_us, const State &state, boo
 		updateDelay(time_us - _last_update);
 	}
 
+	// 检查状态和模式 这个是通过现在状态和故障标志添加故障保护action
 	checkStateAndMode(time_us, state, status_flags);
 	removeNonActivatedActions();
 	clearDelayIfNeeded(state, status_flags);
 
+	// 根据状态选择合适的action以应对故障
 	SelectedActionState action_state{};
 	getSelectedAction(state, status_flags, user_intended_mode_updated, rc_sticks_takeover_request, action_state);
 
@@ -92,6 +103,7 @@ uint8_t FailsafeBase::update(const hrt_abstime &time_us, const State &state, boo
 	 */
 
 	updateStartDelay(time_us - _last_update, action_state.delayed_action != Action::None);
+	// 更新故障保护延迟状态
 	updateFailsafeDeferState(time_us, action_state.failsafe_deferred);
 
 	// Notify user if the action is worse than before, or a new action got added
@@ -845,6 +857,7 @@ bool FailsafeBase::modeCanRun(const failsafe_flags_s &status_flags, uint8_t mode
 		((status_flags.mode_req_other & mode_mask) == 0);
 }
 
+// 延迟所有可以延迟的故障保护机制，避免在紧急情况下触发故障保护
 bool FailsafeBase::deferFailsafes(bool enabled, int timeout_s)
 {
 	if (enabled && _selected_action > Action::Warn) {
