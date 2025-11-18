@@ -90,7 +90,7 @@ public:
 	/**
 	 * @brief Get the Had Mode Change And Clear object
 	 *	  获取已更改模式并清除
-	 * @param _had_mode_change 在函数UserModeIntention::change()中置为True
+	 * @param _had_mode_change 在函数 UserModeIntention::change()中置为True
 	 * @return true
 	 * @return false
 	 */

@@ -1932,7 +1932,7 @@ void Commander::run()
 
 		const hrt_abstime now = hrt_absolute_time();
 
-		// 导航状态或故障保护已更改标志位
+		// (导航状态 or 故障保护)标志位已更改
 		const bool nav_state_or_failsafe_changed = handleModeIntentionAndFailsafe();
 
 		// Run arming checks @ 10Hz

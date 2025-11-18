@@ -274,6 +274,18 @@ void FailureDetector::updateMotorStatus(const vehicle_status_s &vehicle_status, 
 	// Then check
 
 	// Only check while armed
+
+	/**
+	 * @brief 翻译
+	 * 需要检查的内容：
+	 * 1. 电调遥测数据完全消失 -> 电调损坏或该电调断电
+	 * 2. 电调故障，例如过压、过流等。但例如，DShot 驱动程序没有填充 'esc_report.failures' 字段
+	 * 3. 电机电流过低。将实际电机电流与参数的预期值进行比较
+	 * -- 电调电压实际上意义不大，并且高度依赖于设置
+	 * 首先等待包含所需字段的电调遥测数据。在此之前，不要检查此电调
+	 * 然后进行检查
+	 * 仅在解锁状态下检查
+	 */
 	if (vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_ARMED) {
 		const hrt_abstime now = hrt_absolute_time();
 		const int limited_esc_count = math::min(esc_status.esc_count, esc_status_s::CONNECTED_ESC_MAX);
@@ -282,11 +294,13 @@ void FailureDetector::updateMotorStatus(const vehicle_status_s &vehicle_status, 
 		_actuator_motors_sub.copy(&actuator_motors);
 
 		// Check individual ESC reports
+		// 翻译：检查各个电调报告
 		for (int esc_status_idx = 0; esc_status_idx < limited_esc_count; esc_status_idx++) {
 
 			const esc_report_s &cur_esc_report = esc_status.esc[esc_status_idx];
 
 			// Map the esc status index to the actuator function index
+			// 翻译：将电调状态索引映射到执行器功能索引
 			const unsigned i_esc = cur_esc_report.actuator_function - actuator_motors_s::ACTUATOR_FUNCTION_MOTOR1;
 
 			if (i_esc >= actuator_motors_s::NUM_CONTROLS) {
@@ -294,19 +308,26 @@ void FailureDetector::updateMotorStatus(const vehicle_status_s &vehicle_status, 
 			}
 
 			// Check if ESC telemetry was available and valid at some point. This is a prerequisite for the failure detection.
+			// 翻译：检查电调遥测数据是否曾经可用且有效。这是故障检测的前提条件。
+			// 如果全有效那么 _motor_failure_esc_valid_current_mask 最终的值为 0x11111111
+			// !(0x00000001 & 0x00000001) = 0 ; !(0x00000001 & 0x00000010) = 1 ;
 			if (!(_motor_failure_esc_valid_current_mask & (1 << i_esc)) && cur_esc_report.esc_current > 0.0f) {
 				_motor_failure_esc_valid_current_mask |= (1 << i_esc);
 			}
 
 			// Check for telemetry timeout
+			// 翻译：检查遥测超时
 			const bool esc_timed_out = now > cur_esc_report.timestamp + 300_ms;
 			const bool esc_was_valid = _motor_failure_esc_valid_current_mask & (1 << i_esc);
+			// 当前电机电调超时标志位
 			const bool esc_timeout_currently_flagged = _motor_failure_esc_timed_out_mask & (1 << i_esc);
 
+			// 如果esc有效但是已经超时且之前没有标志位，那么设置标志位
 			if (esc_was_valid && esc_timed_out && !esc_timeout_currently_flagged) {
 				// Set flag
 				_motor_failure_esc_timed_out_mask |= (1 << i_esc);
 
+			// 如果esc没有超时但是之前有标志位，那么重置标志位
 			} else if (!esc_timed_out && esc_timeout_currently_flagged) {
 				// Reset flag
 				_motor_failure_esc_timed_out_mask &= ~(1 << i_esc);
@@ -324,6 +345,12 @@ void FailureDetector::updateMotorStatus(const vehicle_status_s &vehicle_status, 
 					esc_throttle = fabsf(actuator_motors.control[i_esc]);
 				}
 
+				/**
+				 * @brief 当油门高于 FD_ACT_MOT_THR 设定惨诉且电流低于 FD_ACT_MOT_C2T 设定阈值持续超过 FD_ACT_MOT_TOUT 时间时，判定为电机故障
+				 * @param FD_ACT_MOT_THR 电机故障油门阈值(仅在油门值高于此阈值时触发)
+				 * @param FD_ACT_MOT_C2T 电机故障电流阈值(电流值低于此阈值时触发)
+				 *
+				 */
 				const bool throttle_above_threshold = esc_throttle > _param_fd_act_mot_thr.get();
 				const bool current_too_low = cur_esc_report.esc_current < esc_throttle *
 							     _param_fd_act_mot_c2t.get();
@@ -343,18 +370,21 @@ void FailureDetector::updateMotorStatus(const vehicle_status_s &vehicle_status, 
 				    && now > (_motor_failure_undercurrent_start_time[i_esc] + (_param_fd_act_mot_tout.get() * 1_ms))
 				    && (_motor_failure_esc_under_current_mask & (1 << i_esc)) == 0) {
 					// Set flag
+					// 翻译：设置故障电机标志位
 					_motor_failure_esc_under_current_mask |= (1 << i_esc);
 
 				} // else: this flag is never cleared, as the motor is stopped, so throttle < threshold
 			}
 		}
 
+		// esc超时故障 or 电流过低故障
 		bool critical_esc_failure = (_motor_failure_esc_timed_out_mask != 0 || _motor_failure_esc_under_current_mask != 0);
 
 		if (critical_esc_failure && !(_failure_detector_status.flags.motor)) {
 			// Add motor failure flag to bitfield
 			_failure_detector_status.flags.motor = true;
 
+		// 如果没有故障且之前有故障标志位，那么重置故障标志位
 		} else if (!critical_esc_failure && _failure_detector_status.flags.motor) {
 			// Reset motor failure flag
 			_failure_detector_status.flags.motor = false;
