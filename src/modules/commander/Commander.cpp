@@ -2984,6 +2984,7 @@ void Commander::dataLinkCheck()
 void Commander::battery_status_check()
 {
 	// Handle shutdown request from emergency battery action
+	// 翻译：处理紧急断电时的关机请求
 	if (_battery_warning != _failsafe_flags.battery_warning) {
 
 		if (_failsafe_flags.battery_warning == battery_status_s::WARNING_EMERGENCY) {

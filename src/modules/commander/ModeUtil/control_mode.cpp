@@ -166,7 +166,9 @@ void getVehicleControlMode(uint8_t nav_state, uint8_t vehicle_type,
 	case vehicle_status_s::NAVIGATION_STATE_AUTO_FOLLOW_TARGET:
 
 	// Follow Target supports RC adjustment, so disable auto control mode to disable
+	// 翻译：跟随目标功能支持遥控器调节，因此禁用自动控制模式可防止
 	// the Flight Task from exiting itself when RC stick movement is detected.
+	// 翻译：检测到遥控器摇杆移动时飞行任务自动退出。
 	case vehicle_status_s::NAVIGATION_STATE_ORBIT:
 		vehicle_control_mode.flag_control_manual_enabled = false;
 		vehicle_control_mode.flag_control_auto_enabled = false;

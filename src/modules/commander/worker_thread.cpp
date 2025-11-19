@@ -71,6 +71,7 @@ void WorkerThread::startTask(Request request)
 	_request = request;
 
 	/* initialize low priority thread */
+	// 翻译：初始化低优先级线程
 	pthread_attr_t low_prio_attr;
 	pthread_attr_init(&low_prio_attr);
 	pthread_attr_setstacksize(&low_prio_attr, PX4_STACK_ADJUSTED(4804));

@@ -129,6 +129,7 @@ void
 Loiter::reposition()
 {
 	// we can't reposition if we are not armed yet
+	// 翻译：如果我们还没有解锁那么就无法重定位
 	if (_navigator->get_vstatus()->arming_state != vehicle_status_s::ARMING_STATE_ARMED) {
 		return;
 	}
@@ -139,11 +140,14 @@ Loiter::reposition()
 		// set loiter position based on reposition command
 
 		// convert mission item to current setpoint
+		// 翻译：将任务点转换为当前的设定点
+		// 存储当前位置为上一次目标位置点
 		struct position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
 		pos_sp_triplet->previous.yaw = _navigator->get_local_position()->heading;
 		pos_sp_triplet->previous.lat = _navigator->get_global_position()->lat;
 		pos_sp_triplet->previous.lon = _navigator->get_global_position()->lon;
 		pos_sp_triplet->previous.alt = _navigator->get_global_position()->alt;
+		// 将重定位目标点复制到目标位置点
 		memcpy(&pos_sp_triplet->current, &rep->current, sizeof(rep->current));
 		pos_sp_triplet->next.valid = false;
 

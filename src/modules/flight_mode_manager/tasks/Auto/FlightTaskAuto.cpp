@@ -98,6 +98,7 @@ bool FlightTaskAuto::updateInitialize()
 	_sub_triplet_setpoint.update();
 
 	// require valid reference and valid target
+	// 需要有效的全球参考和有效的目标
 	ret = ret && _evaluateGlobalReference() && _evaluateTriplets();
 	// require valid position
 	ret = ret && _position.isAllFinite() && _velocity.isAllFinite();
@@ -382,6 +383,7 @@ bool FlightTaskAuto::_evaluateTriplets()
 	_type = (WaypointType)_sub_triplet_setpoint.get().current.type;
 
 	// Prioritize cruise speed from the triplet when it's valid and more recent than the previously commanded cruise speed
+	// 翻译：当三元组中的巡航速度有效且比之前指令的巡航速度更新时，优先使用该巡航速度。
 	const float cruise_speed_from_triplet = _sub_triplet_setpoint.get().current.cruising_speed;
 
 	if (PX4_ISFINITE(cruise_speed_from_triplet)
@@ -395,9 +397,11 @@ bool FlightTaskAuto::_evaluateTriplets()
 	}
 
 	// Ensure planned cruise speed is below the maximum such that the smooth trajectory doesn't get capped
+	// 翻译：确保计划巡航速度低于最大值，以避免平滑轨迹受限
 	_mc_cruise_speed = math::min(_mc_cruise_speed, _param_mpc_xy_vel_max.get());
 
 	// Temporary target variable where we save the local reprojection of the latest navigator current triplet.
+	// 翻译：临时目标变量，用于保存最新导航器当前三元组的本地投影。
 	Vector3f tmp_target;
 
 	if (!PX4_ISFINITE(_sub_triplet_setpoint.get().current.lat)
@@ -414,9 +418,11 @@ bool FlightTaskAuto::_evaluateTriplets()
 
 	} else {
 		// reset locked position if current lon and lat are valid
+		// 翻译：如果当前经度和纬度有效，则重置锁定位置
 		_lock_position_xy.setAll(NAN);
 
 		// Convert from global to local frame.
+		// 翻译：将全局坐标系转换为本地坐标系
 		_reference_position.project(_sub_triplet_setpoint.get().current.lat, _sub_triplet_setpoint.get().current.lon,
 					    tmp_target(0), tmp_target(1));
 	}

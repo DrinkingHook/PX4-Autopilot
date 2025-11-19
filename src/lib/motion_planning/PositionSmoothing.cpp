@@ -175,6 +175,9 @@ const Vector3f PositionSmoothing::_getL1Point(const Vector3f &position, const Ve
 	return closest_pt + alongtrack_error * u_prev_to_target;
 }
 
+/**
+ * @brief 生成速度设定点
+ */
 const Vector3f PositionSmoothing::_generateVelocitySetpoint(const Vector3f &position, const Vector3f(&waypoints)[3],
 		bool is_single_waypoint,
 		const Vector3f &feedforward_velocity_setpoint)
@@ -183,6 +186,10 @@ const Vector3f PositionSmoothing::_generateVelocitySetpoint(const Vector3f &posi
 	// If a velocity is specified, that is used as a feedforward to track the position setpoint
 	// (ie. it assumes the position setpoint is moving at the specified velocity)
 	// If the position setpoints are set to NAN, the values in the velocity setpoints are used as velocity targets: nothing to do here.
+	// 翻译：接口：有效的位置设定点使用保守运动约束生成速度目标。
+	// 如果指定了速度，则将其用作前馈来跟踪位置设定点。
+	// （即，它假设位置设定点以指定的速度移动）
+	// 如果位置设定点设置为 NAN，则速度设定点中的值用作速度目标：此处无需执行任何操作。
 	const Vector3f &target = waypoints[1];
 	const bool xy_target_valid = Vector2f(target).isAllFinite();
 	const bool z_target_valid = PX4_ISFINITE(target(2));
@@ -191,6 +198,7 @@ const Vector3f PositionSmoothing::_generateVelocitySetpoint(const Vector3f &posi
 
 	if (xy_target_valid && z_target_valid) {
 		// Use 3D position setpoint to generate a 3D velocity setpoint
+		// 翻译：使用三维位置设定点生成三维速度设定点
 		Vector3f pos_traj(_trajectory[0].getCurrentPosition(),
 				  _trajectory[1].getCurrentPosition(),
 				  _trajectory[2].getCurrentPosition());

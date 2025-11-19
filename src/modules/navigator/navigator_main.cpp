@@ -248,15 +248,15 @@ void Navigator::run()
 		while (_wait_for_vehicle_status_timestamp == 0 && _vehicle_command_sub.updated()
 		       && (vehicle_command_updates < vehicle_command_s::ORB_QUEUE_LENGTH)) {
 			vehicle_command_updates++;
-			// 获取缓存的generation值
+			// 获取缓存的 generation 值
 			const unsigned last_generation = _vehicle_command_sub.get_last_generation();
 
 			vehicle_command_s cmd{};
 			_vehicle_command_sub.copy(&cmd);
 
-                        // 打印命令数量丢失情况
-                        /**
-                         * @brief 发布者每发布一次generation自增一次，在_vehicle_command_sub.copy(&cmd)更新为最新的数据后判断是否丢失数据
+                        /** 
+                         * @brief 打印命令数量丢失情况
+                         * 	  发布者每发布一次 generation 自增一次，在_vehicle_command_sub.copy(&cmd)更新为最新的数据后判断是否丢失数据
                          *
                          */
 			if (_vehicle_command_sub.get_last_generation() != last_generation + 1) {
@@ -267,10 +267,16 @@ void Navigator::run()
 			if (cmd.command == vehicle_command_s::VEHICLE_CMD_DO_GO_AROUND) {
 
 				// DO_GO_AROUND is currently handled by the position controller (unacknowledged)
-				// DO_GO_AROUND 是目前由位置控制器处理（未确认）
+				// 翻译：DO_GO_AROUND 是目前由位置控制器处理（未确认）
 				// TODO: move DO_GO_AROUND handling to navigator
 				publish_vehicle_command_ack(cmd, vehicle_command_ack_s::VEHICLE_CMD_RESULT_ACCEPTED);
 
+			/**
+                        * @brief 重新定位的几种情况:
+                        * 	     1.任务暂停时临时悬停的定位点 
+                        * 	     2.单一定位点goto 
+                        * 	     3.机载电脑发送goto命令
+                        */
 			} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_DO_REPOSITION
 				   && _vstatus.arming_state == vehicle_status_s::ARMING_STATE_ARMED) {
 				// only update the reposition setpoint if armed, as it otherwise won't get executed until the vehicle switches to loiter,
@@ -278,10 +284,6 @@ void Navigator::run()
 				// 翻译：只有在武装状态下才更新重新定位设定点，否则在车辆切换到闲逛状态之前不会执行，
 				// 这可能会导致危险和意外的行为（参见 loiter.cpp，其中也有 if(armed) 功能）
 
-                                /**
-                                 * @brief 重新定位 1.任务暂停时临时悬停的定位点 2.单一定位点goto 3.机载电脑发送goto命令
-                                 *
-                                 */
 				// Wait for vehicle_status before handling the next command, otherwise the setpoint could be overwritten
 				// 翻译：处理下一条命令前等待车辆状态，否则设定点可能会被覆盖
 				_wait_for_vehicle_status_timestamp = hrt_absolute_time();
@@ -292,7 +294,7 @@ void Navigator::run()
                                  * lat：经度
                                  * lon：纬度
 				 * alt：高度
-                                 * @brief 获取cmd参数,如果参数异常则使用global_position
+                                 * @brief 获取cmd参数为地理围栏检测做准备,如果参数异常则使用 global_position 替代
                                  */
 				if (PX4_ISFINITE(cmd.param5) && PX4_ISFINITE(cmd.param6)) {
 					position_setpoint.lat = cmd.param5;
@@ -476,6 +478,7 @@ void Navigator::run()
 				// 翻译：等待车辆状态后再处理下一条命令，否则设定点可能会被覆盖
 				_wait_for_vehicle_status_timestamp = hrt_absolute_time();
 
+				// 地址围栏判断
 				if (geofence_allows_position(position_setpoint)) {
 					position_setpoint_triplet_s *rep = get_reposition_triplet();
 					position_setpoint_triplet_s *curr = get_position_setpoint_triplet();
