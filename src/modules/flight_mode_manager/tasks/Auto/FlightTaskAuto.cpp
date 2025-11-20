@@ -50,6 +50,7 @@ bool FlightTaskAuto::activate(const trajectory_setpoint_s &last_setpoint)
 	_yawspeed_setpoint = 0.0f;
 
 	// Set setpoints equal current state.
+	// 将设定值设置为当前车辆状态
 	_velocity_setpoint = _velocity;
 	_position_setpoint = _position;
 
@@ -187,6 +188,7 @@ bool FlightTaskAuto::update()
 	_velocity_setpoint = smoothed_setpoints.velocity;
 	_position_setpoint = smoothed_setpoints.position;
 
+	// 未平滑的速度设定点
 	_unsmoothed_velocity_setpoint = smoothed_setpoints.unsmoothed_velocity;
 	_want_takeoff = smoothed_setpoints.unsmoothed_velocity(2) < -0.3f;
 
@@ -802,60 +804,96 @@ bool FlightTaskAuto::isTargetModified() const
 	return xy_modified || z_modified;
 }
 
+/**
+ * @berif  更新轨迹和约束
+ */
 void FlightTaskAuto::_updateTrajConstraints()
 {
 	// update params of the position smoothing
+	// 翻译：更新位置平滑参数
 	_position_smoothing.setMaxAllowedHorizontalError(_param_mpc_xy_err_max.get());
+	// 设置垂直接受半径
 	_position_smoothing.setVerticalAcceptanceRadius(_param_nav_mc_alt_rad.get());
+	// 设置巡航速度
 	_position_smoothing.setCruiseSpeed(_mc_cruise_speed);
+	// 设置水平轨迹增益
 	_position_smoothing.setHorizontalTrajectoryGain(_param_mpc_xy_traj_p.get());
+	// 设置目标接受半径
 	_position_smoothing.setTargetAcceptanceRadius(_target_acceptance_radius);
 
 	// Update the constraints of the trajectories
+	// 翻译：更新轨迹约束
 	_position_smoothing.setMaxAccelerationXY(_param_mpc_acc_hor.get()); // TODO : Should be computed using heading
 	_position_smoothing.setMaxVelocityXY(_param_mpc_xy_vel_max.get());
 	_position_smoothing.setMaxJerk(_param_mpc_jerk_auto.get()); // TODO : Should be computed using heading
 
+	// 判断紧急制动是否激活
 	if (_is_emergency_braking_active) {
 		// When initializing with large velocity, allow 1g of
 		// acceleration in 1s on all axes for fast braking
+		// 翻译：当初始速度较大时，允许所有轴在 1 秒内产生 1g 的加速度，以实现快速制动
 		_position_smoothing.setMaxAcceleration({CONSTANTS_ONE_G, CONSTANTS_ONE_G, CONSTANTS_ONE_G});
 		_position_smoothing.setMaxJerk(CONSTANTS_ONE_G);
 
 		// If the current velocity is beyond the usual constraints, tell
 		// the controller to exceptionally increase its saturations to avoid
 		// cutting out the feedforward
+		// 翻译：如果当前速度超出通常的限制范围，则指示控制器异常提高其饱和度，以避免切断前馈。
+
+		// 车辆约束：
+		//  1.垂直向下的最大速度
+		//  2.垂直向上的最大速度
 		_constraints.speed_down = math::max(fabsf(_position_smoothing.getCurrentVelocityZ()), _constraints.speed_down);
 		_constraints.speed_up = math::max(fabsf(_position_smoothing.getCurrentVelocityZ()), _constraints.speed_up);
 
+	// 如果未平滑的设定点速度小于0(PX4 使用 NED（北东地）坐标系，Z 轴负方向表示向上。所以 < 0 意味着飞行器想要向上爬升)
 	} else if (_unsmoothed_velocity_setpoint(2) < 0.f) { // up
+		// 从参数获取最大的z轴加速度
 		float z_accel_constraint = _param_mpc_acc_up_max.get();
+		// 从参数获取自动模式下的最大的z轴速度
 		float z_vel_constraint = _param_mpc_z_v_auto_up.get();
 
 		// The constraints are broken because they are used as hard limits by the position controller, so put this here
 		// until the constraints don't do things like cause controller integrators to saturate. Once the controller
 		// doesn't use z speed constraints, this can go in _prepareTakeoffSetpoints(). Accel limit is to
 		// emulate the motor ramp (also done in the controller) so that the controller can actually track the setpoint.
+		// 翻译：由于位置控制器将这些约束用作硬性限制，因此这些约束被打破。所以，在约束不再导致控制器积分器饱和等问题之前，请将其放在此处。
+		// 一旦控制器不再使用 Z 方向速度约束，则可以将其放入 _prepareTakeoffSetpoints() 函数中。
+		// 加速度限制用于模拟电机斜坡（也在控制器中完成），以便控制器能够实际跟踪设定点。
+		
+		// 如果处于起飞阶段并且离地距离小于设定值
 		if (_type == WaypointType::takeoff &&  _dist_to_ground < _param_mpc_land_alt1.get()) {
+			// 强制使用起飞阶段专用参数
 			z_vel_constraint = _param_mpc_tko_speed.get();
+			// 这里按照固有思维是使用较大的加速度值，实际则相反因采用较小的加速度值。防止超过了电机的物理极限
 			z_accel_constraint = math::min(z_accel_constraint, _param_mpc_tko_speed.get() / _param_mpc_tko_ramp_t.get());
 
 			// Keep the altitude setpoint at the current altitude
 			// to avoid having it going down into the ground during
 			// the initial ramp as the velocity does not start at 0
+			
+			// 作用：强制将轨迹平滑器的当前 Z 轴位置设定为飞行器当前的实际高度 (_position(2))。
+			// 原因：在起飞初始阶段，速度不是瞬间建立的。如果轨迹生成器认为应该已经在上升，但电机还在加速（Ramp up），实际位置可能滞后。
+			// 如果不重置，轨迹误差会导致控制器试图先向下调节再向上，或者产生剧烈的积分累积。
+			// 这行代码确保轨迹是从当前实际位置开始规划向上的，防止起飞瞬间“掉下去”撞地。
+			// 这个轨迹生成器是基于时间累计积分的，不实时参考实际物理参数。因为实际物理传感器是有噪声的，而轨迹生成本就是一个理想化的
 			_position_smoothing.forceSetPosition({NAN, NAN, _position(2)});
 		}
 
 		_position_smoothing.setMaxVelocityZ(z_vel_constraint);
 		_position_smoothing.setMaxAccelerationZ(z_accel_constraint);
 
+	// 大于0 则表示机体下降
 	} else { // down
+		// 设定最大的z轴加速度(来自参数：最大下降加速度)
 		_position_smoothing.setMaxAccelerationZ(_param_mpc_acc_down_max.get());
+		// 设定最大的z轴速度(来自参数：自动模式下的下降降速度)
 		_position_smoothing.setMaxVelocityZ(_param_mpc_z_v_auto_dn.get());
 	}
 
 	// Stretch the constraints of the velocity controller to leave some room for an additional
 	// correction required by the altitude/vertical position controller
+	// 翻译：放宽速度控制器的约束条件，为高度/垂直位置控制器所需的额外修正留出一些空间。
 	_constraints.speed_down = math::max(_constraints.speed_down, 1.2f * _param_mpc_z_v_auto_dn.get());;
 	_constraints.speed_up = math::max(_constraints.speed_up, 1.2f * _param_mpc_z_v_auto_up.get());;
 }

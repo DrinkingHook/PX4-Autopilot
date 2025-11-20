@@ -148,6 +148,7 @@ const Vector3f PositionSmoothing::_getCrossingPoint(const Vector3f &position, co
 	}
 
 	// Get the crossing point using L1-style guidance
+	// 翻译：使用 L1 级导航获取交叉点
 	return _getL1Point(position, waypoints);
 }
 
@@ -202,6 +203,7 @@ const Vector3f PositionSmoothing::_generateVelocitySetpoint(const Vector3f &posi
 		Vector3f pos_traj(_trajectory[0].getCurrentPosition(),
 				  _trajectory[1].getCurrentPosition(),
 				  _trajectory[2].getCurrentPosition());
+		// 获取交叉点
 		const Vector3f crossing_point = is_single_waypoint ? target : _getCrossingPoint(position, waypoints);
 		const Vector3f u_pos_traj_to_dest{(crossing_point - pos_traj).unit_or_zero()};
 

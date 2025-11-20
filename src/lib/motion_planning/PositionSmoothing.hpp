@@ -188,6 +188,7 @@ public:
 
 	/**
 	 * @return float Current trajectory velocity in Z
+	 * 翻译：返回当前轨迹速度(Z方向)
 	 */
 	inline float getCurrentVelocityZ() const
 	{
