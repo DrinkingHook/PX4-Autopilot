@@ -60,48 +60,64 @@ bool FlightTaskAuto::activate(const trajectory_setpoint_s &last_setpoint)
 
 	for (int i = 0; i < 3; i++) {
 		// If the position setpoint is unknown, set to the current position
+		// 翻译：如果设定点的位置是未知的，则设置为当前的位置
 		if (!PX4_ISFINITE(pos_prev(i))) { pos_prev(i) = _position(i); }
 
 		// If the velocity setpoint is unknown, set to the current velocity
+		// 翻译：如果设定点的速度是位置的，则设置为当前的速度
 		if (!PX4_ISFINITE(vel_prev(i))) { vel_prev(i) = _velocity(i); }
 
 		// No acceleration estimate available, set to zero if the setpoint is NAN
+		// 翻译：没有可用的加速度估计值，如果设定值为 NaN，则设置为零。
 		if (!PX4_ISFINITE(accel_prev(i))) { accel_prev(i) = 0.f; }
 	}
 
+	// 位置平滑器状态重置(使用现传入的参数)
 	_position_smoothing.reset(accel_prev, vel_prev, pos_prev);
 
+	// 上一次的yaw设定点
 	_yaw_setpoint_previous = last_setpoint.yaw;
+	// 航向平滑器状态重置(使用现传入的参数)
 	_heading_smoothing.reset(PX4_ISFINITE(last_setpoint.yaw) ? last_setpoint.yaw : _yaw,
 				 PX4_ISFINITE(last_setpoint.yawspeed) ? last_setpoint.yawspeed : 0.f);
 
+	// 更新轨迹和约束
 	_updateTrajConstraints();
+	// 关闭紧急制动激活
 	_is_emergency_braking_active = false;
+	// 上次巡航速度超限的时间
 	_time_last_cruise_speed_override = 0;
 
 	return ret;
 }
 
+// 重激活
 void FlightTaskAuto::reActivate()
 {
 	FlightTask::reActivate();
 
 	// On ground, reset acceleration and velocity to zero
+	// 在地面上，重置加速度,速度为0
 	_position_smoothing.reset({0.f, 0.f, 0.f}, {0.f, 0.f, 0.7f}, _position);
 }
 
+// 更新初始化
 bool FlightTaskAuto::updateInitialize()
 {
 	bool ret = FlightTask::updateInitialize();
 
+	// home位置点更新
 	_sub_home_position.update();
+	// 车辆状态更新
 	_sub_vehicle_status.update();
+	// 更新目标设定点集合(来自 navigator 模块.其他文件都是sub订阅）
 	_sub_triplet_setpoint.update();
 
 	// require valid reference and valid target
 	// 需要有效的全球参考和有效的目标
 	ret = ret && _evaluateGlobalReference() && _evaluateTriplets();
 	// require valid position
+	// 需要有效的位置和速度
 	ret = ret && _position.isAllFinite() && _velocity.isAllFinite();
 
 	return ret;
@@ -111,17 +127,23 @@ bool FlightTaskAuto::update()
 {
 	bool ret = FlightTask::update();
 	// always reset constraints because they might change depending on the type
+	// 翻译：始终重置约束，因为他们可能会根据类型而变化
 	_setDefaultConstraints();
 
 	// The only time a thrust set-point is sent out is during
 	// idle. Hence, reset thrust set-point to NAN in case the
 	// vehicle exits idle.
+	// 翻译：推力设定值仅在怠速时发送。因此，如果车辆退出怠速状态，则将推力设定值重置为 NAN(NAN的意义是使其自动选择合适的参数)。
+	// 本人的解释：可以在下方的switch 语句中看到若车辆处于idle阶段，那么 position velocity xy轴的加速度分别设置为nan和0,但是z轴为100。
+	// 因为px4采用的NED坐标系，若值为正数，则表示向下的一个加速度。目的就是防止车辆在地面乱动或起飞。
+	// 并且不用担心车辆电机会停止转动，因为若处于解锁状态会有最小的输出值。
 	if (_type_previous == WaypointType::idle) {
 		_acceleration_setpoint.setNaN();
 	}
 
 	// during mission and reposition, raise the landing gears but only
 	// if altitude is high enough
+	// 翻译：在任务和重定位期间，收起起落架，但仅限于高度足够高时
 	if (_highEnoughForLandingGear()) {
 		_gear.landing_gear = landing_gear_s::GEAR_UP;
 	}
@@ -129,12 +151,15 @@ bool FlightTaskAuto::update()
 	switch (_type) {
 	case WaypointType::idle:
 		// Send zero thrust setpoint
+		// 翻译：发送0推力设定点
 		_position_setpoint.setNaN(); // Don't require any position/velocity setpoints
 		_velocity_setpoint.setNaN();
+		// 施加较大的向下加速度以确保没有推力
 		_acceleration_setpoint = Vector3f(0.f, 0.f, 100.f); // High downwards acceleration to make sure there's no thrust
 		break;
 
 	case WaypointType::land:
+		// 准备降落设定点
 		_prepareLandSetpoints();
 		break;
 
@@ -152,15 +177,18 @@ bool FlightTaskAuto::update()
 		}
 
 	// FALLTHROUGH
+	// 翻译：失败循环
 	case WaypointType::takeoff:
 	case WaypointType::position:
 	default:
 		// Simple waypoint navigation: go to xyz target, with standard limitations
+		// 翻译：简单的航点导航：前往 xyz 目标，具有标准限制。
 		_position_setpoint = _target;
 		_velocity_setpoint.setNaN();
 		break;
 	}
 
+	// 检查紧急制动
 	_checkEmergencyBraking();
 	Vector3f waypoints[] = {_prev_wp, _position_setpoint, _next_wp};
 
@@ -203,6 +231,7 @@ bool FlightTaskAuto::update()
 	// update previous type
 	_type_previous = _type;
 
+	// yaw平滑
 	_smoothYaw();
 
 	_constraints.want_takeoff = _checkTakeoff();
@@ -216,9 +245,11 @@ void FlightTaskAuto::overrideCruiseSpeed(const float cruise_speed_m_s)
 	_time_last_cruise_speed_override = hrt_absolute_time();
 }
 
+// rc辅助修改yaw航向
 void FlightTaskAuto::rcHelpModifyYaw(float &yaw_sp)
 {
 	// Only set a yawrate setpoint if weather vane is not active or the yaw stick is out of its dead-zone
+	// 翻译：仅当风向标未激活或偏航杆超出其死区时才设置偏航率设定点
 	if (!_weathervane.isActive() || fabsf(_sticks.getYawExpo()) > FLT_EPSILON) {
 		_stick_yaw.generateYawSetpoint(_yawspeed_setpoint, yaw_sp, _sticks.getYawExpo(), _yaw, _deltatime);
 
@@ -326,6 +357,7 @@ void FlightTaskAuto::_smoothYaw()
 		_yawspeed_setpoint = _heading_smoothing.getSmoothedHeadingRate();
 
 		// The yaw setpoint is aligned when it is within tolerance
+		// 翻译：当偏航设定点在容差范围内时，它就对齐了
 		_yaw_sp_aligned = fabsf(matrix::wrap_pi(yaw_sp_unsmoothed - _yaw_setpoint)) < math::radians(_param_mis_yaw_err.get());
 
 	} else {
@@ -336,10 +368,12 @@ void FlightTaskAuto::_smoothYaw()
 
 	if (PX4_ISFINITE(_yawspeed_setpoint)) {
 		// The yaw setpoint is aligned when its rate is not saturated
+		// 翻译：当偏航设定点速率没有饱和时，它就对齐了
 		_yaw_sp_aligned = _yaw_sp_aligned && (fabsf(_yawspeed_setpoint) < yawrate_max);
 	}
 }
 
+// 评估三元组
 bool FlightTaskAuto::_evaluateTriplets()
 {
 	// TODO: fix the issues mentioned below
@@ -395,6 +429,7 @@ bool FlightTaskAuto::_evaluateTriplets()
 
 	if (!PX4_ISFINITE(_mc_cruise_speed) || (_mc_cruise_speed < FLT_EPSILON)) {
 		// If no speed is planned use the default cruise speed as limit
+		// 翻译：如果未计划设定速度，则使用默认巡航速度作为限制速度。
 		_mc_cruise_speed = _param_mpc_xy_cruise.get();
 	}
 
@@ -406,6 +441,7 @@ bool FlightTaskAuto::_evaluateTriplets()
 	// 翻译：临时目标变量，用于保存最新导航器当前三元组的本地投影。
 	Vector3f tmp_target;
 
+	// 如果 _sub_triplet_setpoint 的当前的lat和lon都无效，则使用当前位置
 	if (!PX4_ISFINITE(_sub_triplet_setpoint.get().current.lat)
 	    || !PX4_ISFINITE(_sub_triplet_setpoint.get().current.lon)) {
 		// No position provided in xy. Lock position
@@ -429,12 +465,15 @@ bool FlightTaskAuto::_evaluateTriplets()
 					    tmp_target(0), tmp_target(1));
 	}
 
+	// _sub_triplet_setpoint.get().current.alt 表示绝对海平面高度(AMSL). _reference_altitude 表示离地高度.
 	tmp_target(2) = -(_sub_triplet_setpoint.get().current.alt - _reference_altitude);
 
 	// Check if anything has changed. We do that by comparing the temporary target
 	// to the internal _triplet_target.
 	// TODO This is a hack and it would be much better if the navigator only sends out a waypoints once they have changed.
 
+	// 翻译：检查是否有任何更改。我们通过将临时目标与内部的 _triplet_target 进行比较来实现这一点。
+	// 	待办事项：这是一种权宜之计，如果导航器仅在航点更改后才发送航点，则会更好。
 	bool triplet_update = true;
 	const bool prev_next_validity_changed = (_prev_was_valid != _sub_triplet_setpoint.get().previous.valid)
 						|| (_next_was_valid != _sub_triplet_setpoint.get().next.valid);
@@ -453,6 +492,7 @@ bool FlightTaskAuto::_evaluateTriplets()
 
 		if (!Vector2f(_triplet_target).isAllFinite()) {
 			// Horizontal target is not finite.
+			// 翻译：水平目标不是有限的
 			_triplet_target(0) = _position(0);
 			_triplet_target(1) = _position(1);
 		}
@@ -491,9 +531,11 @@ bool FlightTaskAuto::_evaluateTriplets()
 	}
 
 	// activation/deactivation of weather vane is based on parameter WV_EN and setting of navigator (allow_weather_vane)
+	// 翻译：风向标的激活/停用基于参数 WV_EN 和导航器的设置 (allow_weather_vane)。
 	_weathervane.setNavigatorForceDisabled(PX4_ISFINITE(_sub_triplet_setpoint.get().current.yaw));
 
 	// Calculate the current vehicle state and check if it has updated.
+	// 翻译：计算当前车辆状态并检测是否已经更新
 	State previous_state = _current_state;
 	_current_state = _getCurrentState();
 
@@ -639,23 +681,57 @@ bool FlightTaskAuto::_evaluateGlobalReference()
 State FlightTaskAuto::_getCurrentState()
 {
 	// Calculate the vehicle current state based on the Navigator triplets and the current position.
+	// 翻译：基于 Navigator triplets 和当前的位置计算车辆当前的位置状态
 	const Vector3f u_prev_to_target = (_triplet_target - _triplet_prev_wp).unit_or_zero();
 	const Vector3f prev_to_pos = _position - _triplet_prev_wp;
 	const Vector3f pos_to_target = _triplet_target - _position;
 
 	// Calculate the closest point to the vehicle position on the line prev_wp - target
+	// 翻译：计算 prev_wp - target 线上距离车辆位置最近的点。
+	/*
+	 *	 * P (_position)
+	 *                   /  (飞机当前位置)
+	 *                  / |
+	 *                 /  | 
+	 *  (prev_to_pos) /   | (垂直距离/偏航误差)
+	 *               /    |
+	 *              /     |
+	 *             A------C------------------------------> B
+	 *   (_triplet_prev_wp)   (_closest_pt)          (_triplet_target)
+	 *        (起点)          (最近投影点)              (终点)
+	 *									
+	 *             |======|
+	 *                ↑
+	 *        _closest_pt(即 A 到 C 的向量长度)
+	 * 参数解释：
+	 *	_triplet_prev_wp：点 A,航线的起点。
+	 *	_triplet_target：点 B,航线的终点。
+	 *	_position：点 P,飞机实际位置（可能飞歪了）。
+	 *	u_prev_to_target：上一航点”到“目标航点”，(单位方向向量，长度为1，指向右)。
+	 *	prev_to_pos：向量 AP,从 A 连接到 P 的斜线向量。
+	 *	_closest_pt：点 C,我们想要求的点。它是 P 点在航线 AB 上的垂直投影。
+	 * 数学知识：
+	 *	如果 向量A * 向量B > 0: 两个向量的方向大致相同(夹角<90°)
+	 *	如果 向量A * 向量B < 0: 两个向量的方向大致相反(夹角>90°)   
+	 * 计算公式：
+	 *	A⋅B=∣A∣×∣B∣×cos(θ) 
+	 */
 	_closest_pt = _triplet_prev_wp + u_prev_to_target * (prev_to_pos * u_prev_to_target);
 
 	State return_state = State::none;
 
+	// 如果“上一航点”到“目标航点”的距离几乎为 0：起点和终点重合了，这根本不是一条线，而是一个点.无法做寻线导航
 	if (!u_prev_to_target.longerThan(FLT_EPSILON)) {
 		// Previous and target are the same point, so we better don't try to do any special line following
 		return_state = State::none;
 
+	// 上一航点到目标航点向量 * 当前位置到目标航点向量： 
 	} else if (u_prev_to_target * pos_to_target < 0.0f) {
 		// Target is behind
+		// 翻译：目标在身后
 		return_state = State::target_behind;
 
+	// 上一航点到目标航点向量 * 上一航点到当前位置向量：
 	} else if (u_prev_to_target * prev_to_pos < 0.0f && prev_to_pos.longerThan(_target_acceptance_radius)) {
 		// Previous is in front
 		return_state = State::previous_infront;
@@ -675,6 +751,11 @@ void FlightTaskAuto::_updateInternalWaypoints()
 	// 1. The vehicle already passed the target -> go straight to target
 	// 2. Previous waypoint is in front of the vehicle -> go straight to previous waypoint
 	// 3. The vehicle is far from track -> go straight to closest point on track
+	// 翻译：内部航点可能与 _triplet_prev_wp、_triplet_target 和 _triplet_next_wp 不同。
+	// 	以下情况有所不同：
+	// 	1. 车辆已越过目标点 -> 直接前往目标点
+	// 	2. 前一个航点在车辆前方 -> 直接前往前一个航点
+	// 	3. 车辆距离赛道较远 -> 直接前往赛道上最近的点
 	switch (_current_state) {
 	case State::target_behind:
 		_target = _triplet_target;
@@ -757,6 +838,7 @@ void FlightTaskAuto::_checkEmergencyBraking()
 {
 	if (!_is_emergency_braking_active) {
 		// activate emergency braking if significantly outside of velocity bounds
+		// 翻译：如果速度显著超出限制则激活紧急自动
 		const float factor = 1.3f;
 		const bool is_vertical_speed_exceeded = _position_smoothing.getCurrentVelocityZ() >
 							(factor * _param_mpc_z_vel_max_dn.get())
