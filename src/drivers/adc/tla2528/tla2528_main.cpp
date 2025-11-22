@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2023 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2025 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,43 +30,48 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
+#include <px4_platform_common/getopt.h>
+#include <px4_platform_common/module.h>
+#include "tla2528.h"
 
-/**
- * @file zenoh_publisher.hpp
- *
- * Defines basic functionality of Zenoh publisher class
- *
- * @author Peter van der Perk <peter.vanderperk@nxp.com>
- */
-
-#pragma once
-
-#include "../rmw_attachment.h"
-
-#include <px4_platform_common/px4_config.h>
-#include <px4_platform_common/log.h>
-
-#include <lib/parameters/param.h>
-#include <containers/List.hpp>
-#include <zenoh-pico.h>
-
-class Zenoh_Publisher : public ListNode<Zenoh_Publisher *>
+void TLA2528::print_usage()
 {
-public:
-	Zenoh_Publisher();
-	virtual ~Zenoh_Publisher();
+	PRINT_MODULE_USAGE_NAME("TLA2528", "driver");
+	PRINT_MODULE_USAGE_SUBCATEGORY("adc");
+	PRINT_MODULE_USAGE_COMMAND("start");
+	PRINT_MODULE_USAGE_PARAMS_I2C_SPI_DRIVER(true, false);
+	PRINT_MODULE_USAGE_DEFAULT_COMMANDS();
+}
 
-	virtual int declare_publisher(z_owned_session_t s, const char *keyexpr, uint8_t *gid);
+extern "C" int tla2528_main(int argc, char *argv[])
+{
+	using ThisDriver = TLA2528;
+	BusCLIArguments cli{true, false};
 
-	virtual int undeclare_publisher();
+	cli.default_i2c_frequency = 400000;
+	cli.i2c_address = 0x10;
+	const char *name = MODULE_NAME;
+	const char *verb = cli.parseDefaultArguments(argc, argv);
 
-	virtual z_result_t update() = 0;
+	if (!verb) {
+		ThisDriver::print_usage();
+		return -1;
+	}
 
-	virtual void print();
+	BusInstanceIterator iterator(name, cli, DRV_ADC_DEVTYPE_TLA2528);
 
-protected:
-	int8_t publish(const uint8_t *, int size);
+	if (!strcmp(verb, "start")) {
+		return ThisDriver::module_start(cli, iterator);
+	}
 
-	z_owned_publisher_t _pub;
-	RmwAttachment _attachment;
-};
+	if (!strcmp(verb, "stop")) {
+		return ThisDriver::module_stop(iterator);
+	}
+
+	if (!strcmp(verb, "status")) {
+		return ThisDriver::module_status(iterator);
+	}
+
+	ThisDriver::print_usage();
+	return -1;
+}

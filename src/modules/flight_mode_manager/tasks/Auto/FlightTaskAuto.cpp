@@ -44,6 +44,7 @@ bool FlightTaskAuto::activate(const trajectory_setpoint_s &last_setpoint)
 {
 	bool ret = FlightTask::activate(last_setpoint);
 
+	// Set setpoints equal current state.
 	_position_setpoint = _position;
 	_velocity_setpoint = _velocity;
 	_yaw_setpoint = _yaw;
