@@ -258,21 +258,28 @@ void FlightTaskAuto::rcHelpModifyYaw(float &yaw_sp)
 	}
 }
 
+/**
+ *  @brief 准备降落设定点
+ */
 void FlightTaskAuto::_prepareLandSetpoints()
 {
 	_velocity_setpoint.setNaN(); // Don't take over any smoothed velocity setpoint
 
 	// Slow down automatic descend close to ground
+	// 翻译：自动减速下降至接近地面
+	// 以设定的不同高度段阶梯限制下降速度
 	float vertical_speed = math::interpolate(_dist_to_ground,
 			       _param_mpc_land_alt2.get(), _param_mpc_land_alt1.get(),
 			       _param_mpc_land_speed.get(), _param_mpc_z_vel_max_dn.get());
 
 	bool range_dist_available = PX4_ISFINITE(_dist_to_bottom);
 
+	// 如果距离地面的高度还有效，且距离小于 alt3(最低的阶梯高度)则以最小的速度缓慢下降
 	if (range_dist_available && _dist_to_bottom <= _param_mpc_land_alt3.get()) {
 		vertical_speed = _param_mpc_land_crwl.get();
 	}
 
+	// 如果为第一次land模式那么初始化降落设定点
 	if (_type_previous != WaypointType::land) {
 		// initialize yaw and xy-position
 		_land_heading = _yaw_setpoint;
@@ -281,9 +288,11 @@ void FlightTaskAuto::_prepareLandSetpoints()
 	}
 
 	// Update xy-position in case of landing position changes (etc. precision landing)
+	// 翻译：着陆位置发生变化时（例如，精确着陆），更新 xy 坐标
 	_land_position = Vector3f(_target(0), _target(1), NAN);
 
 	// User input assisted landing
+	// 翻译：用户辅助降落
 	if (_param_mpc_land_rc_help.get() && _sticks.checkAndUpdateStickInputs()) {
 		// Stick full up -1 -> stop, stick full down 1 -> double the speed
 		vertical_speed *= (1 - _sticks.getThrottleZeroCenteredExpo());
@@ -292,6 +301,7 @@ void FlightTaskAuto::_prepareLandSetpoints()
 
 		if (sticks_xy.longerThan(FLT_EPSILON)) {
 			// Ensure no unintended yawing when nudging horizontally during initial heading alignment
+			// 翻译：确保在初始航向调整期间水平微调时不会产生意外偏航
 			_land_heading = _yaw_setpoint_previous;
 		}
 
@@ -311,6 +321,7 @@ void FlightTaskAuto::_prepareLandSetpoints()
 			if (PX4_ISFINITE(distance_to_circle)) {
 
 				// We are inside of the allowed circle. Limit speed so we can always brake in time to not leave the circle.
+				// 翻译：我们位于允许的圆圈内。限制速度，以便我们始终能够及时刹车，避免离开圆圈。
 				max_speed = math::trajectory::computeMaxSpeedFromDistance(_stick_acceleration_xy.getMaxJerk(),
 						_stick_acceleration_xy.getMaxAcceleration(), distance_to_circle, 0.f);
 
@@ -331,6 +342,7 @@ void FlightTaskAuto::_prepareLandSetpoints()
 
 	} else {
 		// Make sure we have a valid land position even in the case we loose manual control while amending it
+		// 翻译：确保即使在手动调整位置时失去控制，我们仍然拥有有效的着陆位置。
 		if (!PX4_ISFINITE(_land_position(0))) {
 			_land_position.xy() = Vector2f(_position);
 		}
