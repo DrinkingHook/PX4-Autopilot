@@ -46,6 +46,7 @@ FlightModeManager::FlightModeManager() :
 
 	// initialize all flight-tasks
 	// currently this is required to get all parameters read
+	// 翻译：初始化所有飞行任务，目前这需要读取所有参数
 	for (int i = 0; i < static_cast<int>(FlightTaskIndex::Count); i++) {
 		_initTask(static_cast<FlightTaskIndex>(i));
 	}
@@ -71,6 +72,7 @@ bool FlightModeManager::init()
 	}
 
 	// limit to every other vehicle_local_position update (50 Hz)
+	// 翻译：限制每两次vehicle_local_position更新（50 Hz）
 	_vehicle_local_position_sub.set_interval_us(20_ms);
 	_time_stamp_last_loop = hrt_absolute_time();
 	return true;
@@ -87,6 +89,7 @@ void FlightModeManager::Run()
 	perf_begin(_loop_perf);
 
 	// Check if parameters have changed
+	// 翻译：检查参数是否已更改
 	if (_parameter_update_sub.updated()) {
 		// clear update
 		parameter_update_s param_update;
@@ -95,11 +98,13 @@ void FlightModeManager::Run()
 	}
 
 	// generate setpoints on local position changes
+	// 翻译：在本地位置变化时生成设置点
 	vehicle_local_position_s vehicle_local_position;
 
 	if (_vehicle_local_position_sub.update(&vehicle_local_position)) {
 		const hrt_abstime time_stamp_now = vehicle_local_position.timestamp_sample;
 		// Guard against too small (< 0.2ms) and too large (> 100ms) dt's.
+		// 翻译：防止dt太小(<0.2ms)或太大(>100ms)
 		const float dt = math::constrain(((time_stamp_now - _time_stamp_last_loop) / 1e6f), 0.0002f, 0.1f);
 		_time_stamp_last_loop = time_stamp_now;
 
@@ -136,6 +141,7 @@ void FlightModeManager::updateParams()
 void FlightModeManager::start_flight_task()
 {
 	// Do not run any flight task for VTOLs in fixed-wing mode
+	// 翻译：不要为固定翼VTOL运行任何飞行任务
 	if ((_vehicle_status_sub.get().vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING)
 	    || ((_vehicle_status_sub.get().nav_state >= vehicle_status_s::NAVIGATION_STATE_EXTERNAL1)
 		&& (_vehicle_status_sub.get().nav_state <= vehicle_status_s::NAVIGATION_STATE_EXTERNAL8))) {
@@ -144,6 +150,7 @@ void FlightModeManager::start_flight_task()
 	}
 
 	// Only run transition flight task if altitude control is enabled (e.g. in Altitdue, Position, Auto flight mode)
+	// 翻译：只有在启用高度控制（例如在高度、位置、自动飞行模式）时才运行过渡飞行任务
 	if (_vehicle_status_sub.get().in_transition_mode && _vehicle_control_mode_sub.get().flag_control_altitude_enabled) {
 		switchTask(FlightTaskIndex::Transition);
 		return;
@@ -186,6 +193,7 @@ void FlightModeManager::start_flight_task()
 	}
 
 	// Navigator interface for autonomous modes
+	// 翻译：只有在启用自动控制（例如在自主模式）时才运行导航任务
 	if (_vehicle_control_mode_sub.get().flag_control_auto_enabled
 	    && !nav_state_descend) {
 		found_some_task = true;
@@ -272,6 +280,7 @@ void FlightModeManager::start_flight_task()
 
 	if (task_failure) {
 		// For some reason no task was able to start, go into failsafe flighttask
+		// 翻译：由于某种原因，没有任务能够启动，进入故障安全飞行任务。
 		found_some_task = (switchTask(FlightTaskIndex::Failsafe) == FlightTaskError::NoError);
 	}
 
@@ -314,6 +323,7 @@ void FlightModeManager::handleCommand()
 		case vehicle_command_s::VEHICLE_CMD_DO_ORBIT:
 			// The command might trigger a mode switch, and the mode switch can happen before or
 			// after we receive the command here, so we store it for later.
+			// 翻译：命令可能会触发模式切换，模式切换可能在我们收到命令之前或之后发生，因此我们将其存储以供以后使用。
 			memcpy(&_current_command, &command, sizeof(vehicle_command_s));
 			_command_failed = false;
 			break;
@@ -321,6 +331,7 @@ void FlightModeManager::handleCommand()
 
 		if (_current_task.task) {
 			// check for other commands not related to task switching
+			// 翻译：检查与任务切换无关的其他命令
 			if ((command.command == vehicle_command_s::VEHICLE_CMD_DO_CHANGE_SPEED)
 			    && (static_cast<uint8_t>(command.param1 + .5f) == vehicle_command_s::SPEED_TYPE_GROUNDSPEED)
 			    && (command.param2 > 0.f)) {
@@ -334,11 +345,13 @@ void FlightModeManager::generateTrajectorySetpoint(const float dt,
 		const vehicle_local_position_s &vehicle_local_position)
 {
 	// If the task fails sned out empty NAN setpoints and the controller will emergency failsafe
+	// 翻译：如果任务失败，发送空的 NaN 设定点，控制器将进入紧急故障安全模式。
 	trajectory_setpoint_s setpoint = FlightTask::empty_trajectory_setpoint;
 	vehicle_constraints_s constraints = FlightTask::empty_constraints;
 
 	if (_current_task.task->updateInitialize() && _current_task.task->update()) {
 		// setpoints and constraints for the position controller from flighttask
+		// 翻译：从飞行任务获取轨迹设定点和约束。
 		setpoint = _current_task.task->getTrajectorySetpoint();
 		constraints = _current_task.task->getConstraints();
 	}
@@ -353,6 +366,7 @@ void FlightModeManager::generateTrajectorySetpoint(const float dt,
 
 	if (_takeoff_state < takeoff_status_s::TAKEOFF_STATE_RAMPUP) {
 		// reactivate the task which will reset the setpoint to current state
+		// 翻译：重新激活任务，将重置设定点到当前状态。
 		_current_task.task->reActivate();
 	}
 
@@ -364,6 +378,7 @@ void FlightModeManager::generateTrajectorySetpoint(const float dt,
 	_vehicle_constraints_pub.publish(constraints);
 
 	// if there's any change in landing gear setpoint publish it
+	// 翻译：如果存在任何更改的降落伞设定点，发布它。
 	landing_gear_s landing_gear = _current_task.task->getGear();
 
 	if (landing_gear.landing_gear != _old_landing_gear_position
@@ -379,11 +394,13 @@ void FlightModeManager::generateTrajectorySetpoint(const float dt,
 FlightTaskError FlightModeManager::switchTask(FlightTaskIndex new_task_index)
 {
 	// switch to the running task, nothing to do
+	// 翻译：如果新任务索引与当前任务索引相同，则无需操作。
 	if (new_task_index == _current_task.index) {
 		return FlightTaskError::NoError;
 	}
 
 	// Save current setpoints for the next FlightTask
+	// 翻译：保存当前轨迹点，以便在切换任务时使用。
 	trajectory_setpoint_s last_setpoint = FlightTask::empty_trajectory_setpoint;
 
 	if (isAnyTaskActive()) {
@@ -416,6 +433,7 @@ FlightTaskError FlightModeManager::switchTask(FlightTaskIndex new_task_index)
 FlightTaskError FlightModeManager::switchTask(int new_task_index)
 {
 	// make sure we are in range of the enumeration before casting
+	// 翻译：确保我们处于枚举范围之前进行转换。
 	if (static_cast<int>(FlightTaskIndex::None) <= new_task_index &&
 	    static_cast<int>(FlightTaskIndex::Count) > new_task_index) {
 		return switchTask(FlightTaskIndex(new_task_index));

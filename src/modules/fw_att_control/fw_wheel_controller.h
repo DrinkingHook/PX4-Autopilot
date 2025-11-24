@@ -51,6 +51,13 @@ public:
 	 * @param yaw estimated yaw [rad]
 	 * @return Wheel body rate setpoint [rad/s]
 	 */
+	/**
+	 * @brief 计算轮子身体速率设定点。
+	 *
+	 * @param yaw_setpoint 偏航设定点 [rad]
+	 * @param yaw 估计偏航 [rad]
+	 * @return 轮子身体速率设定点 [rad/s]
+	 */
 	float control_attitude(float yaw_setpoint, float yaw);
 
 	float control_bodyrate(float dt, float body_z_rate, float groundspeed, float groundspeed_scaler);

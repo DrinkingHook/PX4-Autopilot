@@ -98,6 +98,11 @@ void ManualVelocitySmoothingZ::checkPositionLock(float velocity_target)
 	 * This is why the previous input of the velocity controller
 	 * is used to set current velocity of the trajectory.
 	 */
+	/**
+	 * 翻译：在位置锁定 -> 位置解锁转换期间，我们必须确保速度设定点是连续的。我们知道位置环的输出（速度设定点的一部分）
+	 * 突然变为零，只有反馈（由该飞行任务生成）将保持不变。
+	 * 因此，速度控制器的上一个输入用于设置轨迹的当前速度。
+	 */
 	if (fabsf(_state.v) < 0.1f &&
 	    fabsf(_state.a) < .2f &&
 	    fabsf(velocity_target) <= FLT_EPSILON) {
@@ -109,6 +114,7 @@ void ManualVelocitySmoothingZ::checkPositionLock(float velocity_target)
 		// Unlock position
 		if (_position_lock_active) {
 			// Start the trajectory at the current velocity setpoint
+			// 翻译：以当前速度设定点开始轨迹。
 			_trajectory.setCurrentVelocity(_velocity_setpoint_feedback);
 			_state.v = _velocity_setpoint_feedback;
 			resetPositionLock();

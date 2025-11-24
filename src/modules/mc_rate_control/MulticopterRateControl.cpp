@@ -78,24 +78,30 @@ MulticopterRateControl::parameters_updated()
 	// rate control parameters
 	// The controller gain K is used to convert the parallel (P + I/s + sD) form
 	// to the ideal (K * [1 + 1/sTi + sTd]) form
+	// 翻译：控制器增益K用于将并行（P + I/s + sD）形式转换为理想的（K * [1 + 1/sTi + sTd]）形式
 	const Vector3f rate_k = Vector3f(_param_mc_rollrate_k.get(), _param_mc_pitchrate_k.get(), _param_mc_yawrate_k.get());
 
+	// 设置pid增益
 	_rate_control.setPidGains(
 		rate_k.emult(Vector3f(_param_mc_rollrate_p.get(), _param_mc_pitchrate_p.get(), _param_mc_yawrate_p.get())),
 		rate_k.emult(Vector3f(_param_mc_rollrate_i.get(), _param_mc_pitchrate_i.get(), _param_mc_yawrate_i.get())),
 		rate_k.emult(Vector3f(_param_mc_rollrate_d.get(), _param_mc_pitchrate_d.get(), _param_mc_yawrate_d.get())));
 
+	// 设置积分限值
 	_rate_control.setIntegratorLimit(
 		Vector3f(_param_mc_rr_int_lim.get(), _param_mc_pr_int_lim.get(), _param_mc_yr_int_lim.get()));
 
+	// 设置前馈增益
 	_rate_control.setFeedForwardGain(
 		Vector3f(_param_mc_rollrate_ff.get(), _param_mc_pitchrate_ff.get(), _param_mc_yawrate_ff.get()));
 
 
 	// manual rate control acro mode rate limits
+	// 翻译：设置手动控制模式下的角速度最大值
 	_acro_rate_max = Vector3f(radians(_param_mc_acro_r_max.get()), radians(_param_mc_acro_p_max.get()),
 				  radians(_param_mc_acro_y_max.get()));
 
+	// 注释：设置角速度低通滤波器的截止频率
 	_output_lpf_yaw.setCutoffFreq(_param_mc_yaw_tq_cutoff.get());
 }
 
@@ -121,6 +127,7 @@ MulticopterRateControl::Run()
 	}
 
 	/* run controller on gyro changes */
+	// 翻译：获取角速度数据
 	vehicle_angular_velocity_s angular_velocity;
 
 	if (_vehicle_angular_velocity_sub.update(&angular_velocity)) {
@@ -128,6 +135,7 @@ MulticopterRateControl::Run()
 		const hrt_abstime now = angular_velocity.timestamp_sample;
 
 		// Guard against too small (< 0.125ms) and too large (> 20ms) dt's.
+		// 翻译：计算时间差并限制范围
 		const float dt = math::constrain(((now - _last_run) * 1e-6f), 0.000125f, 0.02f);
 		_last_run = now;
 
@@ -135,6 +143,7 @@ MulticopterRateControl::Run()
 		const Vector3f angular_accel{angular_velocity.xyz_derivative};
 
 		/* check for updates in other topics */
+		// 翻译：更新控制模式
 		_vehicle_control_mode_sub.update(&_vehicle_control_mode);
 
 		if (_vehicle_land_detected_sub.updated()) {
@@ -149,14 +158,17 @@ MulticopterRateControl::Run()
 		_vehicle_status_sub.update(&_vehicle_status);
 
 		// use rates setpoint topic
+		// 翻译：更新速率设定点
 		vehicle_rates_setpoint_s vehicle_rates_setpoint{};
 
 		if (_vehicle_control_mode.flag_control_manual_enabled && !_vehicle_control_mode.flag_control_attitude_enabled) {
 			// generate the rate setpoint from sticks
+			// 翻译：从操纵杆生成速率设定点
 			manual_control_setpoint_s manual_control_setpoint;
 
 			if (_manual_control_setpoint_sub.update(&manual_control_setpoint)) {
 				// manual rates control - ACRO mode
+				// 翻译：从操纵杆生成速率设定点
 				const Vector3f man_rate_sp{
 					math::superexpo(manual_control_setpoint.roll, _param_mc_acro_expo.get(), _param_mc_acro_supexpo.get()),
 					math::superexpo(-manual_control_setpoint.pitch, _param_mc_acro_expo.get(), _param_mc_acro_supexpo.get()),
@@ -167,6 +179,7 @@ MulticopterRateControl::Run()
 				_thrust_setpoint(0) = _thrust_setpoint(1) = 0.f;
 
 				// publish rate setpoint
+				// 翻译：发布速率设定点
 				vehicle_rates_setpoint.roll = _rates_setpoint(0);
 				vehicle_rates_setpoint.pitch = _rates_setpoint(1);
 				vehicle_rates_setpoint.yaw = _rates_setpoint(2);
@@ -186,14 +199,17 @@ MulticopterRateControl::Run()
 		}
 
 		// run the rate controller
+		// 翻译：运行速率控制器
 		if (_vehicle_control_mode.flag_control_rates_enabled) {
 
 			// reset integral if disarmed
+			// 翻译：如果未启动，则重置积分
 			if (!_vehicle_control_mode.flag_armed || _vehicle_status.vehicle_type != vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
 				_rate_control.resetIntegral();
 			}
 
 			// update saturation status from control allocation feedback
+			// 翻译：从控制分配反馈更新饱和状态
 			control_allocator_status_s control_allocator_status;
 
 			if (_control_allocator_status_sub.update(&control_allocator_status)) {
@@ -212,14 +228,17 @@ MulticopterRateControl::Run()
 				}
 
 				// TODO: send the unallocated value directly for better anti-windup
+				// 翻译：直接发送未分配的值以获得更好的抗风化
 				_rate_control.setSaturationStatus(saturation_positive, saturation_negative);
 			}
 
 			// run rate controller
+			// 翻译：运行速率控制器
 			Vector3f torque_setpoint =
 				_rate_control.update(rates, _rates_setpoint, angular_accel, dt, _maybe_landed || _landed);
 
 			// apply low-pass filtering on yaw axis to reduce high frequency torque caused by rotor acceleration
+			// 翻译：在yaw轴上应用低通滤波器以减少由于旋翼加速引起的高频扭矩
 			torque_setpoint(2) = _output_lpf_yaw.update(torque_setpoint(2), dt);
 
 			// publish rate controller status
@@ -238,6 +257,7 @@ MulticopterRateControl::Run()
 			vehicle_torque_setpoint.xyz[2] = PX4_ISFINITE(torque_setpoint(2)) ? torque_setpoint(2) : 0.f;
 
 			// scale setpoints by battery status if enabled
+			// 翻译：如果电池状态启用，则缩放设置点
 			if (_param_mc_bat_scale_en.get()) {
 				if (_battery_status_sub.updated()) {
 					battery_status_s battery_status;
@@ -271,6 +291,11 @@ MulticopterRateControl::Run()
 	perf_end(_loop_perf);
 }
 
+/**
+ * @brief 更新电机控制状态
+ * @param vehicle_torque_setpoint 电机转矩设定值
+ * @param dt 时间间隔
+ */
 void MulticopterRateControl::updateActuatorControlsStatus(const vehicle_torque_setpoint_s &vehicle_torque_setpoint,
 		float dt)
 {

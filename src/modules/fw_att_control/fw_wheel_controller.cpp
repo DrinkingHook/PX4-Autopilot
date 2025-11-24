@@ -47,6 +47,7 @@ using matrix::wrap_pi;
 float WheelController::control_bodyrate(float dt, float body_z_rate, float groundspeed, float groundspeed_scaler)
 {
 	/* Do not calculate control signal with bad inputs */
+	// 翻译：如果输入无效，则不计算控制信号
 	if (!(PX4_ISFINITE(body_z_rate) &&
 	      PX4_ISFINITE(groundspeed) &&
 	      PX4_ISFINITE(groundspeed_scaler))) {
@@ -56,16 +57,19 @@ float WheelController::control_bodyrate(float dt, float body_z_rate, float groun
 
 	const float rate_error = _body_rate_setpoint - body_z_rate;
 
+	// 仅当超过 1m/s 时才开始积分
 	if (_k_i > 0.f && groundspeed > 1.f) { // only start integrating when above 1m/s
 
 		float id = rate_error * dt * groundspeed_scaler * groundspeed_scaler;
 
 		if (_last_output < -1.f) {
 			/* only allow motion to center: increase value */
+			// 翻译：如果输出大于1，则增大值
 			id = math::max(id, 0.f);
 
 		} else if (_last_output > 1.f) {
 			/* only allow motion to center: decrease value */
+			// 翻译：如果输出大于1，则减小值
 			id = math::min(id, 0.f);
 		}
 
@@ -73,6 +77,7 @@ float WheelController::control_bodyrate(float dt, float body_z_rate, float groun
 	}
 
 	/* Apply PI rate controller and store non-limited output */
+	// 翻译：应用PI速率控制器并存储非限制输出
 	_last_output = _body_rate_setpoint * _k_ff * groundspeed_scaler +
 		       groundspeed_scaler * groundspeed_scaler * (rate_error * _k_p) + _integrator;
 
@@ -82,6 +87,7 @@ float WheelController::control_bodyrate(float dt, float body_z_rate, float groun
 float WheelController::control_attitude(float yaw_setpoint, float yaw)
 {
 	/* Do not calculate control signal with bad inputs */
+	// 翻译：如果输入无效，则不计算控制信号
 	if (!(PX4_ISFINITE(yaw_setpoint) &&
 	      PX4_ISFINITE(yaw))) {
 
@@ -90,6 +96,7 @@ float WheelController::control_attitude(float yaw_setpoint, float yaw)
 
 	const float yaw_error = wrap_pi(yaw_setpoint - yaw);
 
+	// 假设俯仰角和横滚角为 0，因此雅可比矩阵简化为单位矩阵
 	_body_rate_setpoint = yaw_error / _tc; // assume 0 pitch and roll angle, thus jacobian is simply identity matrix
 
 	if (_max_rate > 0.01f) {

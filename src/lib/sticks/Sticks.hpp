@@ -54,11 +54,13 @@ public:
 	~Sticks() = default;
 
 	// Checks for updated manual control input & updates internal values
+	// 翻译：检查并更新手柄输入
 	bool checkAndUpdateStickInputs();
 
 	bool isAvailable() { return _input_available; };
 
 	// Helper functions to get stick values more intuitively
+	// 翻译：获取手柄值更直观的辅助函数
 	float getRoll() const { return _positions(0); }
 	float getPitch() const { return _positions(1); }
 	float getYaw() const { return _positions(2); }
@@ -78,6 +80,10 @@ public:
 	 * Limit the the horizontal input from a square shaped joystick gimbal to a unit circle
 	 * @param v Vector containing x, y, z axis of the joystick gimbal. x, y get adjusted
 	 */
+	/**
+	 * 翻译：限制从方形摇杆手柄输入的水平输入到单位圆
+	 * @param v 包含摇杆手柄x，y，z轴的向量。x，y被调整
+	 */
 	static void limitStickUnitLengthXY(matrix::Vector2f &v);
 
 	/**
@@ -85,6 +91,12 @@ public:
 	 * @param v Vector containing x, y, z axis of the joystick input.
 	 * @param yaw Current vehicle yaw heading
 	 * @param yaw_setpoint Current yaw setpoint if it's locked else NAN
+	 */
+	/**
+	 * 翻译：将摇杆输入的水平分量旋转到车辆身体方向
+	 * @param v 包含摇杆输入x，y，z轴的向量。
+	 * @param yaw 当前车辆偏航角
+	 * @param yaw_setpoint 如果锁定则当前偏航角设置点，否则为NAN
 	 */
 	static void rotateIntoHeadingFrameXY(matrix::Vector2f &v, const float yaw, const float yaw_setpoint);
 

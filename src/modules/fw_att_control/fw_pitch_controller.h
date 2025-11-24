@@ -54,6 +54,14 @@ public:
 	 * @param pitch estimated pitch [rad]
 	 * @return Pitch body rate setpoint [rad/s]
 	 */
+	/**
+	 *  @brief 计算欧拉角和身体角速度设定点。
+	 *  @param pitch_setpoint 欧拉角设定点 [rad]
+	 *  @param euler_yaw_rate_setpoint 欧拉角速度设定点 [rad/s]
+	 *  @param roll 估计的滚转角 [rad]
+	 *  @param pitch 估计的俯仰角 [rad]
+	 *  @return 俯仰角速度设定点 [rad/s]
+	 */
 	float control_pitch(float pitch_setpoint, float euler_yaw_rate_setpoint, float roll, float pitch);
 
 	void set_time_constant(float time_constant) { _tc = time_constant; }

@@ -45,6 +45,7 @@ float YawController::control_yaw(float roll_setpoint, float euler_pitch_rate_set
 				 float airspeed)
 {
 	/* Do not calculate control signal with bad inputs */
+	// 翻译：如果输入不正确，则不计算控制信号
 	if (!(PX4_ISFINITE(roll_setpoint) &&
 	      PX4_ISFINITE(roll) &&
 	      PX4_ISFINITE(pitch) &&
@@ -58,6 +59,7 @@ float YawController::control_yaw(float roll_setpoint, float euler_pitch_rate_set
 	bool inverted = false;
 
 	/* roll is used as feedforward term and inverted flight needs to be considered */
+	// 翻译：如果滚转角度小于90度，则不反转，否则反转
 	if (fabsf(roll) < math::radians(90.f)) {
 		/* not inverted, but numerically still potentially close to infinity */
 		constrained_roll = math::constrain(roll, math::radians(-80.f), math::radians(80.f));
@@ -67,12 +69,16 @@ float YawController::control_yaw(float roll_setpoint, float euler_pitch_rate_set
 
 		// inverted flight, constrain on the two extremes of -pi..+pi to avoid infinity
 		//note: the ranges are extended by 10 deg here to avoid numeric resolution effects
+		// 翻译：倒置飞行，在 -π..+π 的两个极端进行约束以避免无穷大
+		// 注意：这里将范围扩展 10 度以避免数值分辨率效应
 		if (roll > 0.f) {
 			/* right hemisphere */
+			// 翻译：右半球
 			constrained_roll = math::constrain(roll, math::radians(100.f), math::radians(180.f));
 
 		} else {
 			/* left hemisphere */
+			// 翻译：左半球
 			constrained_roll = math::constrain(roll, math::radians(-180.f), math::radians(-100.f));
 		}
 	}
@@ -82,9 +88,11 @@ float YawController::control_yaw(float roll_setpoint, float euler_pitch_rate_set
 
 	if (!inverted) {
 		/* Calculate desired yaw rate from coordinated turn constraint / (no side forces) */
+		// 翻译：计算期望的偏航角速度，从协调转弯约束 / （无侧向力）中得出
 		_euler_rate_setpoint = tanf(constrained_roll) * cosf(pitch) * CONSTANTS_ONE_G / airspeed;
 
 		/* Transform setpoint to body angular rates (jacobian) */
+		// 翻译：将期望的偏航角速度转换为身体角速度（雅可比）
 		const float yaw_body_rate_setpoint_raw = -sinf(roll) * euler_pitch_rate_setpoint +
 				cosf(roll) * cosf(pitch) * _euler_rate_setpoint;
 		_body_rate_setpoint = math::constrain(yaw_body_rate_setpoint_raw, -_max_rate, _max_rate);

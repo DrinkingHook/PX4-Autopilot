@@ -60,6 +60,7 @@ struct loiter_point_s {
 };
 
 // defines one land location and a maximum of num_approaches_max loiter points
+// 翻译：定义一个着陆位置和最多num_approaches_max个盘旋点。
 struct land_approaches_s {
 
 	static constexpr uint8_t num_approaches_max = 8;
@@ -92,6 +93,7 @@ struct land_approaches_s {
 	float getMaxDistLandToLoiterCircle() const
 	{
 		// returns negative infinity if there is no valid approach
+		// 翻译：如果没有任何有效的着陆点，则返回负无穷大。
 		float dist_max = -INFINITY;
 
 		for (uint8_t i = 0; i < num_approaches_max; i++) {

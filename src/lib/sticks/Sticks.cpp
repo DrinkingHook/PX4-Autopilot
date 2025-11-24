@@ -92,6 +92,9 @@ void Sticks::limitStickUnitLengthXY(Vector2f &v)
 	}
 }
 
+/* 
+ * @brief 旋转至航向坐标系 XY
+ */
 void Sticks::rotateIntoHeadingFrameXY(Vector2f &v, const float yaw, const float yaw_setpoint)
 {
 	const float yaw_rotate = PX4_ISFINITE(yaw_setpoint) ? yaw_setpoint : yaw;

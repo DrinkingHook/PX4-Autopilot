@@ -57,6 +57,7 @@ void WeatherVane::update()
 	// Weathervane needs to be enabled by parameter
 	// in manual we use weathervane just if position is controlled as well
 	// in mission we use weathervane except for when navigator disables it
+	// 翻译：在手动模式下，我们只使用风向舵，如果位置被控制，那么在任务模式下，我们使用风向舵，除非导航器禁用它。
 	_is_active = _param_wv_en.get()
 		     && ((_flag_control_manual_enabled && _flag_control_position_enabled)
 			 || (!_flag_control_manual_enabled && !_navigator_force_disabled));
@@ -65,12 +66,14 @@ void WeatherVane::update()
 float WeatherVane::getWeathervaneYawrate()
 {
 	// direction of desired body z axis represented in earth frame
+	// 翻译：方向是期望的主体z轴在地球框架中表示。
 	vehicle_attitude_setpoint_s vehicle_attitude_setpoint;
 	_vehicle_attitude_setpoint_sub.copy(&vehicle_attitude_setpoint);
 	matrix::Vector3f body_z_sp(matrix::Quatf(vehicle_attitude_setpoint.q_d).dcm_z()); // attitude setpoint body z axis
 
 	// rotate desired body z axis into new frame which is rotated in z by the current
 	// heading of the vehicle. we refer to this as the heading frame.
+	// 翻译：旋转期望的主体z轴到新的框架，该框架在z轴上旋转了当前车辆的航向。我们称之为航向框架。
 	vehicle_local_position_s vehicle_local_position{};
 	_vehicle_local_position_sub.copy(&vehicle_local_position);
 	matrix::Dcmf R_yaw = matrix::Eulerf(0.0f, 0.0f, -vehicle_local_position.heading);

@@ -44,6 +44,7 @@
 float RollController::control_roll(float roll_setpoint, float euler_yaw_rate_setpoint, float roll, float pitch)
 {
 	/* Do not calculate control signal with bad inputs */
+	// 翻译：不要计算带有错误输入的控制信号
 	if (!(PX4_ISFINITE(roll_setpoint) &&
 	      PX4_ISFINITE(euler_yaw_rate_setpoint) &&
 	      PX4_ISFINITE(pitch) &&
@@ -56,6 +57,7 @@ float RollController::control_roll(float roll_setpoint, float euler_yaw_rate_set
 	_euler_rate_setpoint = roll_error / _tc;
 
 	/* Transform setpoint to body angular rates (jacobian) */
+	// 翻译：将设定点转换为身体角速率（雅可比）
 	const float roll_body_rate_setpoint_raw = _euler_rate_setpoint - sinf(pitch) *
 			euler_yaw_rate_setpoint;
 	_body_rate_setpoint = math::constrain(roll_body_rate_setpoint_raw, -_max_rate, _max_rate);

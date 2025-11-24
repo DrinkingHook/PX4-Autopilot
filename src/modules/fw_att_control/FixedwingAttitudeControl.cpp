@@ -46,6 +46,7 @@ FixedwingAttitudeControl::FixedwingAttitudeControl(bool vtol) :
 	_loop_perf(perf_alloc(PC_ELAPSED, MODULE_NAME": cycle"))
 {
 	/* fetch initial parameter values */
+	// 翻译：获取初始参数值
 	parameters_update();
 	_landing_gear_wheel_pub.advertise();
 }
@@ -92,11 +93,13 @@ FixedwingAttitudeControl::vehicle_manual_poll(const float yaw_body)
 	if (_vcontrol_mode.flag_control_manual_enabled && _in_fw_or_transition_wo_tailsitter_transition) {
 
 		// Always copy the new manual setpoint, even if it wasn't updated, to fill the actuators with valid values
+		// 翻译：始终复制新的手动设置点，即使它没有更新，以填充有效值的执行器
 		if (_manual_control_setpoint_sub.copy(&_manual_control_setpoint)) {
 
 			if (!_vcontrol_mode.flag_control_climb_rate_enabled && _vcontrol_mode.flag_control_attitude_enabled) {
 
 				// STABILIZED mode generate the attitude setpoint from manual user inputs
+				// 翻译：稳定模式从手动用户输入生成姿态设置点
 
 				const float roll_body = _manual_control_setpoint.roll * radians(_param_fw_man_r_max.get());
 
@@ -147,16 +150,21 @@ float FixedwingAttitudeControl::get_airspeed_constrained()
 				    && (hrt_elapsed_time(&_airspeed_validated_sub.get().timestamp) < 1_s);
 
 	// if no airspeed measurement is available out best guess is to use the trim airspeed
+	// 翻译：如果没有任何气压测量，最好的猜测是使用校准气压
 	float airspeed = _param_fw_airspd_trim.get();
 
 	if (_param_fw_use_airspd.get() && airspeed_valid) {
 		/* prevent numerical drama by requiring 0.5 m/s minimal speed */
+		// 翻译：防止数值混乱，要求最小速度为0.5 m/s
 		airspeed = math::max(0.5f, _airspeed_validated_sub.get().calibrated_airspeed_m_s);
 
 	} else {
 		// VTOL: if we have no airspeed available and we are in hover mode then assume the lowest airspeed possible
 		// this assumption is good as long as the vehicle is not hovering in a headwind which is much larger
 		// than the stall airspeed
+		// 翻译：VTOL: 如果我们没有空速可用并且处于悬停模式，则假设最低可能的空速
+		// 这种假设在车辆没有在远大于失速空速的逆风中悬停的情况下是有效的
+
 		if (_vehicle_status.is_vtol && _vehicle_status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING
 		    && !_vehicle_status.in_transition_mode) {
 			airspeed = _param_fw_airspd_stall.get();
@@ -177,18 +185,22 @@ void FixedwingAttitudeControl::Run()
 	perf_begin(_loop_perf);
 
 	// only run controller if attitude changed
+	// 翻译：只有当姿态改变时才运行控制器
 	if (_att_sub.updated() || (hrt_elapsed_time(&_last_run) > 20_ms)) {
 
 		// only update parameters if they changed
+		// 翻译：只有当参数改变时才更新参数
 		const bool params_updated = _parameter_update_sub.updated();
 
 		// check for parameter updates
+		// 翻译：检查参数是否更新
 		if (params_updated) {
 			// clear update
 			parameter_update_s pupdate;
 			_parameter_update_sub.copy(&pupdate);
 
 			// update parameters from storage
+			// 翻译：从存储中更新参数
 			updateParams();
 			parameters_update();
 		}
@@ -205,6 +217,7 @@ void FixedwingAttitudeControl::Run()
 			_last_run = att.timestamp_sample;
 
 			// get current rotation matrix and euler angles from control state quaternions
+			// 翻译：从控制状态四元数获取当前的旋转矩阵和欧拉角
 			_R = matrix::Quatf(att.q);
 		}
 
@@ -231,6 +244,18 @@ void FixedwingAttitudeControl::Run()
 			 * Rxy	Ryy  Rzy		-Rzy  Ryy  Rxy
 			 * Rxz	Ryz  Rzz		-Rzz  Ryz  Rxz
 			 * */
+			/**
+			 * 翻译为中文：由于VTOL飞机初始化为多旋翼，我们需要修改估计的姿势以进行固定翼操作。
+			 * 由于固定翼模式的中立位置与多旋翼模式的中立位置相比，绕俯仰轴旋转了-90度，
+			 * 我们需要交换滚转和偏航轴（第1列和第3列）在旋转矩阵中。
+			 * 此外，为了获得正确的俯仰符号，我们需要将新x轴的旋转矩阵乘以-1
+			 *
+			 * 原始：			修改：
+			 *
+			 * Rxx  Ryx  Rzx		-Rzx  Ryx  Rxx
+			 * Rxy	Ryy  Rzy		-Rzy  Ryy  Rxy
+			 * Rxz	Ryz  Rzz		-Rzz  Ryz  Rxz
+			 * */
 			matrix::Dcmf R_adapted = _R;		//modified rotation matrix
 
 			/* move z to x */
@@ -244,6 +269,7 @@ void FixedwingAttitudeControl::Run()
 			R_adapted(2, 2) = _R(2, 0);
 
 			/* change direction of pitch (convert to right handed system) */
+			// 翻译：改变俯仰方向（转换为右手坐标系）。
 			R_adapted(0, 0) = -R_adapted(0, 0);
 			R_adapted(1, 0) = -R_adapted(1, 0);
 			R_adapted(2, 0) = -R_adapted(2, 0);
@@ -259,6 +285,7 @@ void FixedwingAttitudeControl::Run()
 		vehicle_attitude_setpoint_poll();
 
 		// vehicle status update must be before the vehicle_control_mode poll, otherwise rate sp are not published during whole transition
+		// 翻译：车辆状态更新必须在车辆控制模式轮询之前，否则整个转换期间不会发布速率SP。
 		_vehicle_status_sub.update(&_vehicle_status);
 		const bool is_in_transition_except_tailsitter = _vehicle_status.in_transition_mode
 				&& !_vehicle_status.is_vtol_tailsitter;
@@ -270,6 +297,7 @@ void FixedwingAttitudeControl::Run()
 		vehicle_land_detected_poll();
 
 		/* if we are in rotary wing mode, do nothing */
+		// 翻译：如果我们在旋翼模式下，什么也不做。
 		if (_vehicle_status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING && !_vehicle_status.is_vtol) {
 			perf_end(_loop_perf);
 			return;
@@ -280,6 +308,7 @@ void FixedwingAttitudeControl::Run()
 			/* Reset integrators if the aircraft is on ground
 			 * or a multicopter (but not transitioning VTOL or tailsitter)
 			 */
+			// 翻译：如果飞机着陆或不是固定翼或过渡模式，重置积分器。
 			if (_landed
 			    || !_in_fw_or_transition_wo_tailsitter_transition) {
 
@@ -291,6 +320,7 @@ void FixedwingAttitudeControl::Run()
 			}
 
 			/* Run attitude controllers */
+			// 翻译:运行姿态控制器
 
 			if (_vcontrol_mode.flag_control_attitude_enabled && _in_fw_or_transition_wo_tailsitter_transition) {
 				const Quatf q_sp(_att_sp.q_d);
@@ -308,6 +338,7 @@ void FixedwingAttitudeControl::Run()
 							      euler_angles.theta(), get_airspeed_constrained());
 
 					/* Update input data for rate controllers */
+					// 翻译：更新输入数据以供速率控制器使用
 					Vector3f body_rates_setpoint = Vector3f(_roll_ctrl.get_body_rate_setpoint(), _pitch_ctrl.get_body_rate_setpoint(),
 										_yaw_ctrl.get_body_rate_setpoint());
 
@@ -330,17 +361,20 @@ void FixedwingAttitudeControl::Run()
 					}
 
 					/* add yaw rate setpoint from sticks in all attitude-controlled modes */
+					// 翻译：在所有姿态控制模式下，从操纵杆中添加偏航速率设定点
 					if (_vcontrol_mode.flag_control_manual_enabled) {
 						body_rates_setpoint(2) += math::constrain(_manual_control_setpoint.yaw * radians(_param_man_yr_max.get()),
 									  -radians(_param_fw_y_rmax.get()), radians(_param_fw_y_rmax.get()));
 					}
 
 					// Tailsitter: transform from FW to hover frame (all interfaces are in hover (body) frame)
+					// 翻译：将姿态从飞行模式转换为悬停模式（所有接口都在悬停（体）框架中）
 					if (_vehicle_status.is_vtol_tailsitter) {
 						body_rates_setpoint = Vector3f(body_rates_setpoint(2), body_rates_setpoint(1), -body_rates_setpoint(0));
 					}
 
 					/* Publish the rate setpoint for analysis once available */
+					// 翻译：发布速率设定点以供分析
 					_rates_sp.roll = body_rates_setpoint(0);
 					_rates_sp.pitch = body_rates_setpoint(1);
 					_rates_sp.yaw = body_rates_setpoint(2);
@@ -353,6 +387,7 @@ void FixedwingAttitudeControl::Run()
 		}
 
 		// steering wheel control
+		// 翻译：舵轮控制
 		fixed_wing_runway_control_s runway_control{};
 		_fixed_wing_runway_control_sub.copy(&runway_control);
 		const bool runway_control_recent = hrt_elapsed_time(&runway_control.timestamp) < 1_s;
@@ -373,6 +408,7 @@ void FixedwingAttitudeControl::Run()
 			}
 
 			// Use stall airspeed to calculate ground speed scaling region. Don't scale below gspd_scaling_trim
+			// 翻译：使用失速空速计算地面速度缩放区域。不要缩放到gspd_scaling_trim以下
 			float gspd_scaling_trim = (_param_fw_airspd_stall.get());
 
 			if (_groundspeed > gspd_scaling_trim) {
@@ -381,6 +417,7 @@ void FixedwingAttitudeControl::Run()
 			}
 
 			// set now yaw setpoint once we're entering the first time
+			// 翻译：设置现在方向舵偏航设置点，一旦我们进入第一次
 			if (!PX4_ISFINITE(_steering_wheel_yaw_setpoint)) {
 				_steering_wheel_yaw_setpoint = euler_angles.psi();
 			}
@@ -408,6 +445,7 @@ void FixedwingAttitudeControl::Run()
 	}
 
 	// backup schedule
+	// 翻译：备份调度
 	ScheduleDelayed(20_ms);
 
 	perf_end(_loop_perf);

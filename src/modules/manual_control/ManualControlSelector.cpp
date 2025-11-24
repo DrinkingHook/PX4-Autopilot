@@ -33,6 +33,10 @@
 
 #include "ManualControlSelector.hpp"
 
+/**
+ * @brief 更新所选输入的有效性。
+ * @param now 当前时间戳
+ */
 void ManualControlSelector::updateValidityOfChosenInput(uint64_t now)
 {
 	if (!isInputValid(_setpoint, now)) {
@@ -41,12 +45,20 @@ void ManualControlSelector::updateValidityOfChosenInput(uint64_t now)
 	}
 }
 
+/**
+ * @brief 更新所选输入的有效性。
+ * @param now 当前时间戳
+ * @param input 输入样本
+ * @param instance 实例
+ */
 void ManualControlSelector::updateWithNewInputSample(uint64_t now, const manual_control_setpoint_s &input, int instance)
 {
 	// First check if the chosen input got invalid, so it can get replaced
+	// 翻译：首先检查所选输入是否有效，以便可以替换它
 	updateValidityOfChosenInput(now);
 
 	// Update with input sample if it's valid and should be chosen according to COM_RC_IN_MODE
+	// 翻译：如果输入有效且应根据COM_RC_IN_MODE选择，则更新输入样本
 	if (isInputValid(input, now)) {
 		_setpoint = input;
 		_setpoint.valid = true;
@@ -55,6 +67,7 @@ void ManualControlSelector::updateWithNewInputSample(uint64_t now, const manual_
 
 		if (_first_valid_source == manual_control_setpoint_s::SOURCE_UNKNOWN) {
 			// initialize first valid source once
+			// 翻译：初始化第一个有效的源
 			_first_valid_source = _setpoint.data_source;
 		}
 	}
@@ -63,9 +76,11 @@ void ManualControlSelector::updateWithNewInputSample(uint64_t now, const manual_
 bool ManualControlSelector::isInputValid(const manual_control_setpoint_s &input, uint64_t now) const
 {
 	// Check for timeout
+	// 翻译：检查超时
 	const bool sample_newer_than_timeout = now < input.timestamp_sample + _timeout;
 
 	// Check if source matches the configuration
+	// 翻译：检查源是否匹配配置
 	bool match = false;
 
 	switch (_rc_in_mode) { // COM_RC_IN_MODE

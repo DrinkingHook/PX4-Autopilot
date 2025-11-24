@@ -43,6 +43,9 @@
 
 using namespace time_literals;
 
+/**
+ * @brief 多旋翼悬停推力估计器
+ */
 MulticopterHoverThrustEstimator::MulticopterHoverThrustEstimator() :
 	ModuleParams(nullptr),
 	WorkItem(MODULE_NAME, px4::wq_configurations::nav_and_controllers)
@@ -127,6 +130,9 @@ void MulticopterHoverThrustEstimator::Run()
 		// this value is always good enough after takeoff for
 		// this use case.
 		// TODO: improve the landed flag
+		// 翻译：之所以需要这样做，是因为着陆检测器的着陆标志并不能保证飞行器不再接触地面。
+		// 由于起飞后 dist_bottom 值对于此用例始终足够有效，因此无需检查其有效性。
+		// 待办事项：改进着陆标志。
 		if (!_landed) {
 			if (local_pos.dist_bottom > 1.f) {
 				_in_air = true;
@@ -182,7 +188,9 @@ void MulticopterHoverThrustEstimator::Run()
 			if (PX4_ISFINITE(thrust_allocated(2))) {
 				// Inform the hover thrust estimator about the measured vertical
 				// acceleration (positive acceleration is up) and the current thrust (positive thrust is up)
+				// 翻译：将测量的垂直加速度（正加速度向上）和当前推力（正推力向上）通知悬停推力估计器。
 				// Guard against fast up and down motions biasing the estimator due to large drag and prop wash effects
+				// 翻译：防止快速上下运动导致估计器偏移，由于大阻力和螺旋桨效应
 				const float meas_noise_coeff_z = fmaxf((fabsf(local_pos.vz) - _param_hte_vz_thr.get()) + 1.f, 1.f);
 				const float meas_noise_coeff_xy = fmaxf((matrix::Vector2f(local_pos.vx,
 									local_pos.vy).norm() - _param_hte_vxy_thr.get()) + 1.f,
@@ -194,6 +202,7 @@ void MulticopterHoverThrustEstimator::Run()
 				bool valid = (_hover_thrust_ekf.getHoverThrustEstimateVar() < 0.001f);
 
 				// The test ratio does not need to pass all the time to have a valid estimate
+				// 翻译：测试比率不需要一直通过才能有有效的估计
 				if (!_valid) {
 					valid = valid && (_hover_thrust_ekf.getInnovationTestRatio() < 1.f);
 				}
@@ -214,6 +223,7 @@ void MulticopterHoverThrustEstimator::Run()
 
 		if (_valid) {
 			// only publish a single message to invalidate
+			// 翻译：只发布一条消息来取消验证
 			publishInvalidStatus();
 
 			_valid = false;
@@ -244,6 +254,9 @@ void MulticopterHoverThrustEstimator::publishStatus(const hrt_abstime &timestamp
 	_hover_thrust_ekf_pub.publish(status_msg);
 }
 
+/**
+ * @brief 发布无效状态
+ */
 void MulticopterHoverThrustEstimator::publishInvalidStatus()
 {
 	hover_thrust_estimate_s status_msg{};

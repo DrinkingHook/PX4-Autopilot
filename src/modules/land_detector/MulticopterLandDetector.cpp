@@ -124,6 +124,7 @@ void MulticopterLandDetector::_update_params()
 	param_get(_paramHandle.crawlSpeed, &_params.crawlSpeed);
 
 	// 1.2 corresponds to the margin between the default parameters LNDMC_Z_VEL_MAX = MPC_LAND_CRWL / 1.2
+	// 翻译：1.2对应默认参数LNDMC_Z_VEL_MAX = MPC_LAND_CRWL / 1.2之间的差异
 	const float lndmc_upper_threshold = math::min(_params.crawlSpeed, _params.landSpeed) / 1.2f;
 
 	if (_param_lndmc_z_vel_max.get() > lndmc_upper_threshold) {
@@ -146,16 +147,27 @@ void MulticopterLandDetector::_update_params()
 		// Therefore, we need to always initialize the hoverThrottle using the hover
 		// thrust parameter in case we fly in stabilized
 		// TODO: this can be removed once HTE runs in all modes
+		// 翻译：HTE 基于位置控制器运行，因此即使我们希望使用估计值，它也仅在高度和位置模式下可用。
+		// 因此，我们需要始终使用悬停推力参数来初始化 hoverThrottle，以防我们在稳定模式下飞行
+		// TODO: 一旦 HTE 在所有模式下运行，这部分可以移除
+
 		_hover_thrust_initialized = true;
 	}
 }
 
+/**
+ * @brief 获取自由落体状态
+ */
 bool MulticopterLandDetector::_get_freefall_state()
 {
 	// norm of specific force. Should be close to 9.8 m/s^2 when landed.
+	// 翻译：当降落时，规范的特定力应该接近9.8 m/s^2。
 	return _acceleration.norm() < 2.f;
 }
 
+/**
+ * @brief 获取地面接触状态
+ */
 bool MulticopterLandDetector::_get_ground_contact_state()
 {
 	const hrt_abstime time_now_us = hrt_absolute_time();
@@ -167,6 +179,10 @@ bool MulticopterLandDetector::_get_ground_contact_state()
 		// Use wider threshold if currently in "maybe landed" state, as estimation for
 		// vertical speed is often deteriorated when on the ground or due to propeller
 		// up/down throttling.
+		// 翻译：检查我们是否在垂直移动。
+		// 如果当前处于"可能着陆"状态，则使用更宽的阈值，因为在地面上或由于螺旋桨
+		// 上下推油门时，垂直速度的估计通常会变差。
+
 
 		float vertical_velocity_threshold = _param_lndmc_z_vel_max.get();
 
@@ -179,6 +195,7 @@ bool MulticopterLandDetector::_get_ground_contact_state()
 
 		} else if (_vehicle_local_position.z_valid && (fabsf(_vehicle_local_position.z_deriv) < vertical_velocity_threshold)) {
 			// The Z derivative is often less accurate than VZ but is less affected by biased velocity measurements.
+			// 翻译：Z导数通常不如VZ准确，但受偏置速度测量的影响较小。
 			_vertical_movement = false;
 
 		} else {
@@ -191,6 +208,7 @@ bool MulticopterLandDetector::_get_ground_contact_state()
 
 
 	// Check if we are moving horizontally.
+	// 翻译：检查我们是否在水平移动。
 	if (lpos_available && _vehicle_local_position.v_xy_valid) {
 		const Vector2f v_xy{_vehicle_local_position.vx, _vehicle_local_position.vy};
 		_horizontal_movement = v_xy.longerThan(_param_lndmc_xy_vel_max.get());
@@ -210,10 +228,12 @@ bool MulticopterLandDetector::_get_ground_contact_state()
 
 	if (!_in_descend || hover_thrust_estimate_valid) {
 		// continue using valid hover thrust if it became invalid during descent
+		// 翻译：如果悬停推力估计有效，则继续使用有效的悬停推力。
 		_hover_thrust_estimate_valid = hover_thrust_estimate_valid;
 	}
 
 	// low thrust: 30% of throttle range between min and hover, relaxed to 60% if hover thrust estimate available
+	// 翻译：如果悬停推力估计有效，则将低推力阈值设置为悬停推力的60%，否则设置为悬停推力的30%。
 	const float thr_pct_hover = _hover_thrust_estimate_valid ? 0.6f : 0.3f;
 	const float sys_low_throttle = _params.minThrottle + (_params.hoverThrottle - _params.minThrottle) * thr_pct_hover;
 	_has_low_throttle = (_vehicle_thrust_setpoint_throttle <= sys_low_throttle);
@@ -221,6 +241,7 @@ bool MulticopterLandDetector::_get_ground_contact_state()
 
 	// if we have a valid velocity setpoint and the vehicle is demanded to go down but no vertical movement present,
 	// we then can assume that the vehicle hit ground
+	// 翻译：如果速度设定值有效，且车辆被要求向下行驶但没有垂直运动，那么我们可以假设车辆已撞击地面。
 	if (_flag_control_climb_rate_enabled) {
 		trajectory_setpoint_s trajectory_setpoint;
 
@@ -231,6 +252,7 @@ bool MulticopterLandDetector::_get_ground_contact_state()
 		}
 
 		// ground contact requires commanded descent until landed
+		// 翻译：触地需要指令下降直至着陆。
 		if (!_maybe_landed_hysteresis.get_state() && !_landed_hysteresis.get_state()) {
 			ground_contact &= _in_descend;
 		}
@@ -240,17 +262,24 @@ bool MulticopterLandDetector::_get_ground_contact_state()
 	}
 
 	// if there is no distance to ground estimate available then don't enforce using it.
+	// 翻译：如果距离地面估计不可用，则不要强制使用它。
 	// if a distance to the ground estimate is generally available (_dist_bottom_is_observable=true), then
 	// we already increased the hysteresis for the land detection states in order to reduce the chance of false positives.
+	// 翻译：如果通常可以获得到地面的距离估计值（_dist_bottom_is_observable=true），
+	// 那么我们已经增加了陆地检测状态的滞后，以减少误报的可能性。
 	const bool skip_close_to_ground_check = !_dist_bottom_is_observable || !_vehicle_local_position.dist_bottom_valid;
 	_close_to_ground_or_skipped_check = _is_close_to_ground() || skip_close_to_ground_check;
 
 	// TODO: we need an accelerometer based check for vertical movement for flying without GPS
+	// 翻译：我们需要一个基于加速度计的垂直运动检查，以在没有GPS的情况下飞行。
 	return !_armed ||
 	       (_close_to_ground_or_skipped_check && ground_contact
 		&& !_horizontal_movement && !_vertical_movement);
 }
 
+/**
+ * @brief 获取可能着陆状态
+ */
 bool MulticopterLandDetector::_get_maybe_landed_state()
 {
 	hrt_abstime now = hrt_absolute_time();
@@ -259,6 +288,7 @@ bool MulticopterLandDetector::_get_maybe_landed_state()
 
 	if (_flag_control_climb_rate_enabled) {
 		// 10% of throttle range between min and hover
+		// 翻译：10%的推力范围在最小值和悬停值之间。
 		minimum_thrust_threshold = _params.minThrottle + (_params.hoverThrottle - _params.minThrottle) * 0.1f;
 
 	} else {
@@ -269,10 +299,12 @@ bool MulticopterLandDetector::_get_maybe_landed_state()
 	_minimum_thrust_8s_hysteresis.set_state_and_update(minimum_thrust_now, now);
 
 	// Next look if vehicle is not rotating (do not consider yaw)
+	// 翻译：接下来，检查车辆是否没有旋转（不考虑偏航）
 	float max_rotation_threshold = math::radians(_param_lndmc_rot_max.get());
 
 	// Widen max rotation thresholds if either in landed state, thus making it harder
 	// to trigger a false positive !landed e.g. due to propeller throttling up/down.
+	// 翻译：如果处于着陆状态，则扩大最大旋转阈值，从而更难触发误报！着陆，例如由于螺旋桨油门增大/减小。
 	if (_landed_hysteresis.get_state()) {
 		max_rotation_threshold *= 2.5f;
 	}
@@ -280,6 +312,7 @@ bool MulticopterLandDetector::_get_maybe_landed_state()
 	_rotational_movement = _angular_velocity.xy().norm() > max_rotation_threshold;
 
 	// If vertical velocity is available: ground contact, no thrust, no movement -> landed
+	// 翻译：如果垂直速度可用：地面接触，无推力，无运动->着陆
 	const bool local_position_updated = (now - _vehicle_local_position.timestamp) < 1_s;
 	const bool vertical_velocity_valid = _vehicle_local_position.v_z_valid;
 	const bool vertical_estimate = local_position_updated && vertical_velocity_valid;
@@ -290,12 +323,19 @@ bool MulticopterLandDetector::_get_maybe_landed_state()
 		    || (!vertical_estimate && _minimum_thrust_8s_hysteresis.get_state())));
 }
 
+/**
+ * @brief 获取着陆状态
+ */
 bool MulticopterLandDetector::_get_landed_state()
 {
 	// all maybe_landed conditions need to hold longer
+	// 翻译：所有可能着陆的条件需要保持更长时间
 	return !_armed || _maybe_landed_hysteresis.get_state();
 }
 
+/**
+ * @brief 获取地面效应状态
+ */
 bool MulticopterLandDetector::_get_ground_effect_state()
 {
 	return (_in_descend && !_horizontal_movement) ||
@@ -303,6 +343,9 @@ bool MulticopterLandDetector::_get_ground_effect_state()
 	       _takeoff_state == takeoff_status_s::TAKEOFF_STATE_RAMPUP;
 }
 
+/**
+ * @brief 获取接近地面状态
+ */
 bool MulticopterLandDetector::_is_close_to_ground()
 {
 	if (_vehicle_local_position.dist_bottom_valid) {
@@ -313,6 +356,10 @@ bool MulticopterLandDetector::_is_close_to_ground()
 	}
 }
 
+/**
+ * @brief 设置滞回因子
+ * @param factor 滞回因子
+ */
 void MulticopterLandDetector::_set_hysteresis_factor(const int factor)
 {
 	_ground_contact_hysteresis.set_hysteresis_time_from(false, _param_lndmc_trig_time.get() * 1_s / 3 * factor);

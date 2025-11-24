@@ -55,9 +55,13 @@ void VelocitySmoothing::reset(float accel, float vel, float pos)
 	_state_init = _state;
 }
 
+/**
+ * @brief 拉伸时间以满足最大加速度限制
+ */
 float VelocitySmoothing::saturateT1ForAccel(float a0, float j_max, float T1, float a_max) const
 {
 	/* Check maximum acceleration, saturate and recompute T1 if needed */
+	// 翻译：只有在没有除以零的错误并且无人机不在位置设定点前面时才拉伸时间
 	float accel_T1 = a0 + j_max * T1;
 	float T1_new = T1;
 
@@ -101,6 +105,17 @@ float VelocitySmoothing::computeT1(float a0, float v3, float j_max, float a_max)
 	return math::max(T1, 0.f);
 }
 
+/**
+ * @berif 计算T1，给定T123，a0，v3，j_max和a_max。
+ *
+ * @param T123 总时间T1 + T2 + T3。
+ * @param a0 初始加速度。
+ * @param v3 最终速度。
+ * @param j_max 最大加速度。
+ * @param a_max 最大加速度。
+ *
+ * @return 计算的T1。
+ */
 float VelocitySmoothing::computeT1(float T123, float a0, float v3, float j_max, float a_max) const
 {
 	float a = -j_max;
@@ -160,6 +175,9 @@ float VelocitySmoothing::computeT3(float T1, float a0, float j_max) const
 	return math::max(T3, 0.f);
 }
 
+/**
+ * 更新速度平滑的持续时间。
+ */
 void VelocitySmoothing::updateDurations(float vel_setpoint)
 {
 	_vel_sp = math::constrain(vel_setpoint, -_max_vel, _max_vel);
@@ -175,9 +193,11 @@ int VelocitySmoothing::computeDirection() const
 {
 	// Compute the velocity at which the trajectory will be
 	// when the acceleration will be zero
+	// 翻译：
 	float vel_zero_acc = computeVelAtZeroAcc();
 
 	/* Depending of the direction, start accelerating positively or negatively */
+	// 翻译：根据方向，启动正向或负向加速
 	int direction = sign(_vel_sp - vel_zero_acc);
 
 	if (direction == 0) {

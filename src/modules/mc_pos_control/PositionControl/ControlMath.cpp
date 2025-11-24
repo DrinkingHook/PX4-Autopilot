@@ -44,22 +44,37 @@ using namespace matrix;
 
 namespace ControlMath
 {
+/**
+ * @brief 将推力转换为姿态
+ * @param thr_sp 推力向量
+ * @param yaw_sp 目标yaw角度
+ * @param att_sp 姿态设置点
+ */
 void thrustToAttitude(const Vector3f &thr_sp, const float yaw_sp, vehicle_attitude_setpoint_s &att_sp)
 {
 	bodyzToAttitude(-thr_sp, yaw_sp, att_sp);
 	att_sp.thrust_body[2] = -thr_sp.length();
 }
 
+/**
+ * @brief 限制倾斜角度
+ * @param body_unit 身体方向向量
+ * @param world_unit 世界方向向量
+ * @param max_angle 最大倾斜角度
+ */
 void limitTilt(Vector3f &body_unit, const Vector3f &world_unit, const float max_angle)
 {
 	// determine tilt
+	// 翻译：确定倾斜
 	const float dot_product_unit = body_unit.dot(world_unit);
 	float angle = acosf(dot_product_unit);
 	// limit tilt
+	// 翻译：限制倾斜
 	angle = math::min(angle, max_angle);
 	Vector3f rejection = body_unit - (dot_product_unit * world_unit);
 
 	// corner case exactly parallel vectors
+	// 翻译：特殊情况：向量完全平行
 	if (rejection.norm_squared() < FLT_EPSILON) {
 		rejection(0) = 1.f;
 	}
@@ -67,9 +82,16 @@ void limitTilt(Vector3f &body_unit, const Vector3f &world_unit, const float max_
 	body_unit = cosf(angle) * world_unit + sinf(angle) * rejection.unit();
 }
 
+/**
+ * @brief 将身体z轴转换为姿态
+ * @param body_z 身体z轴方向向量
+ * @param yaw_sp 目标yaw角度
+ * @param att_sp 姿态设置点
+ */
 void bodyzToAttitude(Vector3f body_z, const float yaw_sp, vehicle_attitude_setpoint_s &att_sp)
 {
 	// zero vector, no direction, set safe level value
+	// 翻译：零向量，没有方向，设置安全水平值
 	if (body_z.norm_squared() < FLT_EPSILON) {
 		body_z(2) = 1.f;
 	}
@@ -77,12 +99,15 @@ void bodyzToAttitude(Vector3f body_z, const float yaw_sp, vehicle_attitude_setpo
 	body_z.normalize();
 
 	// vector of desired yaw direction in XY plane, rotated by PI/2
+	// 翻译：在XY平面中，目标yaw方向，旋转PI/2
 	const Vector3f y_C{-sinf(yaw_sp), cosf(yaw_sp), 0.f};
 
 	// desired body_x axis, orthogonal to body_z
+	// 翻译：身体x轴，与身体z轴正交
 	Vector3f body_x = y_C % body_z;
 
 	// keep nose to front while inverted upside down
+	// 翻译：倒置时，保持前部朝前
 	if (body_z(2) < 0.f) {
 		body_x = -body_x;
 	}
@@ -90,6 +115,8 @@ void bodyzToAttitude(Vector3f body_z, const float yaw_sp, vehicle_attitude_setpo
 	if (fabsf(body_z(2)) < 0.000001f) {
 		// desired thrust is in XY plane, set X downside to construct correct matrix,
 		// but yaw component will not be used actually
+		// 翻译：在XY平面上，设置X轴朝下，构造正确的矩阵，
+		// 但不会使用yaw组件
 		body_x.zero();
 		body_x(2) = 1.f;
 	}
@@ -97,11 +124,13 @@ void bodyzToAttitude(Vector3f body_z, const float yaw_sp, vehicle_attitude_setpo
 	body_x.normalize();
 
 	// desired body_y axis
+	// 翻译：身体y轴，与身体x轴正交
 	const Vector3f body_y = body_z % body_x;
 
 	Dcmf R_sp;
 
 	// fill rotation matrix
+	// 翻译：填充旋转矩阵
 	for (int i = 0; i < 3; i++) {
 		R_sp(i, 0) = body_x(i);
 		R_sp(i, 1) = body_y(i);
@@ -109,10 +138,18 @@ void bodyzToAttitude(Vector3f body_z, const float yaw_sp, vehicle_attitude_setpo
 	}
 
 	// copy quaternion setpoint to attitude setpoint topic
+	// 翻译：将四元数设定点复制到姿态设定点主题
 	const Quatf q_sp{R_sp};
 	q_sp.copyTo(att_sp.q_d);
 }
 
+/**
+ * @brief 约束XY轴，使其不超过最大值
+ * @param v0 第一个向量
+ * @param v1 第二个向量
+ * @param max 最大值
+ * @return Vector2f 约束后的向量
+ */
 Vector2f constrainXY(const Vector2f &v0, const Vector2f &v1, const float &max)
 {
 	if (Vector2f(v0 + v1).norm() <= max) {
@@ -177,10 +214,19 @@ Vector2f constrainXY(const Vector2f &v0, const Vector2f &v1, const float &max)
 	}
 }
 
+/**
+ * @brief 计算球体与直线的交点
+ * @param sphere_c 球心坐标
+ * @param sphere_r 球半径
+ * @param line_a 直线起点坐标
+ * @param line_b 直线终点坐标
+ * @param res 交点坐标
+ */
 bool cross_sphere_line(const Vector3f &sphere_c, const float sphere_r,
 		       const Vector3f &line_a, const Vector3f &line_b, Vector3f &res)
 {
 	// project center of sphere on line  normalized AB
+	// 翻译：将球心投影到直线上，得到归一化的AB向量
 	Vector3f ab_norm = line_b - line_a;
 
 	if (ab_norm.length() < 0.01f) {
@@ -193,14 +239,17 @@ bool cross_sphere_line(const Vector3f &sphere_c, const float sphere_r,
 
 	if (sphere_r > cd_len) {
 		// we have triangle CDX with known CD and CX = R, find DX
+		// 翻译：计算DX的长度，即球心到直线的距离
 		float dx_len = sqrtf(sphere_r * sphere_r - cd_len * cd_len);
 
 		if ((sphere_c - line_b) * ab_norm > 0.f) {
 			// target waypoint is already behind us
+			// 翻译：如果目标点在我们身后，直接返回目标点
 			res = line_b;
 
 		} else {
 			// target is in front of us
+			// 翻译：如果目标点在我们前方，计算球心到直线的距离
 			res = d + ab_norm * dx_len; // vector A->B on line
 		}
 
@@ -209,14 +258,17 @@ bool cross_sphere_line(const Vector3f &sphere_c, const float sphere_r,
 	} else {
 
 		// have no roots, return D
+		// 翻译：如果没有根，直接返回D
 		res = d; // go directly to line
 
 		// previous waypoint is still in front of us
+		// 翻译：如果前一个点在我们前方，直接返回前一个点
 		if ((sphere_c - line_a) * ab_norm < 0.f) {
 			res = line_a;
 		}
 
 		// target waypoint is already behind us
+		// 翻译：如果目标点在我们身后，直接返回目标点
 		if ((sphere_c - line_b) * ab_norm > 0.f) {
 			res = line_b;
 		}
@@ -229,10 +281,12 @@ void addIfNotNan(float &setpoint, const float addition)
 {
 	if (PX4_ISFINITE(setpoint) && PX4_ISFINITE(addition)) {
 		// No NAN, add to the setpoint
+		// 翻译：如果两个值都是有限的，直接相加
 		setpoint += addition;
 
 	} else if (!PX4_ISFINITE(setpoint)) {
 		// Setpoint NAN, take addition
+		// 翻译：设定值 NAN，取加法
 		setpoint = addition;
 	}
 
@@ -249,6 +303,7 @@ void addIfNotNanVector3f(Vector3f &setpoint, const Vector3f &addition)
 void setZeroIfNanVector3f(Vector3f &vector)
 {
 	// Adding zero vector overwrites elements that are NaN with zero
+	// 翻译：添加零向量会将 NaN 元素覆盖为零。
 	addIfNotNanVector3f(vector, Vector3f());
 }
 

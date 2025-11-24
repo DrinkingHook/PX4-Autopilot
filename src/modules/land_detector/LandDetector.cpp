@@ -76,6 +76,7 @@ void LandDetector::start()
 void LandDetector::Run()
 {
 	// push backup schedule
+	// 翻译：推送备份调度
 	ScheduleDelayed(50_ms);
 
 	perf_begin(_cycle_perf);
@@ -122,11 +123,13 @@ void LandDetector::Run()
 
 	if (!_dist_bottom_is_observable) {
 		// we consider the distance to the ground observable if the system is using a range sensor
+		// 翻译：我们考虑地面距离可观察，如果系统使用范围传感器
 		_dist_bottom_is_observable = _vehicle_local_position.dist_bottom_sensor_bitfield &
 					     vehicle_local_position_s::DIST_BOTTOM_SENSOR_RANGE;
 	}
 
 	// Increase land detection time if not close to ground
+	// 翻译：如果不在地面附近，增加地面检测时间
 	if (_dist_bottom_is_observable && !_vehicle_local_position.dist_bottom_valid) {
 		_set_hysteresis_factor(3);
 
@@ -153,6 +156,7 @@ void LandDetector::Run()
 	const bool at_rest = landDetected && _at_rest;
 
 	// publish at 1 Hz, very first time, or when the result has changed
+	// 翻译：如果不在地面附近，增加地面检测时间
 	if ((hrt_elapsed_time(&_land_detected.timestamp) >= 1_s) ||
 	    (_land_detected.landed != landDetected) ||
 	    (_land_detected.freefall != freefallDetected) ||
@@ -163,6 +167,7 @@ void LandDetector::Run()
 
 		if (!landDetected && _land_detected.landed && _takeoff_time == 0) { /* only set take off time once, until disarming */
 			// We did take off
+			// 翻译：增加地面检测时间
 			_takeoff_time = now_us;
 		}
 
@@ -184,6 +189,7 @@ void LandDetector::Run()
 
 	// set the flight time when disarming (not necessarily when landed, because all param changes should
 	// happen on the same event and it's better to set/save params while not in armed state)
+	// 翻译：在解除解锁时设置飞行时间（不一定在着陆时设置，因为所有参数更改应在同一事件中发生，并且最好在未解锁状态下设置/保存参数）
 	if (_takeoff_time != 0 && !_armed && _previous_armed_state) {
 		_total_flight_time += now_us - _takeoff_time;
 		_takeoff_time = 0;
@@ -209,6 +215,9 @@ void LandDetector::Run()
 	}
 }
 
+/**
+ * @brief 更新车辆静止状态
+ */
 void LandDetector::UpdateVehicleAtRest()
 {
 	if (_sensor_selection_sub.updated()) {
@@ -220,6 +229,7 @@ void LandDetector::UpdateVehicleAtRest()
 			bool gyro_status_found = false;
 
 			// find corresponding vehicle_imu_status instance
+			// 翻译：查找对应的vehicle_imu_status实例
 			for (uint8_t imu_instance = 0; imu_instance < 4; imu_instance++) {
 				uORB::Subscription imu_status_sub{ORB_ID(vehicle_imu_status), imu_instance};
 

@@ -88,6 +88,7 @@ void StickAccelerationXY::generateSetpoints(Vector2f stick_xy, const float yaw, 
 		const matrix::Vector2f &vel_sp_feedback, const float dt)
 {
 	// avoid setpoint steps from limit changes to improve velocity tracking and hence drag estimation
+	// 翻译：避免因限位变化而导致的设定点阶跃，以提高速度跟踪精度，从而改善阻力估计。
 	const float velocity_constraint = _velocity_slew_rate_xy.update(_velocity_constraint, dt);
 	_velocity_constraint = _param_mpc_vel_manual.get(); // reset, reduced to strictest limit in next loop
 

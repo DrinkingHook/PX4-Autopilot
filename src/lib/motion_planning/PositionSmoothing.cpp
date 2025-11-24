@@ -77,6 +77,7 @@ bool PositionSmoothing::_isTurning(const Vector3f &target) const
 	// and the direction to the target is greater than 10 degrees, the
 	// velocity is large enough and the drone isn't in the acceptance
 	// radius of the last WP.
+	// 翻译：如果速度向量与目标方向之间的角度大于10度，速度足够大，无人机不在最后一个WP的接受半径内，则认为无人机正在转弯。
 	return (vel_traj.longerThan(0.2f)
 		&& cos_align < 0.98f
 		&& pos_to_target.longerThan(_target_acceptance_radius));
@@ -98,6 +99,8 @@ float PositionSmoothing::_getMaxXYSpeed(const Vector3f(&waypoints)[3]) const
 
 	// constrain velocity to go to the position setpoint first if the position setpoint has been modified by an external source
 	// (eg. Obstacle Avoidance)
+	// 翻译：如果位置设定点已被外部源修改（例如，障碍物避让），则约束速度以优先前往位置设定点
+
 
 	Vector3f pos_to_waypoints[3] = {pos_traj, waypoints[1], waypoints[2]};
 
@@ -162,17 +165,20 @@ const Vector3f PositionSmoothing::_getL1Point(const Vector3f &position, const Ve
 	const Vector3f closest_pt = waypoints[0] + prev_to_closest;
 
 	// Compute along-track error using L1 distance and cross-track error
+	// 翻译：使用 L1 距离和跨轨误差计算沿轨误差
 	const float crosstrack_error = (closest_pt - pos_traj).length();
 
 	const float l1 = math::max(_target_acceptance_radius, 5.f);
 	float alongtrack_error = 0.f;
 
 	// Protect against sqrt of a negative number
+	// 翻译：防止负数的平方根
 	if (l1 > crosstrack_error) {
 		alongtrack_error = sqrtf(l1 * l1 - crosstrack_error * crosstrack_error);
 	}
 
 	// Position of the point on the line where L1 intersect the line between the two waypoints
+	// 翻译：L1 与两个航点之间的线相交的线上的点的位置
 	return closest_pt + alongtrack_error * u_prev_to_target;
 }
 
@@ -224,6 +230,7 @@ const Vector3f PositionSmoothing::_generateVelocitySetpoint(const Vector3f &posi
 
 		for (int i = 0; i < 3; i++) {
 			// If available, use the existing velocity as a feedforward, otherwise replace it
+			// 翻译：如果可用，使用现有的速度作为反馈，否则替换它
 			if (PX4_ISFINITE(velocity_setpoint(i))) {
 				velocity_setpoint(i) += vel_sp_constrained(i);
 
@@ -235,8 +242,10 @@ const Vector3f PositionSmoothing::_generateVelocitySetpoint(const Vector3f &posi
 
 	else if (xy_target_valid) {
 		// Use 2D position setpoint to generate a 2D velocity setpoint
+		// 翻译：使用2D位置设定点生成2D速度设定点
 
 		// Get various path specific vectors
+		// 翻译：获取各种路径特定向量
 		Vector2f pos_traj(_trajectory[0].getCurrentPosition(), _trajectory[1].getCurrentPosition());
 		Vector2f crossing_point = is_single_waypoint ? Vector2f(target) : Vector2f(_getCrossingPoint(position, waypoints));
 		Vector2f pos_traj_to_dest_xy = crossing_point - pos_traj;
@@ -256,6 +265,7 @@ const Vector3f PositionSmoothing::_generateVelocitySetpoint(const Vector3f &posi
 
 		for (int i = 0; i < 2; i++) {
 			// If available, use the existing velocity as a feedforward, otherwise replace it
+			// 翻译：如果可用，使用现有的速度作为反馈，否则替换它
 			if (PX4_ISFINITE(velocity_setpoint(i))) {
 				velocity_setpoint(i) += vel_sp_constrained_xy(i);
 
@@ -267,11 +277,13 @@ const Vector3f PositionSmoothing::_generateVelocitySetpoint(const Vector3f &posi
 
 	else if (z_target_valid) {
 		// Use Z position setpoint to generate a Z velocity setpoint
+		// 翻译：使用Z位置设定点生成Z速度设定点
 
 		const float z_dir = matrix::sign(target(2) - _trajectory[2].getCurrentPosition());
 		const float vel_sp_z = z_dir * _getMaxZSpeed(waypoints);
 
 		// If available, use the existing velocity as a feedforward, otherwise replace it
+		// 翻译：如果可用，使用现有的速度作为反馈，否则替换它
 		if (PX4_ISFINITE(velocity_setpoint(2))) {
 			velocity_setpoint(2) += vel_sp_z;
 
@@ -297,6 +309,10 @@ void PositionSmoothing::_generateTrajectory(
 	/* Slow down the trajectory by decreasing the integration time based on the position error.
 	 * This is only performed when the drone is behind the trajectory
 	 */
+	/**
+	 * 翻译：减慢轨迹速度，通过减少积分时间来减少位置误差。
+	 * 	这只在无人机在轨迹后面时才执行
+	 */
 	Vector2f position_trajectory_xy(_trajectory[0].getCurrentPosition(), _trajectory[1].getCurrentPosition());
 	Vector2f position_xy(position);
 	Vector2f vel_traj_xy(_trajectory[0].getCurrentVelocity(), _trajectory[1].getCurrentVelocity());
@@ -306,6 +322,7 @@ void PositionSmoothing::_generateTrajectory(
 	float time_stretch = 1.f;
 
 	// Only stretch time if there's no division by zero and the drone isn't ahead of the position setpoint
+	// 翻译：只有在没有除以零的错误并且无人机不在位置设定点前面时才拉伸时间
 	if ((_max_allowed_horizontal_error > FLT_EPSILON)
 	    && drone_to_trajectory_xy.dot(vel_traj_xy) >= 0) {
 		time_stretch = 1.f - math::constrain(position_error / _max_allowed_horizontal_error, 0.f, 1.f);

@@ -298,24 +298,30 @@ void FlightTaskAuto::_prepareLandSetpoints()
 		// Stick full up -1 -> stop, stick full down 1 -> double the speed
 		vertical_speed *= (1 - _sticks.getThrottleZeroCenteredExpo());
 
+		// 获取俯仰和横滚输入
 		Vector2f sticks_xy = _sticks.getPitchRollExpo();
 
 		if (sticks_xy.longerThan(FLT_EPSILON)) {
 			// Ensure no unintended yawing when nudging horizontally during initial heading alignment
 			// 翻译：确保在初始航向调整期间水平微调时不会产生意外偏航
+			// 有水平微调输入时，锁定当前航向（防止意外偏航）
 			_land_heading = _yaw_setpoint_previous;
 		}
 
+		// 允许偏航摇杆调整航向
 		rcHelpModifyYaw(_land_heading);
 
+		//  将机体坐标系的摇杆输入转换为地理坐标系（北-东）
 		Vector2f sticks_ne = sticks_xy;
 		Sticks::rotateIntoHeadingFrameXY(sticks_ne, _yaw, _land_heading);
 
+		// 默认无限制
 		float max_speed = INFINITY;
 
 		if (_param_mpc_land_radius.get() > FLT_EPSILON) {
 
 			// = NaN if we are outside of the allowed circle and nudging does not point back towards it
+			// 翻译：如果我们位于允许的圆圈之外，并且微调操作无法将我们指向该圆圈，则结果为 NaN。
 			const float distance_to_circle = math::trajectory::getMaxDistanceToCircle(_position.xy(), _initial_land_position.xy(),
 							 _param_mpc_land_radius.get(), sticks_ne);
 
@@ -326,16 +332,19 @@ void FlightTaskAuto::_prepareLandSetpoints()
 				max_speed = math::trajectory::computeMaxSpeedFromDistance(_stick_acceleration_xy.getMaxJerk(),
 						_stick_acceleration_xy.getMaxAcceleration(), distance_to_circle, 0.f);
 
+				// 如果速度已经很小，直接禁止微调
 				if (max_speed < 0.5f) {
 					sticks_xy.setZero();
 				}
 
 			} else {
 				max_speed = 0.f;
+				// 强制忽略摇杆输入
 				sticks_xy.setZero();
 			}
 		}
 
+		// 应用速度限制
 		_stick_acceleration_xy.setVelocityConstraint(max_speed);
 		_stick_acceleration_xy.generateSetpoints(sticks_xy, _yaw, _land_heading, _position,
 				_velocity_setpoint_feedback.xy(), _deltatime);
@@ -349,6 +358,7 @@ void FlightTaskAuto::_prepareLandSetpoints()
 		}
 	}
 
+	// 着陆位置的最后一个元素必须保持为 NaN（非空值）。
 	_position_setpoint = _land_position; // The last element of the land position has to stay NAN
 	_yaw_setpoint = _land_heading;
 	_velocity_setpoint(2) = vertical_speed;
@@ -357,6 +367,7 @@ void FlightTaskAuto::_prepareLandSetpoints()
 
 void FlightTaskAuto::_smoothYaw()
 {
+	// 参数初始化
 	const float yawrate_max = math::radians(_param_mpc_yawrauto_max.get());
 	_heading_smoothing.setMaxHeadingRate(yawrate_max);
 	_heading_smoothing.setMaxHeadingAccel(math::radians(_param_mpc_yawrauto_acc.get()));
@@ -900,7 +911,7 @@ bool FlightTaskAuto::isTargetModified() const
 }
 
 /**
- * @berif  更新轨迹和约束
+ * @brief  更新轨迹和约束
  */
 void FlightTaskAuto::_updateTrajConstraints()
 {

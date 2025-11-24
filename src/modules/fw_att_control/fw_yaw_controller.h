@@ -62,6 +62,16 @@ public:
 	 * @param airspeed airspeed [m/s]
 	 * @return Roll body rate setpoint [rad/s]
 	 */
+	/**
+	 * @brief 翻译为中文：根据当前姿态和空速计算欧拉角和身体角速度设定点
+	 * 
+	 * @param roll_setpoint 翻译：滚转角设定点 [rad]
+	 * @param euler_pitch_rate_setpoint 翻译：欧拉角俯仰角速率设定点 [rad/s]
+	 * @param roll 翻译：滚转角 [rad]
+	 * @param pitch 翻译：俯仰角 [rad]
+	 * @param airspeed 翻译：空速 [m/s]
+	 * @return 翻译：身体角速率设定点 [rad/s]
+	 */
 	float control_yaw(float roll_setpoint, float euler_pitch_rate_setpoint, float roll, float pitch,
 			  float airspeed);
 

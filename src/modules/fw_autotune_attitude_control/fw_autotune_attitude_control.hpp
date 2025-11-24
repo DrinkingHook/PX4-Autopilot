@@ -198,6 +198,10 @@ private:
 	 * When input and output scales are a lot different, some elements of the covariance
 	 * matrix will collapse much faster than other ones, creating an ill-conditionned matrix
 	 */
+	/**
+	 * 翻译：应用于输入数据的缩放因子，以使输入/输出范围相同
+	 * 	当输入和输出尺度差异很大时，协方差矩阵的一些元素会比其他元素更快地坍塌，从而产生一个病态矩阵
+	 */
 	float _input_scale{1.f};
 
 	hrt_abstime _last_run{0};

@@ -81,17 +81,20 @@ void McAutotuneAttitudeControl::Run()
 	}
 
 	// check for parameter updates
+	// 翻译：检查参数更新。
 	if (_parameter_update_sub.updated()) {
 		// clear update
 		parameter_update_s pupdate;
 		_parameter_update_sub.copy(&pupdate);
 
 		// update parameters from storage
+		// 翻译：从存储中更新参数。
 		updateParams();
 		updateStateMachine(hrt_absolute_time());
 	}
 
 	// new control data needed every iteration
+	// 翻译：每次迭代都需要新的控制数据。
 	if (_state == state::idle
 	    || !_vehicle_torque_setpoint_sub.updated()) {
 		return;
@@ -126,8 +129,10 @@ void McAutotuneAttitudeControl::Run()
 	const hrt_abstime timestamp_sample = vehicle_torque_setpoint.timestamp;
 
 	// collect sample interval average for filters
+	// 翻译：收集滤波器的采样间隔平均值。
 	if (_last_run > 0) {
 		// Guard against too small (< 0.125ms) and too large (> 20ms) dt's.
+		// 翻译：防止dt太小(<0.125ms)或太大(>20ms)。
 		const float dt = math::constrain(((timestamp_sample - _last_run) * 1e-6f), 0.000125f, 0.02f);
 		_interval_sum += dt;
 		_interval_count++;
@@ -142,6 +147,7 @@ void McAutotuneAttitudeControl::Run()
 	checkFilters();
 
 	// Send data to the filters at maximum frequency
+	// 翻译：在最大频率下将数据发送到滤波器。
 	if (_state == state::roll) {
 		_sys_id.updateFilters(_input_scale * vehicle_torque_setpoint.xyz[0],
 				      angular_velocity.xyz[0]);
@@ -156,6 +162,7 @@ void McAutotuneAttitudeControl::Run()
 	}
 
 	// Update the model at a lower frequency
+	// 翻译：在较低频率下更新模型。
 	_model_update_counter++;
 
 	if (_model_update_counter >= _model_update_scaler) {
@@ -186,6 +193,7 @@ void McAutotuneAttitudeControl::Run()
 		_kid = pid_design::computePidGmvc(num, den, model_dt, desired_rise_time, 0.f, 0.7f);
 
 		// Prevent the D term from going just negative if it is not needed
+		// 翻译：如果不需要，则防止 D 项变为负值
 		if ((_kid(2) < 0.f) && (_kid(2) > -0.001f)) {
 			_kid(2) = 0.f;
 		}
@@ -193,6 +201,9 @@ void McAutotuneAttitudeControl::Run()
 		// To compute the attitude gain, use the following empirical rule:
 		// "An error of 60 degrees should produce the maximum control output"
 		// or K_att * K_rate * rad(60) = 1
+		// 翻译：要计算姿态增益，请使用以下经验法则：
+		// “60 度的误差应产生最大控制输出”
+		// 或 K_att * K_rate * rad(60) = 1
 		_attitude_p = math::constrain(1.f / (math::radians(60.f) * _kid(0)), 2.f, 6.5f);
 
 		const Vector<float, 5> &coeff_var = _sys_id.getVariances();
@@ -228,9 +239,11 @@ void McAutotuneAttitudeControl::checkFilters()
 {
 	if (_interval_count > 1000) {
 		// calculate sensor update rate
+		// 翻译：计算传感器更新速率
 		_sample_interval_avg = _interval_sum / _interval_count;
 
 		// check if sample rate error is greater than 1%
+		// 翻译：检查采样率误差是否大于1%
 		bool reset_filters = false;
 
 		if ((fabsf(_filter_dt - _sample_interval_avg) / _filter_dt) > 0.01f) {
@@ -247,6 +260,7 @@ void McAutotuneAttitudeControl::checkFilters()
 
 			// Set the model sampling time depending on the gyro cutoff frequency
 			// as this is a good indicator of the maximum control loop bandwidth
+			// 翻译：根据陀螺仪截止频率设置模型采样时间，因为这是最大控制环带宽的良好指示器
 			float model_dt = math::constrain(math::max(1.f / (2.f * _param_imu_gyro_cutoff.get()), _filter_dt), _model_dt_min,
 							 _model_dt_max);
 
@@ -260,13 +274,18 @@ void McAutotuneAttitudeControl::checkFilters()
 		}
 
 		// reset sample interval accumulator
+		// 翻译：重置采样间隔累加器
 		_last_run = 0;
 	}
 }
 
+/**
+ * @brief更新状态机。
+ */
 void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 {
 	// when identifying an axis, check if the estimate has converged
+	// 翻译：当识别轴时，检查估计是否收敛
 	const float converged_thr = 50.f;
 
 	switch (_state) {
@@ -290,6 +309,7 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			_state_start_time = now;
 			_sys_id.reset();
 			// first step needs to be shorter to keep the drone centered
+			// 翻译：第一步需要更短，以保持无人机居中
 			_steps_counter = 5;
 			_max_steps = 10;
 			_signal_sign = 1;
@@ -306,6 +326,7 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			copyGains(0);
 
 			// wait for the drone to stabilize
+			// 翻译：等待无人机稳定
 			_state = state::roll_pause;
 			_state_start_time = now;
 		}
@@ -321,6 +342,7 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			_signal_filter.reset(0.f);
 			_signal_sign = 1;
 			// first step needs to be shorter to keep the drone centered
+			// 翻译：第一步需要更短，以保持无人机居中
 			_steps_counter = 5;
 			_max_steps = 10;
 		}
@@ -346,6 +368,7 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			_signal_filter.reset(0.f);
 			_signal_sign = 1;
 			// first step needs to be shorter to keep the drone centered
+			// 翻译：第一步需要更短，以保持无人机居中
 			_steps_counter = 5;
 			_max_steps = 10;
 		}
@@ -430,6 +453,7 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 
 		// Wait a bit in that state to make sure
 		// the other components are aware of the final result
+		// 翻译：等待片刻，以确保其他组件知道最终结果
 		if ((now - _state_start_time) > 2_s) {
 			_state = state::idle;
 			stopAutotune();
@@ -440,6 +464,7 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 
 	// In case of convergence timeout or pilot intervention,
 	// the identification sequence is aborted immediately
+	// 翻译：在收敛超时或飞行员干预的情况下，立即中止识别序列
 	manual_control_setpoint_s manual_control_setpoint{};
 	_manual_control_setpoint_sub.copy(&manual_control_setpoint);
 
@@ -453,6 +478,9 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 	}
 }
 
+/**
+ * @brief 备份并保存增益到参数
+ */
 void McAutotuneAttitudeControl::backupAndSaveGainsToParams()
 {
 	float backup_gains[15] = {};
@@ -490,6 +518,9 @@ void McAutotuneAttitudeControl::backupAndSaveGainsToParams()
 	_gains_backup_available = true;
 }
 
+/**
+ * @brief 恢复参数增益。
+ */
 void McAutotuneAttitudeControl::revertParamGains()
 {
 	if (_gains_backup_available) {
@@ -497,6 +528,9 @@ void McAutotuneAttitudeControl::revertParamGains()
 	}
 }
 
+/**
+ * @brief 注册actuator_controls_callback回调函数。
+ */
 bool McAutotuneAttitudeControl::registerActuatorControlsCallback()
 {
 	if (!_vehicle_torque_setpoint_sub.registerCallback()) {
@@ -507,6 +541,12 @@ bool McAutotuneAttitudeControl::registerActuatorControlsCallback()
 	return true;
 }
 
+/**
+ * @brief 检查向量中的所有元素是否都小于给定的阈值。
+ * @param vect 向量
+ * @param threshold 阈值
+ * @return bool 返回值：如果向量中的所有元素都小于阈值，则返回true，否则返回false。
+ */
 bool McAutotuneAttitudeControl::areAllSmallerThan(const Vector<float, 5> &vect, float threshold) const
 {
 	return (vect(0) < threshold)
@@ -526,6 +566,10 @@ void McAutotuneAttitudeControl::copyGains(int index)
 	}
 }
 
+/**
+ * @brief 检查当前的控制增益是否满足要求。
+ * @return bool 返回值：如果当前的控制增益满足要求，则返回true，否则返回false。
+ */
 bool McAutotuneAttitudeControl::areGainsGood() const
 {
 	const bool are_positive = _rate_k.min() > 0.f
@@ -541,9 +585,13 @@ bool McAutotuneAttitudeControl::areGainsGood() const
 	return are_positive && are_small_enough;
 }
 
+/**
+ * @brief 将当前的控制增益保存到参数中。
+ */
 void McAutotuneAttitudeControl::saveGainsToParams()
 {
 	// save as parallel form
+	// 翻译：另存为并行形式。
 	_param_mc_rollrate_p.set(_rate_k(0));
 	_param_mc_rollrate_k.set(1.f);
 	_param_mc_rollrate_i.set(_rate_k(0) * _rate_i(0));
@@ -585,6 +633,9 @@ void McAutotuneAttitudeControl::stopAutotune()
 	_vehicle_torque_setpoint_sub.unregisterCallback();
 }
 
+/**
+ * @brief 获取当前的控制信号。
+ */
 const Vector3f McAutotuneAttitudeControl::getIdentificationSignal()
 {
 	if (_steps_counter > _max_steps) {

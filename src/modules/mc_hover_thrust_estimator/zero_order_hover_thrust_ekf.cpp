@@ -45,6 +45,8 @@ void ZeroOrderHoverThrustEkf::predict(const float dt)
 {
 	// State is constant
 	// Predict state covariance only
+	// 翻译：状态为常量
+	// 	仅预测状态协方差
 	_state_var += _process_var * dt * dt;
 	_dt = dt;
 }
@@ -68,6 +70,8 @@ void ZeroOrderHoverThrustEkf::fuseAccZ(const float acc_z, const float thrust)
 		// Rejecting all the measurements for some time,
 		// it means that the hover thrust suddenly changed or that the EKF
 		// is diverging. To recover, we bump the state variance
+		// 翻译：如果检测到较大的偏移，我们拒绝所有测量一段时间，
+		// 这意味着悬停推力突然变化或EKF发散。为了恢复，我们增加状态方差
 		bumpStateVariance();
 	}
 

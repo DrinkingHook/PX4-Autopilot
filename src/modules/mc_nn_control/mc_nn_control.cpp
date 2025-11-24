@@ -48,11 +48,13 @@
 namespace
 {
 // This number should be the number of operations in the model, like tanh and fully connected
+// 翻译：这个数字应该是模型中的操作数，例如tanh和全连接
 using NNControlOpResolver = tflite::MicroMutableOpResolver<3>;
 
 TfLiteStatus RegisterOps(NNControlOpResolver &op_resolver)
 {
 	// Add the operations to you need to the op_resolver
+	// 翻译：将您需要的操作添加到op_resolver中
 	TF_LITE_ENSURE_STATUS(op_resolver.AddFullyConnected());
 	TF_LITE_ENSURE_STATUS(op_resolver.AddRelu());
 	TF_LITE_ENSURE_STATUS(op_resolver.AddAdd());
@@ -135,6 +137,7 @@ int32_t MulticopterNeuralNetworkControl::GetTime()
 void MulticopterNeuralNetworkControl::RegisterNeuralFlightMode()
 {
 	// Register the neural flight mode with the commander
+	// 翻译：将神经飞行模式注册到指挥官
 	register_ext_component_request_s register_ext_component_request{};
 	register_ext_component_request.timestamp = hrt_absolute_time();
 	strncpy(register_ext_component_request.name, "Neural Control", sizeof(register_ext_component_request.name) - 1);
@@ -149,6 +152,7 @@ void MulticopterNeuralNetworkControl::RegisterNeuralFlightMode()
 void MulticopterNeuralNetworkControl::UnregisterNeuralFlightMode(int8 arming_check_id, int8 mode_id)
 {
 	// Unregister the neural flight mode with the commander
+	// 翻译：将神经飞行模式从指挥官中注销
 	unregister_ext_component_s unregister_ext_component{};
 	unregister_ext_component.timestamp = hrt_absolute_time();
 	strncpy(unregister_ext_component.name, "Neural Control", sizeof(unregister_ext_component.name) - 1);
@@ -161,6 +165,7 @@ void MulticopterNeuralNetworkControl::UnregisterNeuralFlightMode(int8 arming_che
 void MulticopterNeuralNetworkControl::ConfigureNeuralFlightMode(int8 mode_id)
 {
 	// Configure the neural flight mode with the commander
+	// 翻译：将神经飞行模式配置为指挥官
 	vehicle_control_mode_s config_control_setpoints{};
 	config_control_setpoints.timestamp = hrt_absolute_time();
 	config_control_setpoints.source_id = mode_id;
@@ -178,6 +183,7 @@ void MulticopterNeuralNetworkControl::ConfigureNeuralFlightMode(int8 mode_id)
 void MulticopterNeuralNetworkControl::ReplyToArmingCheck(int8 request_id)
 {
 	// Reply to the arming check request
+	// 翻译：回复启动检查请求
 	arming_check_reply_s arming_check_reply;
 	arming_check_reply.timestamp = hrt_absolute_time();
 	arming_check_reply.request_id = request_id;
@@ -228,6 +234,7 @@ void MulticopterNeuralNetworkControl::check_setpoint_validity(vehicle_local_posi
 void MulticopterNeuralNetworkControl::reset_trajectory_setpoint(vehicle_local_position_s &_position)
 {
 	// Reset trajectory setpoint to current position and attitude
+	// 翻译：重置轨迹设定点到当前位置和姿态
 	_trajectory_setpoint.timestamp = hrt_absolute_time();
 	_trajectory_setpoint.position[0] = _position.x;
 	_trajectory_setpoint.position[1] = _position.y;
@@ -237,11 +244,13 @@ void MulticopterNeuralNetworkControl::reset_trajectory_setpoint(vehicle_local_po
 void MulticopterNeuralNetworkControl::generate_trajectory_setpoint(float dt)
 {
 	// Update position setpoints based on manual control inputs
+	// 翻译：根据手动控制输入更新位置设定点
 	float vx_sp = 0.0;
 
 	if (_manual_control_setpoint.pitch > 0.1f
 	    || _manual_control_setpoint.pitch < -0.1f) {
 		// If pitch is not zero, we use it to set the roll setpoint
+		// 翻译：如果俯仰不为零，我们使用它来设置滚转设定点
 		vx_sp = _manual_control_setpoint.pitch * 0.5f;
 	}
 
@@ -250,6 +259,7 @@ void MulticopterNeuralNetworkControl::generate_trajectory_setpoint(float dt)
 	if (_manual_control_setpoint.roll > 0.1f
 	    || _manual_control_setpoint.roll < -0.1f) {
 		// If roll is not zero, we use it to set the pitch setpoint
+		// 翻译：如果滚转不为零，我们使用它来设置俯仰设定点
 		vy_sp = _manual_control_setpoint.roll * 0.5f;
 	}
 
@@ -258,11 +268,14 @@ void MulticopterNeuralNetworkControl::generate_trajectory_setpoint(float dt)
 	if (_manual_control_setpoint.throttle > 0.1f
 	    || _manual_control_setpoint.throttle < -0.1f) {
 		// If throttle is not zero, we use it to set the vertical velocity
+		// 翻译：如果推力不为零，我们使用它来设置垂直速度设定点
 		// Note: negative sign due to NED frame
+		// 翻译：由于NED框架，负号
 		vz_sp = -_manual_control_setpoint.throttle * 0.5f;
 	}
 
 	// Orient setpoint to vehicle
+	// 翻译：将设定点定向到车辆
 	matrix::Vector3f velocity_setpoint(vx_sp, vy_sp, vz_sp);
 	float yaw = matrix::Eulerf(matrix::Quatf(_attitude.q)).psi();
 	matrix::Eulerf euler(0.0, 0.0, yaw);
@@ -270,6 +283,7 @@ void MulticopterNeuralNetworkControl::generate_trajectory_setpoint(float dt)
 	matrix::Vector3f rotated_velocity_setpoint = q_yaw.rotateVector(velocity_setpoint);
 
 	// Build setpoint
+	// 翻译：构建设定点
 	_trajectory_setpoint.timestamp = hrt_absolute_time();
 	_trajectory_setpoint.position[0] = _trajectory_setpoint.position[0] + rotated_velocity_setpoint(
 			0) * dt; // X in world frame
@@ -283,8 +297,10 @@ void MulticopterNeuralNetworkControl::generate_trajectory_setpoint(float dt)
 void MulticopterNeuralNetworkControl::PopulateInputTensor()
 {
 	// Creates a 15 element input tensor for the neural network [pos_err(3), lin_vel(3), att(6), ang_vel(3)]
+	// 翻译：创建一个15元素的输入张量，用于神经网络[位置误差(3)，线速度(3)，姿态(6)，角速度(3)]
 
 	// transform observations in correct frame
+	// 翻译：将观察值转换为正确的框架
 	matrix::Dcmf frame_transf;
 	frame_transf(0, 0) = 1.0f;
 	frame_transf(0, 1) = 0.0f;
@@ -308,6 +324,7 @@ void MulticopterNeuralNetworkControl::PopulateInputTensor()
 	frame_transf_2(2, 2) = 1.0f;
 
 	// Set default setpoint if NAN
+	// 翻译：如果NAN，则设置默认的设定点
 	_trajectory_setpoint.position[0] = PX4_ISFINITE(_trajectory_setpoint.position[0]) ? _trajectory_setpoint.position[0] :
 					   0.0f;
 	_trajectory_setpoint.position[1] = PX4_ISFINITE(_trajectory_setpoint.position[1]) ? _trajectory_setpoint.position[1] :
@@ -412,6 +429,7 @@ inline void MulticopterNeuralNetworkControl::RescaleActions()
 int MulticopterNeuralNetworkControl::task_spawn(int argc, char *argv[])
 {
 	// This function loads the model, sets up the interpreter, allocates memory for the model's tensors, and prepares the input data.
+	// 翻译：此函数加载模型，设置解释器，为模型的张量分配内存，并准备输入数据。
 	MulticopterNeuralNetworkControl *instance = new MulticopterNeuralNetworkControl();
 
 	if (instance) {
@@ -450,6 +468,7 @@ void MulticopterNeuralNetworkControl::Run()
 	}
 
 	// Register the flight mode with the commander
+	// 翻译：将飞行模式注册到指挥官
 	if (!_sent_mode_registration) {
 		RegisterNeuralFlightMode();
 		_sent_mode_registration = true;
@@ -457,6 +476,7 @@ void MulticopterNeuralNetworkControl::Run()
 	}
 
 	// Check if registration was successful
+	// 翻译：检查注册是否成功
 	if (_mode_id == -1 || _arming_check_id == -1) {
 		CheckModeRegistration();
 		return;
@@ -465,6 +485,7 @@ void MulticopterNeuralNetworkControl::Run()
 	perf_begin(_loop_perf);
 
 	// Check if an arming check request is received
+	// 翻译：检查是否收到启动检查请求
 	if (_arming_check_request_sub.updated()) {
 		arming_check_request_s arming_check_request;
 		_arming_check_request_sub.copy(&arming_check_request);
@@ -472,6 +493,7 @@ void MulticopterNeuralNetworkControl::Run()
 	}
 
 	// Check if navigation mode is set to Neural Control
+	// 翻译：检查导航模式是否设置为神经控制
 	vehicle_status_s vehicle_status;
 
 	if (_vehicle_status_sub.updated()) {
@@ -487,6 +509,7 @@ void MulticopterNeuralNetworkControl::Run()
 
 	if (!_use_neural) {
 		// If the neural network flight mode is not enabled, do nothing
+		// 翻译：如果神经网络飞行模式未启用，则不执行任何操作
 		perf_end(_loop_perf);
 		return;
 	}
@@ -494,6 +517,7 @@ void MulticopterNeuralNetworkControl::Run()
 	int32_t start_time1 = GetTime();
 
 	// run controller on angular velocity updates
+	// 翻译：在角速度更新时运行控制器
 	if (_angular_velocity_sub.update(&_angular_velocity)) {
 		const float dt = math::constrain(((_angular_velocity.timestamp_sample - _last_run) * 1e-6f), 0.0002f, 0.02f);
 		_last_run = _angular_velocity.timestamp_sample;
@@ -506,6 +530,7 @@ void MulticopterNeuralNetworkControl::Run()
 			_position_sub.copy(&_position);
 
 			// If there is no position setpoint, use the position when switching mode as the setpoint
+			// 翻译：如果未设置位置设定点，则使用切换模式时的位置作为设定点
 			if (!PX4_ISFINITE(_trajectory_setpoint.position[0])
 			    && !PX4_ISFINITE(_trajectory_setpoint.position[1])
 			    && !PX4_ISFINITE(_trajectory_setpoint.position[2])) {
@@ -515,21 +540,26 @@ void MulticopterNeuralNetworkControl::Run()
 
 		if (_param_manual_control.get()) {
 			// Run manual control mode
+			// 翻译：运行手动控制模式
 			_manual_control_setpoint_sub.update(&_manual_control_setpoint);
 
 			// Ensure no nan and sufficiently recent setpoint
+			// 翻译：确保没有nan并且最近的设定点
 			check_setpoint_validity(_position);
 
 			// Generate _trajectory_setpoint -> creates _trajectory_setpoint
+			// 翻译：生成_trajectory_setpoint -> 创建_trajectory_setpoint
 			generate_trajectory_setpoint(dt);
 
 		} else {
 			// Parse offboard trajectory setpoint
+			// 翻译：解析离线轨迹设定点
 			if (_trajectory_setpoint_sub.updated()) {
 				trajectory_setpoint_s _trajectory_setpoint_temp;
 				_trajectory_setpoint_sub.copy(&_trajectory_setpoint_temp);
 
 				// Make sure the trajectory setpoint is defined before using it
+				// 翻译：确保轨迹设定点在使用前被定义
 				if (PX4_ISFINITE(_trajectory_setpoint_temp.position[0]) && PX4_ISFINITE(_trajectory_setpoint_temp.position[1]) &&
 				    PX4_ISFINITE(_trajectory_setpoint_temp.position[2])) {
 					_trajectory_setpoint = _trajectory_setpoint_temp;
@@ -556,6 +586,7 @@ void MulticopterNeuralNetworkControl::Run()
 		}
 
 		// Convert the output tensor to actuator values
+		// 翻译：将输出张量转换为执行器值
 		RescaleActions();
 
 		PublishOutput(_output_tensor->data.f);
@@ -563,6 +594,7 @@ void MulticopterNeuralNetworkControl::Run()
 		int32_t full_controller_time = GetTime() - start_time1;
 
 		// Publish the neural control debug message
+		// 翻译：发布神经控制调试消息
 		neural_control_s neural_control;
 		neural_control.timestamp = hrt_absolute_time();
 		neural_control.inference_time = inference_time;

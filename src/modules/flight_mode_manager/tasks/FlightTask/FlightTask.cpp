@@ -130,6 +130,7 @@ void FlightTask::_evaluateVehicleLocalPosition()
 	_dist_to_bottom = NAN;
 
 	// Only use vehicle-local-position topic fields if the topic is received within a certain timestamp
+	// 翻译：仅当在特定时间戳内收到主题时才使用 vehicle-local-position 主题字段
 	if ((_time_stamp_current - _sub_vehicle_local_position.get().timestamp) < _timeout) {
 
 		// yaw
@@ -158,12 +159,14 @@ void FlightTask::_evaluateVehicleLocalPosition()
 		}
 
 		// distance to bottom
+		// 翻译：距底部的距离
 		if (_sub_vehicle_local_position.get().dist_bottom_valid
 		    && PX4_ISFINITE(_sub_vehicle_local_position.get().dist_bottom)) {
 			_dist_to_bottom = _sub_vehicle_local_position.get().dist_bottom;
 		}
 
 		// global frame reference coordinates to enable conversions
+		// 翻译：用于启用转换的全局坐标系参考坐标
 		if (_sub_vehicle_local_position.get().xy_global && _sub_vehicle_local_position.get().z_global) {
 			if (!_geo_projection.isInitialized()
 			    || (_geo_projection.getProjectionReferenceTimestamp() != _sub_vehicle_local_position.get().ref_timestamp)) {
@@ -177,15 +180,22 @@ void FlightTask::_evaluateVehicleLocalPosition()
 	}
 }
 
+/* 
+ * @brief 评估车辆局部位置设定点
+ *
+ */
 void FlightTask::_evaluateVehicleLocalPositionSetpoint()
 {
 	vehicle_local_position_setpoint_s vehicle_local_position_setpoint;
 
 	// Only use data that is received within a certain timestamp
+	// 翻译：仅使用在特定时间戳内收到的数据
 	if (_vehicle_local_position_setpoint_sub.copy(&vehicle_local_position_setpoint)
 	    && (_time_stamp_current - vehicle_local_position_setpoint.timestamp) < _timeout) {
 		// Inform about the input and output of the velocity controller
+		// 翻译：提供速度控制器的输入和输出信息
 		// This is used to properly initialize the velocity setpoint when onpening the position loop (position unlock)
+		// 翻译：这用于在开启位置环路（位置解锁）时正确初始化速度设定值。
 		_velocity_setpoint_feedback = matrix::Vector3f(vehicle_local_position_setpoint.vx, vehicle_local_position_setpoint.vy,
 					      vehicle_local_position_setpoint.vz);
 		_acceleration_setpoint_feedback = matrix::Vector3f(vehicle_local_position_setpoint.acceleration);

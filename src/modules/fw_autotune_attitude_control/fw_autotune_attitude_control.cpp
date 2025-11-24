@@ -110,6 +110,7 @@ void FwAutotuneAttitudeControl::Run()
 	_aux_switch_en = isAuxEnableSwitchEnabled();
 
 	// new control data needed every iteration
+	// 翻译：新的控制数据需要在每次迭代中更新
 	if ((_state == state::idle && !_aux_switch_en)
 	    || !_vehicle_torque_setpoint_sub.updated()) {
 
@@ -144,8 +145,10 @@ void FwAutotuneAttitudeControl::Run()
 	const hrt_abstime timestamp_sample = vehicle_torque_setpoint.timestamp;
 
 	// collect sample interval average for filters
+	// 翻译：收集采样间隔平均值以供滤波器使用
 	if (_last_run > 0) {
 		// Guard against too small (< 0.125ms) and too large (> 20ms) dt's.
+		// 翻译：防止dt过小(<0.125ms)或过大(>20ms)
 		const float dt = math::constrain(((timestamp_sample - _last_run) * 1e-6f), 0.000125f, 0.02f);
 		_interval_sum += dt;
 		_interval_count++;
@@ -192,6 +195,10 @@ void FwAutotuneAttitudeControl::Run()
 		// To compute the attitude gain, use the following empirical rule:
 		// "An error of 60 degrees should produce the maximum control output"
 		// or K_att * (K_rate + K_ff) * rad(60) = 1
+		// 翻译：要计算姿态增益，使用以下经验法则：
+		// 	“60 度的误差应产生最大控制输出”
+		// 	或 K_att * (K_rate + K_ff) * rad(60) = 1
+
 		_attitude_p = math::constrain(1.f / (math::radians(60.f) * (_kiff(0) + _kiff(2))), 1.f, 5.f);
 
 		const Vector<float, 5> &coeff_var = _sys_id.getVariances();
@@ -234,10 +241,12 @@ void FwAutotuneAttitudeControl::checkFilters()
 {
 	if (_interval_count > 1000) {
 		// calculate sensor update rate
+		// 翻译：计算传感器更新速率
 		_sample_interval_avg = _interval_sum / _interval_count;
 		const float update_rate_hz = 1.f / _sample_interval_avg;
 
 		// check if sample rate error is greater than 1%
+		// 翻译：检查采样率误差是否大于1%
 		bool reset_filters = false;
 
 		if ((fabsf(update_rate_hz - _filter_sample_rate) / _filter_sample_rate) > 0.01f) {
@@ -254,6 +263,7 @@ void FwAutotuneAttitudeControl::checkFilters()
 		}
 
 		// reset sample interval accumulator
+		// 翻译：重置采样间隔累加器
 		_last_run = 0;
 	}
 }
@@ -303,6 +313,7 @@ bool FwAutotuneAttitudeControl::isAuxEnableSwitchEnabled()
 void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 {
 	// when identifying an axis, check if the estimate has converged
+	// 翻译：当识别轴时，检查估计是否已收敛
 	const float converged_thr = 1.f;
 
 	const float temp[5] = {0.f, 0.f, 0.f, 0.f, 0.f};
@@ -327,6 +338,7 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			_state_start_time = now;
 			_sys_id.reset(sys_id_init);
 			// first step needs to be shorter to keep the drone centered
+			// 翻译：第一个步骤需要更短，以保持无人机居中
 			_steps_counter = 5;
 			_max_steps = 10;
 			_signal_sign = 1;
@@ -340,6 +352,7 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 	case state::roll_amp_detection: {
 			if (!(_param_fw_at_axes.get() & Axes::roll)) {
 				// Should not tune this axis, skip
+				// 翻译：不应该调整这个轴，跳过
 				_state = state::roll_pause;
 				break;
 			}
@@ -365,6 +378,7 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			copyGains(0);
 
 			// wait for the drone to stabilize
+			// 翻译：等待无人机稳定
 			_state = state::roll_pause;
 			_state_start_time = now;
 		}
@@ -380,6 +394,7 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			_input_scale = 1.f / _param_fw_pr_p.get();
 			_signal_sign = 1;
 			// first step needs to be shorter to keep the drone centered
+			// 翻译：第一步需要更短，以保持无人机居中
 			_steps_counter = 5;
 			_max_steps = 10;
 			_signal_filter.reset(0.f);
@@ -390,6 +405,7 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 	case state::pitch_amp_detection: {
 			if (!(_param_fw_at_axes.get() & Axes::pitch)) {
 				// Should not tune this axis, skip
+				// 翻译：不应该调整此轴，跳过
 				_state = state::pitch_pause;
 				break;
 			}
@@ -429,6 +445,7 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			_input_scale = 1.f / _param_fw_yr_p.get();
 			_signal_sign = 1;
 			// first step needs to be shorter to keep the drone centered
+			// 翻译：第一步需要更短，以保持无人机居中
 			_steps_counter = 5;
 			_max_steps = 10;
 			_signal_filter.reset(0.f);
@@ -439,6 +456,7 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 	case state::yaw_amp_detection: {
 			if (!(_param_fw_at_axes.get() & Axes::yaw)) {
 				// Should not tune this axis, skip
+				// 翻译：不应该调整此轴，跳过
 				_state = state::yaw_pause;
 				break;
 			}
@@ -530,9 +548,11 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 
 		// Wait a bit in that state to make sure
 		// the other components are aware of the final result
+		// 翻译：等待一段时间，确保其他组件知道最终结果
 		if ((now - _state_start_time) > 2_s) {
 
 			// Don't reset until aux switch is back to disabled
+			// 翻译：直到辅助开关返回禁用状态才重置
 			if (_param_fw_at_man_aux.get() && _aux_switch_en) {
 				break;
 			}
@@ -549,6 +569,7 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 
 	// In case of convergence timeout
 	// the identification sequence is aborted and the FSM moves on to the next axis
+	// 翻译：在收敛超时的情况下，中止识别序列并移动到下一个轴
 	if (_state != state::wait_for_disarm && _state != state::idle && _state != state::fail && _state != state::complete) {
 
 		const bool timeout = (now - _state_start_time) > 30_s;
@@ -860,6 +881,7 @@ const Vector3f FwAutotuneAttitudeControl::scaleInputSignal(const float signal)
 	if (_state == state::roll_amp_detection || _state == state::roll || _state == state::test) {
 		// Scale the signal such that the attitude controller is
 		// able to cancel it completely at an attitude error of pi/8
+		// 翻译：将信号缩放，使姿态控制器在姿态误差为pi/8时能够完全抵消它
 		signal_scaled = math::min(signal * M_PI_F / (8.f * _param_fw_r_tc.get()), math::radians(_param_fw_r_rmax.get()));
 		rate_sp(0) = signal_scaled - _signal_filter.getState();
 	}
@@ -873,6 +895,7 @@ const Vector3f FwAutotuneAttitudeControl::scaleInputSignal(const float signal)
 
 	if (_state == state::yaw_amp_detection || _state ==  state::yaw) {
 		// Do not send a signal that produces more than a full deflection of the rudder
+		// 翻译：不要发送一个信号，它会导致舵机产生超过最大偏转的偏转
 		signal_scaled = math::min(signal, 1.f / (_param_fw_yr_ff.get() + _param_fw_yr_p.get()),
 					  math::radians(_param_fw_y_rmax.get()));
 		rate_sp(2) = signal_scaled - _signal_filter.getState();

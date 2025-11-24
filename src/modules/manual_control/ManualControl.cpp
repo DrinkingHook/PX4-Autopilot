@@ -115,6 +115,7 @@ void ManualControl::processInput(hrt_abstime now)
 		processStickArming(_selector.setpoint());
 
 		// User override by stick
+		// 翻译：用户通过摇杆进行覆盖
 		const float dt_s = (now - _timestamp_last_loop) / 1e6f;
 		const float minimum_stick_change = 0.01f * _param_com_rc_stick_ov.get();
 
@@ -127,6 +128,7 @@ void ManualControl::processInput(hrt_abstime now)
 		_manual_control_setpoint_pub.publish(_selector.setpoint());
 
 		// Attach scheduling to new samples of the chosen input
+		// 翻译：将调度附加到所选输入的新样本上
 		const int instance = _selector.instance();
 
 		if (instance != _previous_manual_control_input_instance) {
@@ -171,6 +173,7 @@ void ManualControl::processSwitches(hrt_abstime &now)
 	const bool switches_updated = _manual_control_switches_sub.update(&switches);
 
 	// Only use switches if the currently valid source is RC as well
+	// 翻译：如果当前有效的源是RC，则只使用开关
 	if (_selector.setpoint().valid
 	    && _selector.setpoint().data_source == manual_control_setpoint_s::SOURCE_RC) {
 		if (switches_updated) {
@@ -294,6 +297,7 @@ void ManualControl::processSwitches(hrt_abstime &now)
 
 			} else if (!_armed) {
 				// Directly initialize mode using RC switch but only before arming
+				// 翻译：使用遥控器开关直接初始化模式，但仅限在解锁之前
 				evaluateModeSlot(switches.mode_slot);
 			}
 
@@ -303,6 +307,7 @@ void ManualControl::processSwitches(hrt_abstime &now)
 
 	} else {
 		// Don't react on switch changes while RC was not in use
+		// 翻译：遥控器未使用时，不响应开关变化
 		_previous_switches_initialized = false;
 	}
 }
@@ -322,6 +327,7 @@ void ManualControl::updateParams()
 	// MAN_ARM_GESTURE
 	if (_param_man_arm_gesture.get() == 1) {
 		// RC_MAP_ARM_SW & MAN_ARM_GESTURE: disable arm gesture if an arm switch is configured
+		// 翻译：如果遥控器开关已配置，则禁用遥控器开关
 		param_t param_rc_map_arm_sw = param_find("RC_MAP_ARM_SW");
 
 		if (param_rc_map_arm_sw != PARAM_INVALID) {
@@ -343,6 +349,7 @@ void ManualControl::updateParams()
 		}
 
 		// MC_AIRMODE & MAN_ARM_GESTURE: check for unsafe Airmode settings: yaw airmode requires disabling the stick arm gesture
+		// 翻译：MC_AIRMODE 和 MAN_ARM_GESTURE：检查不安全的空中模式设置：偏航空中模式需要禁用摇杆解锁手势
 		if ((_param_man_arm_gesture.get() == 1) && (_rotary_wing || _vtol)) {
 			param_t param_mc_airmode = param_find("MC_AIRMODE");
 
@@ -367,6 +374,10 @@ void ManualControl::updateParams()
 	}
 }
 
+/**
+ * @brief 处理摇杆解锁手势
+ * @param input 摇杆输入数据
+ */
 void ManualControl::processStickArming(const manual_control_setpoint_s &input)
 {
 	// Arm gesture
@@ -403,6 +414,10 @@ void ManualControl::processStickArming(const manual_control_setpoint_s &input)
 	}
 }
 
+/**
+ * @brief 评估模式槽
+ * @param mode_slot 模式槽
+ */
 void ManualControl::evaluateModeSlot(uint8_t mode_slot)
 {
 	switch (mode_slot) {
@@ -445,9 +460,16 @@ void ManualControl::evaluateModeSlot(uint8_t mode_slot)
 	}
 }
 
+/**
+ * @brief 发送动作请求
+ * @param action 动作类型
+ * @param source 动作来源
+ * @param mode 模式
+ */
 void ManualControl::sendActionRequest(int8_t action, int8_t source, int8_t mode)
 {
 	// We catch default unassigned mode slots which have value -1
+	// 翻译：我们捕获默认未分配的模式槽，其值为-1
 	if (action == action_request_s::ACTION_SWITCH_MODE && mode < 0) {
 		return;
 	}

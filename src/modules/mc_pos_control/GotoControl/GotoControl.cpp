@@ -50,6 +50,7 @@ bool GotoControl::checkForSetpoint(const hrt_abstime &now, const bool enabled)
 	if (!enabled) {
 		// Flag the setpoint as invalid if disabled, so if it is enabled in near future,
 		// we don't use an old setpoint
+		// 翻译：如果禁用，则将设置点标记为无效，因此如果将来启用，则不会使用旧的设置点
 		_goto_setpoint.timestamp = 0;
 	}
 
@@ -76,6 +77,8 @@ void GotoControl::update(const float dt, const matrix::Vector3f &position, const
 
 	if (!position_setpoint.isAllFinite()) {
 		// TODO: error messaging
+		// 翻译：TODO：错误消息
+		// 如果设置点不是有限的，则重置平滑器
 		_need_smoother_reset = true;
 		return;
 	}
@@ -165,9 +168,13 @@ void GotoControl::resetHeadingSmoother(const float heading)
 	_heading_smoothing.reset(heading, initial_heading_rate);
 }
 
+/**
+ * @brief 设置位置平滑器的限制
+ */
 void GotoControl::setPositionSmootherLimits(const goto_setpoint_s &goto_setpoint)
 {
 	// Horizontal constraints
+	// 翻译：水平约束
 	float max_horizontal_speed = _param_mpc_xy_cruise;
 	float max_horizontal_accel = _param_mpc_acc_hor;
 
@@ -177,7 +184,9 @@ void GotoControl::setPositionSmootherLimits(const goto_setpoint_s &goto_setpoint
 						       _param_mpc_xy_cruise);
 
 		// linearly scale horizontal acceleration limit with horizontal speed limit to maintain smoothing dynamic
+		// 翻译：水平加速度限制与水平速度限制成线性比例，以保持平滑动态
 		// only limit acceleration once within velocity constraints
+		// 翻译：只在速度限制范围内限制加速度
 		if (!_position_smoothing.getCurrentVelocityXY().longerThan(max_horizontal_speed)) {
 			const float speed_scale = max_horizontal_speed / _param_mpc_xy_cruise;
 			max_horizontal_accel = math::constrain(_param_mpc_acc_hor * speed_scale, 0.f, _param_mpc_acc_hor);
@@ -188,9 +197,11 @@ void GotoControl::setPositionSmootherLimits(const goto_setpoint_s &goto_setpoint
 	_position_smoothing.setMaxAccelerationXY(max_horizontal_accel);
 
 	// Vertical constraints
+	// 翻译：垂直约束
 	float vehicle_max_vertical_speed = _param_mpc_z_v_auto_dn;
 	float vehicle_max_vertical_accel = _param_mpc_acc_down_max;
 
+	// 解析：如果目标高度小于当前位置，则设置为向上飞行
 	if (goto_setpoint.position[2] < _position_smoothing.getCurrentPositionZ()) { // goto higher -> more negative
 		vehicle_max_vertical_speed = _param_mpc_z_v_auto_up;
 		vehicle_max_vertical_accel = _param_mpc_acc_up_max;
@@ -203,7 +214,9 @@ void GotoControl::setPositionSmootherLimits(const goto_setpoint_s &goto_setpoint
 		max_vertical_speed = math::constrain(goto_setpoint.max_vertical_speed, 0.f, vehicle_max_vertical_speed);
 
 		// linearly scale vertical acceleration limit with vertical speed limit to maintain smoothing dynamic
+		// 翻译：线性缩放垂直加速度限制与垂直速度限制，以保持平滑动态
 		// only limit acceleration once within velocity constraints
+		// 翻译：只在速度约束范围内限制加速度
 		if (fabsf(_position_smoothing.getCurrentVelocityZ()) <= max_vertical_speed) {
 			const float speed_scale = max_vertical_speed / vehicle_max_vertical_speed;
 			max_vertical_accel = math::constrain(vehicle_max_vertical_accel * speed_scale, 0.f, vehicle_max_vertical_accel);
@@ -214,6 +227,9 @@ void GotoControl::setPositionSmootherLimits(const goto_setpoint_s &goto_setpoint
 	_position_smoothing.setMaxAccelerationZ(max_vertical_accel);
 }
 
+/**
+ * @brief 设置航向平滑器的限制
+ */
 void GotoControl::setHeadingSmootherLimits(const goto_setpoint_s &goto_setpoint)
 {
 	float max_heading_rate = _param_mpc_yawrauto_max;
@@ -223,7 +239,9 @@ void GotoControl::setHeadingSmootherLimits(const goto_setpoint_s &goto_setpoint)
 		max_heading_rate = math::constrain(goto_setpoint.max_heading_rate, 0.f, _param_mpc_yawrauto_max);
 
 		// linearly scale heading acceleration limit with heading rate limit to maintain smoothing dynamic
+		// 翻译：线性缩放水平加速度限制与水平速度限制，以保持平滑动态
 		// only limit acceleration once within velocity constraints
+		// 翻译：只在速度约束范围内限制加速度
 		if (fabsf(_heading_smoothing.getSmoothedHeadingRate()) <= max_heading_rate) {
 			const float rate_scale = max_heading_rate / _param_mpc_yawrauto_max;
 			max_heading_accel = math::constrain(_param_mpc_yawrauto_acc * rate_scale, 0.f, _param_mpc_yawrauto_acc);

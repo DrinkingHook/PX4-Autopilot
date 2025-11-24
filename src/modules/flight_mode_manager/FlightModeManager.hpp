@@ -120,6 +120,9 @@ private:
 	 * Union with all existing tasks: we use it to make sure that only the memory of the largest existing
 	 * task is needed, and to avoid using dynamic memory allocations.
 	 */
+	/**
+	 * 翻译：联合所有现有任务：我们使用它来确保只使用最大现有任务所需的内存，并避免使用动态内存分配。
+	 */
 	TaskUnion _task_union; /**< storage for the currently active task */
 
 	struct flight_task_t {
