@@ -64,6 +64,9 @@ hrt_abstime CollisionPrevention::getTime()
 	return hrt_absolute_time();
 }
 
+/**
+ * @brief 获取当前时间与指定时间的差值
+ */
 hrt_abstime CollisionPrevention::getElapsedTime(const hrt_abstime *ptr)
 {
 	return hrt_absolute_time() - *ptr;
@@ -81,6 +84,11 @@ bool CollisionPrevention::is_active()
 	return activated;
 }
 
+/**
+ * @brief 修改速度和加速度设定点以避免碰撞
+ * @param setpoint_accel 加速度设定点
+ * @param setpoint_vel 速度设定点
+ */
 void CollisionPrevention::modifySetpoint(Vector2f &setpoint_accel, const Vector2f &setpoint_vel)
 {
 	if (_vehicle_attitude_sub.updated()) {
@@ -93,12 +101,14 @@ void CollisionPrevention::modifySetpoint(Vector2f &setpoint_accel, const Vector2
 	}
 
 	//calculate movement constraints based on range data
+	// 翻译：根据范围数据计算运动约束
 	const Vector2f original_setpoint = setpoint_accel;
 	_updateObstacleMap();
 	_updateObstacleData();
 	_calculateConstrainedSetpoint(setpoint_accel, setpoint_vel);
 
 	// publish constraints
+	// 翻译：发布约束
 	collision_constraints_s	constraints{};
 	original_setpoint.copyTo(constraints.original_setpoint);
 	setpoint_accel.copyTo(constraints.adapted_setpoint);
@@ -106,19 +116,25 @@ void CollisionPrevention::modifySetpoint(Vector2f &setpoint_accel, const Vector2
 	_constraints_pub.publish(constraints);
 }
 
+/**
+ * @brief 更新障碍物地图
+ */
 void CollisionPrevention::_updateObstacleMap()
 {
 	// add distance sensor data
+	// 翻译：添加距离传感器数据
 	for (auto &dist_sens_sub : _distance_sensor_subs) {
 		distance_sensor_s distance_sensor;
 
 		if (dist_sens_sub.update(&distance_sensor)) {
 			// consider only instances with valid data and orientations useful for collision prevention
+			// 翻译：考虑只有有效数据和对碰撞预防有用的朝向的实例
 			if ((getElapsedTime(&distance_sensor.timestamp) < RANGE_STREAM_TIMEOUT_US) &&
 			    (distance_sensor.orientation != distance_sensor_s::ROTATION_DOWNWARD_FACING) &&
 			    (distance_sensor.orientation != distance_sensor_s::ROTATION_UPWARD_FACING)) {
 
 				// update message description
+				// 翻译：更新消息描述
 				_obstacle_map_body_frame.timestamp = math::max(_obstacle_map_body_frame.timestamp, distance_sensor.timestamp);
 				_obstacle_map_body_frame.max_distance = math::max(_obstacle_map_body_frame.max_distance,
 									(uint16_t)(distance_sensor.max_distance * 100.0f));
@@ -131,10 +147,12 @@ void CollisionPrevention::_updateObstacleMap()
 	}
 
 	// add obstacle distance data
+	// 翻译：添加障碍物距离数据
 	if (_sub_obstacle_distance.update()) {
 		const obstacle_distance_s &obstacle_distance = _sub_obstacle_distance.get();
 
 		// Update map with obstacle data if the data is not stale
+		// 翻译：如果数据不陈旧，则更新障碍物数据的地图
 		if (getElapsedTime(&obstacle_distance.timestamp) < RANGE_STREAM_TIMEOUT_US && obstacle_distance.increment > 0.f) {
 			//update message description
 			_obstacle_map_body_frame.timestamp = math::max(_obstacle_map_body_frame.timestamp, obstacle_distance.timestamp);
@@ -147,9 +165,13 @@ void CollisionPrevention::_updateObstacleMap()
 	}
 
 	// publish fused obtacle distance message with data from offboard obstacle_distance and distance sensor
+	// 翻译：发布融合障碍物距离消息，使用来自离线障碍物距离和距离传感器的数据
 	_obstacle_distance_fused_pub.publish(_obstacle_map_body_frame);
 }
 
+/**
+ * @brief 更新障碍物数据
+ */
 void CollisionPrevention::_updateObstacleData()
 {
 	_obstacle_data_present = false;
@@ -158,6 +180,7 @@ void CollisionPrevention::_updateObstacleData()
 
 	for (int i = 0; i < BIN_COUNT; i++) {
 		// if the data is stale, reset the bin
+		// 翻译：如果数据过期，则重置该bin
 		if (getTime() - _data_timestamps[i] > RANGE_STREAM_TIMEOUT_US) {
 			_obstacle_map_body_frame.distances[i] = UINT16_MAX;
 		}
@@ -168,6 +191,7 @@ void CollisionPrevention::_updateObstacleData()
 		const uint16_t bin_distance = _obstacle_map_body_frame.distances[i];
 
 		// check if there is avaliable data and the data of the map is not stale
+		// 翻译：检查是否有可用数据且障碍物地图数据不陈旧
 		if (bin_distance < UINT16_MAX
 		    && (getTime() - _obstacle_map_body_frame.timestamp) < RANGE_STREAM_TIMEOUT_US) {
 			_obstacle_data_present = true;
@@ -180,6 +204,11 @@ void CollisionPrevention::_updateObstacleData()
 	}
 }
 
+/**
+ * @brief 计算受约束的加速度设定点
+ * @param setpoint_accel 加速度设定点
+ * @param setpoint_vel 速度设定点
+ */
 void CollisionPrevention::_calculateConstrainedSetpoint(Vector2f &setpoint_accel, const Vector2f &setpoint_vel)
 {
 	const float setpoint_length = setpoint_accel.norm();
@@ -212,6 +241,7 @@ void CollisionPrevention::_calculateConstrainedSetpoint(Vector2f &setpoint_accel
 		setpoint_accel.setZero();
 
 		// if distance data is stale, switch to Loiter
+		// 翻译：如果距离数据过时，切换到Loiter模式
 		if (getElapsedTime(&_last_timeout_warning) > 1_s && getElapsedTime(&_time_activated) > 1_s) {
 			if ((now - _obstacle_map_body_frame.timestamp) > TIMEOUT_HOLD_US &&
 			    getElapsedTime(&_time_activated) > TIMEOUT_HOLD_US) {
@@ -225,6 +255,12 @@ void CollisionPrevention::_calculateConstrainedSetpoint(Vector2f &setpoint_accel
 }
 
 // TODO this gives false output if the offset is not a multiple of the resolution. to be fixed...
+// 翻译：如果偏移不是分辨率的倍数，将给出错误输出。待修复...
+/**
+ * @brief 添加障碍物传感器数据
+ * @param obstacle 障碍物数据
+ * @param vehicle_yaw 车辆朝向
+ */
 void CollisionPrevention::_addObstacleSensorData(const obstacle_distance_s &obstacle, const float vehicle_yaw)
 {
 
@@ -246,6 +282,7 @@ void CollisionPrevention::_addObstacleSensorData(const obstacle_distance_s &obst
 							obstacle.angle_offset - vehicle_orientation_deg);
 
 				// if a bin stretches over the 0/360 degree line, adjust the angles
+				// 翻译：如果一个bin跨越0/360度线，调整角度
 				if (bin_lower_angle > bin_upper_angle) {
 					bin_lower_angle -= 360;
 				}
@@ -352,6 +389,10 @@ CollisionPrevention::_enterData(int map_index, float sensor_range, float sensor_
 	return false;
 }
 
+/**
+ * @brief 检查设置点方向可行性
+ * @return 设定点可行性
+ */
 bool
 CollisionPrevention::_checkSetpointDirectionFeasability()
 {
@@ -359,6 +400,7 @@ CollisionPrevention::_checkSetpointDirectionFeasability()
 
 	for (int i = 0; i < BIN_COUNT; i++) {
 		// check if our setpoint is either pointing in a direction where data exists, or if not, wether we are allowed to go where there is no data
+		// 翻译：检查你的设定点是否指向有数据的方向，或者，如果没有数据，我们是否被允许指向没有数据的方向。
 		if ((_obstacle_map_body_frame.distances[i] == UINT16_MAX && i == _setpoint_index) && (!_param_cp_go_no_data.get()
 				|| (_param_cp_go_no_data.get() && _data_fov[i]))) {
 			setpoint_feasible =  false;
@@ -369,6 +411,10 @@ CollisionPrevention::_checkSetpointDirectionFeasability()
 	return setpoint_feasible;
 }
 
+/**
+ * @brief 转换设定点
+ * @param setpoint 设定点
+ */
 void
 CollisionPrevention::_transformSetpoint(const Vector2f &setpoint)
 {
@@ -377,14 +423,21 @@ CollisionPrevention::_transformSetpoint(const Vector2f &setpoint)
 					       _obstacle_map_body_frame.angle_offset);
 	_setpoint_index = floor(sp_angle_with_offset_deg / BIN_SIZE);
 	// change setpoint direction slightly (max by _param_cp_guide_ang degrees) to help guide through narrow gaps
+	// 翻译：改变设定点的方向，使其稍微偏离当前方向，以帮助穿越狭窄的缝隙。
 	_setpoint_dir = setpoint.unit_or_zero();
 	_adaptSetpointDirection(_setpoint_dir, _setpoint_index, _vehicle_yaw);
 }
 
+/**
+ * @brief 添加距离传感器数据
+ * @param distance_sensor 距离传感器数据
+ * @param vehicle_attitude 车辆姿态
+ */
 void
 CollisionPrevention::_addDistanceSensorData(distance_sensor_s &distance_sensor, const Quatf &vehicle_attitude)
 {
 	// clamp at maximum sensor range
+	// 翻译：将距离读数限制在最大传感器范围内。
 	float distance_reading = math::min(distance_sensor.current_distance, distance_sensor.max_distance);
 
 	// negative values indicate out of range but valid measurements.
@@ -393,12 +446,14 @@ CollisionPrevention::_addDistanceSensorData(distance_sensor_s &distance_sensor, 
 	}
 
 	// discard values below min range
+	// 翻译：丢弃小于最小范围的值。
 	if (distance_reading > distance_sensor.min_distance) {
 		float sensor_yaw_body_rad = ObstacleMath::sensor_orientation_to_yaw_offset(static_cast<ObstacleMath::SensorOrientation>
 					    (distance_sensor.orientation), distance_sensor.q);
 		float sensor_yaw_body_deg = math::degrees(wrap_2pi(sensor_yaw_body_rad));
 
 		// calculate the field of view boundary bin indices
+		// 翻译：计算视野边界bin索引。
 		int lower_bound = (int)round((sensor_yaw_body_deg  - math::degrees(distance_sensor.h_fov / 2.0f)) / BIN_SIZE);
 		int upper_bound = (int)round((sensor_yaw_body_deg  + math::degrees(distance_sensor.h_fov / 2.0f)) / BIN_SIZE);
 
@@ -421,6 +476,12 @@ CollisionPrevention::_addDistanceSensorData(distance_sensor_s &distance_sensor, 
 	}
 }
 
+/**
+ * @brief 适应航向点方向。
+ * @param setpoint_dir 航向点方向。
+ * @param setpoint_index 航向点索引。
+ * @param vehicle_yaw_angle_rad 车辆航向角。
+ */
 void
 CollisionPrevention::_adaptSetpointDirection(Vector2f &setpoint_dir, int &setpoint_index, float vehicle_yaw_angle_rad)
 {
@@ -432,6 +493,7 @@ CollisionPrevention::_adaptSetpointDirection(Vector2f &setpoint_dir, int &setpoi
 	for (int i = sp_index_original - guidance_bins; i <= sp_index_original + guidance_bins; i++) {
 
 		// apply moving average filter to the distance array to be able to center in larger gaps
+		// 翻译：应用移动平均滤波器到距离数组，以便在较大的间隙中居中。
 		const int filter_size = 1;
 		float mean_dist = 0;
 
@@ -458,6 +520,7 @@ CollisionPrevention::_adaptSetpointDirection(Vector2f &setpoint_dir, int &setpoi
 	}
 
 	//only change setpoint direction if it was moved to a different bin
+	// 翻译：仅当设定点被移至不同料箱时才更改设定点方向
 	if (new_sp_index != setpoint_index) {
 		float angle = math::radians((float)new_sp_index * BIN_SIZE + _obstacle_map_body_frame.angle_offset);
 		angle = wrap_2pi(vehicle_yaw_angle_rad + angle);
@@ -466,6 +529,11 @@ CollisionPrevention::_adaptSetpointDirection(Vector2f &setpoint_dir, int &setpoi
 	}
 }
 
+/**
+ * @brief 获取障碍物距离
+ * @param direction 方向向量
+ * @return 障碍物距离
+ */
 float CollisionPrevention::_getObstacleDistance(const Vector2f &direction)
 {
 	float obstacle_distance = 0.f;
@@ -484,6 +552,11 @@ float CollisionPrevention::_getObstacleDistance(const Vector2f &direction)
 	return obstacle_distance;
 }
 
+/**
+ * @brief 约束加速度设定点
+ * @param setpoint_length 设定点长度
+ * @return 新的设定点
+ */
 Vector2f
 CollisionPrevention::_constrainAccelerationSetpoint(const float &setpoint_length)
 {
@@ -509,6 +582,11 @@ CollisionPrevention::_constrainAccelerationSetpoint(const float &setpoint_length
 	return new_setpoint;
 }
 
+/**
+ * @brief 获取缩放比例
+ * @param reference_distance 参考距离
+ * @return 缩放比例
+ */
 float
 CollisionPrevention::_getScale(const float &reference_distance)
 {
@@ -521,6 +599,14 @@ CollisionPrevention::_getScale(const float &reference_distance)
 	return scale;
 }
 
+/**
+ * 获取速度补偿加速度
+ * @param vehicle_yaw_angle_rad 车辆航向角
+ * @param setpoint_vel 目标速度
+ * @param now 当前时间
+ * @param vel_comp_accel 速度补偿加速度
+ * @param vel_comp_accel_dir 速度补偿加速度方向
+ */
 void CollisionPrevention::_getVelocityCompensationAcceleration(const float vehicle_yaw_angle_rad,
 		const Vector2f &setpoint_vel,
 		const hrt_abstime now, float &vel_comp_accel, Vector2f &vel_comp_accel_dir)
@@ -529,6 +615,7 @@ void CollisionPrevention::_getVelocityCompensationAcceleration(const float vehic
 		const float max_range = _data_maxranges[i] * 0.01f;
 
 		// get the vector pointing into the direction of current bin
+		// 翻译：获取当前bin的方向向量
 		float bin_angle = wrap_2pi(vehicle_yaw_angle_rad
 					   + math::radians((float)i * BIN_SIZE + _obstacle_map_body_frame.angle_offset));
 
@@ -536,11 +623,13 @@ void CollisionPrevention::_getVelocityCompensationAcceleration(const float vehic
 		float bin_distance = _obstacle_map_body_frame.distances[i];
 
 		// only consider bins which are between min and max values
+		// 翻译：仅考虑介于最小值和最大值之间的区间
 		if (bin_distance > _obstacle_map_body_frame.min_distance && bin_distance < UINT16_MAX) {
 			const float distance = bin_distance * 0.01f;
 
 			// Assume current velocity is sufficiently close to the setpoint velocity, this breaks down if flying high
 			// acceleration maneuvers
+			// 翻译：假设当前速度与设定速度足够接近，这在飞行高加速度动作时会失效
 			const float curr_vel_parallel = math::max(0.f, setpoint_vel.dot(bin_direction));
 			float delay_distance = curr_vel_parallel * _param_cp_delay.get();
 
@@ -571,6 +660,9 @@ void CollisionPrevention::_getVelocityCompensationAcceleration(const float vehic
 	}
 }
 
+/**
+ * @brief 发布车辆命令以执行悬停模式
+ */
 void CollisionPrevention::_publishVehicleCmdDoLoiter()
 {
 	vehicle_command_s command{};

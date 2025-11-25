@@ -143,6 +143,13 @@ void FeasibilityChecker::updateData()
 	}
 }
 
+/**
+ * @brief 处理下一个任务项
+ * @param mission_item 当前任务项
+ * @param current_index 当前任务项索引
+ * @param total_count 总任务项数量
+ * @return 是否成功处理下一个任务项
+ */
 bool FeasibilityChecker::processNextItem(mission_item_s &mission_item, const int current_index, const int total_count)
 {
 	if (current_index == 0) {
@@ -180,6 +187,11 @@ bool FeasibilityChecker::processNextItem(mission_item_s &mission_item, const int
 	return true;
 }
 
+/**
+ * @brief 处理通用检查
+ * @param mission_item 当前任务项
+ * @param current_index 当前任务项索引
+ */
 void FeasibilityChecker::doCommonChecks(mission_item_s &mission_item, const int current_index)
 {
 
@@ -200,6 +212,12 @@ void FeasibilityChecker::doCommonChecks(mission_item_s &mission_item, const int 
 	}
 }
 
+/**
+ * @brief 处理VTOL检查
+ * @param mission_item 当前任务项
+ * @param current_index 当前任务项索引
+ * @param last_index 最后一个任务项索引
+ */
 void FeasibilityChecker::doVtolChecks(mission_item_s &mission_item, const int current_index, const int last_index)
 {
 	if (!_checks_failed.flags.land_pattern_validity_failed) {
@@ -208,6 +226,12 @@ void FeasibilityChecker::doVtolChecks(mission_item_s &mission_item, const int cu
 
 }
 
+/**
+ * @brief 处理固定翼检查
+ * @param mission_item 当前任务项
+ * @param current_index 当前任务项索引
+ * @param last_index 最后一个任务项索引
+ */
 void FeasibilityChecker::doFixedWingChecks(mission_item_s &mission_item, const int current_index, const int last_index)
 {
 	if (!_checks_failed.flags.land_pattern_validity_failed) {
@@ -220,12 +244,22 @@ void FeasibilityChecker::doFixedWingChecks(mission_item_s &mission_item, const i
 
 }
 
+/**
+ * @brief 处理多旋翼检查
+ * @param mission_item 当前任务项
+ * @param current_index 当前任务项索引
+ */
 void FeasibilityChecker::doMulticopterChecks(mission_item_s &mission_item, const int current_index)
 {
 	// this flag is used for the checkTakeoffLandAvailable check at the very end
 	_landing_valid |= mission_item.nav_cmd == NAV_CMD_LAND;
 }
 
+/**
+ * @brief 检查任务项有效性
+ * @param mission_item 当前任务项
+ * @param current_index 当前任务项索引
+ */
 bool FeasibilityChecker::checkMissionItemValidity(mission_item_s &mission_item, const int current_index)
 {
 	/* reject relative alt without home set */
@@ -243,6 +277,7 @@ bool FeasibilityChecker::checkMissionItemValidity(mission_item_s &mission_item, 
 	}
 
 	// check if we find unsupported items and reject mission if so
+	// 翻译：检查任务项是否支持
 	if (mission_item.nav_cmd != NAV_CMD_IDLE &&
 	    mission_item.nav_cmd != NAV_CMD_WAYPOINT &&
 	    mission_item.nav_cmd != NAV_CMD_LOITER_UNLIMITED &&
@@ -296,6 +331,7 @@ bool FeasibilityChecker::checkMissionItemValidity(mission_item_s &mission_item, 
 	}
 
 	// check if the mission starts with a land command while the vehicle is landed
+	// 翻译：检查任务是否以着陆指令开始，以及载具是否已着陆。
 	if ((current_index == 0) && mission_item.nav_cmd == NAV_CMD_LAND && _is_landed) {
 
 		mavlink_log_critical(_mavlink_log_pub, "Mission rejected: starts with landing\t");
@@ -313,6 +349,7 @@ bool FeasibilityChecker::checkTakeoff(mission_item_s &mission_item)
 	// look for a takeoff waypoint
 	if (mission_item.nav_cmd == NAV_CMD_TAKEOFF || mission_item.nav_cmd == NAV_CMD_VTOL_TAKEOFF) {
 		// make sure that the altitude of the waypoint is above the home altitude
+		// 翻译：确保起飞点的海拔高于起始点的海拔。
 		const float takeoff_alt = mission_item.altitude_is_relative
 					  ? mission_item.altitude
 					  : mission_item.altitude - _home_alt_msl;
@@ -377,6 +414,12 @@ bool FeasibilityChecker::checkTakeoff(mission_item_s &mission_item)
 	return true;
 }
 
+/**
+ * @brief 检查固定风降落接近
+ * @param mission_item 当前任务项
+ * @param current_index 当前任务项索引
+ * @return true 检查通过，false 检查失败
+ */
 bool FeasibilityChecker::checkFixedWindLandApproach(mission_item_s &mission_item, const int current_index)
 {
 	if (mission_item.nav_cmd == NAV_CMD_LAND && current_index > 0) {
@@ -402,6 +445,8 @@ bool FeasibilityChecker::checkFixedWindLandApproach(mission_item_s &mission_item
 			if (_mission_item_previous.nav_cmd == NAV_CMD_LOITER_TO_ALT) {
 				// assume this is a fixed-wing landing pattern with orbit to alt followed
 				// by tangent exit to landing approach and touchdown at landing waypoint
+				// 翻译：假设这是固定翼降落模式，其中围绕高度的圆圈跟随
+				// 	由着陆点的切线退出到着陆接近和着陆点的着陆点
 
 				const float distance_orbit_center_to_land = get_distance_to_next_waypoint(_mission_item_previous.lat,
 						_mission_item_previous.lon, mission_item.lat, mission_item.lon);
@@ -439,6 +484,7 @@ bool FeasibilityChecker::checkFixedWindLandApproach(mission_item_s &mission_item
 			// rounding on next check with small (arbitrary) 0.1 deg buffer, as the
 			// landing angle parameter is what is typically used for steepest glide
 			// in landing config
+			// 翻译：尊重用户设置的最大滑行坡度，但考虑到下一个检查中的浮点数舍入，使用小的（任意）0.1度缓冲区，因为着陆角度参数通常用于着陆配置中的最陡滑行
 			const float max_glide_slope = tanf(math::radians(_param_fw_lnd_ang + 0.1f));
 
 			if (glide_slope > max_glide_slope) {
@@ -475,6 +521,12 @@ bool FeasibilityChecker::checkFixedWindLandApproach(mission_item_s &mission_item
 	return true;
 }
 
+/**
+ * @brief 检查着陆模式的有效性。
+ * @param mission_item 当前任务项
+ * @param current_index 当前任务项索引
+ * @param last_index 最后一个任务项索引
+ */
 bool FeasibilityChecker::checkLandPatternValidity(mission_item_s &mission_item, const int current_index,
 		const int last_index)
 {
@@ -529,6 +581,9 @@ bool FeasibilityChecker::checkLandPatternValidity(mission_item_s &mission_item, 
 	return true;
 }
 
+/**
+ * @brief 检查起飞场地是否可用
+ */
 bool FeasibilityChecker::checkTakeoffLandAvailable()
 {
 	bool result = true;
@@ -601,6 +656,9 @@ bool FeasibilityChecker::checkTakeoffLandAvailable()
 	return result;
 }
 
+/**
+ * @brief 检查是否同时存在起飞和降落任务，或者两者都不存在。
+ */
 bool FeasibilityChecker::hasMissionBothOrNeitherTakeoffAndLanding()
 {
 	bool result{_has_takeoff == _landing_valid};
@@ -619,6 +677,11 @@ bool FeasibilityChecker::hasMissionBothOrNeitherTakeoffAndLanding()
 	return result;
 }
 
+/**
+ * @brief 检查第一个航点与起始位置之间的水平距离是否符合要求。
+ * @param mission_item 要检查的航点。
+ * @return 检查结果。
+ */
 bool FeasibilityChecker::checkHorizontalDistanceToFirstWaypoint(mission_item_s &mission_item)
 {
 	if (_param_mis_dist_1wp > FLT_EPSILON &&
@@ -656,6 +719,11 @@ bool FeasibilityChecker::checkHorizontalDistanceToFirstWaypoint(mission_item_s &
 	return true;
 }
 
+/**
+ * @brief 检查航点之间的水平距离是否符合要求。
+ * @param mission_item 要检查的航点。
+ * @return 检查结果。
+ */
 bool FeasibilityChecker::checkDistancesBetweenWaypoints(const mission_item_s &mission_item)
 {
 	/* check only items with valid lat/lon */
@@ -677,6 +745,7 @@ bool FeasibilityChecker::checkDistancesBetweenWaypoints(const mission_item_s &mi
 			/* Waypoints and gate are at the exact same position, which indicates an
 			 * invalid mission and makes calculating the direction from one waypoint
 			 * to another impossible. */
+			// 翻译：航点和门在同一个位置，这表明任务无效，无法从一个航点到另一个航点计算方向。
 			mavlink_log_critical(_mavlink_log_pub,
 					     "Distance between waypoint and gate too close: %d meters\t",
 					     (int)dist_between_waypoints);
@@ -696,6 +765,11 @@ bool FeasibilityChecker::checkDistancesBetweenWaypoints(const mission_item_s &mi
 	return true;
 }
 
+/**
+ * @brief 检查任务项是否适合车辆类型
+ * @param mission_item 任务项
+ * @return true 适合，false 不适合
+ */
 bool FeasibilityChecker::checkItemsFitToVehicleType(const mission_item_s &mission_item)
 {
 	if (_vehicle_type != VehicleType::Vtol &&

@@ -47,6 +47,7 @@ void AttitudeControl::setProportionalGain(const matrix::Vector3f &proportional_g
 	_yaw_w = math::constrain(yaw_weight, 0.f, 1.f);
 
 	// compensate for the effect of the yaw weight rescaling the output
+	// 翻译：补偿由于yaw权重缩放输出的效果
 	if (_yaw_w > 1e-4f) {
 		_proportional_gain(2) /= _yaw_w;
 	}
@@ -57,6 +58,7 @@ matrix::Vector3f AttitudeControl::update(const Quatf &q) const
 	Quatf qd = _attitude_setpoint_q;
 
 	// calculate reduced desired attitude neglecting vehicle's yaw to prioritize roll and pitch
+	// 翻译：计算减少的期望姿态，忽略车辆的yaw，优先考虑roll和pitch
 	const Vector3f e_z = q.dcm_z();
 	const Vector3f e_z_d = qd.dcm_z();
 	Quatf qd_red(e_z, e_z_d);
@@ -65,19 +67,27 @@ matrix::Vector3f AttitudeControl::update(const Quatf &q) const
 		// In the infinitesimal corner case where the vehicle and thrust have the completely opposite direction,
 		// full attitude control anyways generates no yaw input and directly takes the combination of
 		// roll and pitch leading to the correct desired yaw. Ignoring this case would still be totally safe and stable.
+		// 翻译：在车辆和推力完全相反的方向的无穷小角落案例中，
+		// 全姿态控制仍然生成没有yaw输入，并直接采取roll和pitch的组合，
+		// 导致正确的期望yaw。忽略这个案例仍然完全安全和稳定。
 		qd_red = qd;
 
 	} else {
 		// Transform rotation from current to desired thrust vector into a world frame reduced desired attitude.
 		// This is a right multiplication as the tilt error quaternion is obtained from two Z vectors expressed in the world frame.
+		// 翻译：从当前到期望推力矢量的旋转转换到世界框架的减少期望姿态。
+		// 这是一个右乘法，因为倾斜误差四元数是从世界框架中的两个Z矢量获得的。
 		qd_red *= q;
 	}
 
 	// With a full desired attitude given by: qd = qd_red * qd_dyaw, extract the delta yaw component.
+	// 翻译：给定完全期望姿态：qd = qd_red * qd_dyaw，提取偏航角分量。
 	// By definition, the delta yaw quaternion has the form (cos(angle/2), 0, 0, sin(angle/2))
+	// 翻译：通过定义，delta yaw四元数具有形式(cos(angle/2)，0，0，sin(angle/2))
 	Quatf qd_dyaw = qd_red.inversed() * qd;
 	qd_dyaw.canonicalize();
 	// catch numerical problems with the domain of acosf and asinf
+	// 翻译：捕捉acosf和asinf函数域的数值问题
 	qd_dyaw(0) = math::constrain(qd_dyaw(0), -1.f, 1.f);
 	qd_dyaw(3) = math::constrain(qd_dyaw(3), -1.f, 1.f);
 

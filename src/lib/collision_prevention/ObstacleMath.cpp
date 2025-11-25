@@ -39,6 +39,12 @@ using namespace matrix;
 namespace ObstacleMath
 {
 
+/**
+ * @brief 将距离投影到水平平面上。
+ * @param distance 距离
+ * @param yaw 面向角度
+ * @param q_world_vehicle 车辆在世界坐标系下的四元数
+ */
 void project_distance_on_horizontal_plane(float &distance, const float yaw, const matrix::Quatf &q_world_vehicle)
 {
 	const Quatf q_vehicle_sensor(Quatf(cosf(yaw / 2.f), 0.f, 0.f, sinf(yaw / 2.f)));
@@ -51,24 +57,52 @@ void project_distance_on_horizontal_plane(float &distance, const float yaw, cons
 	distance *= horizontal_projection_scale;
 }
 
+/**
+ * @brief 获取角度所在的bin索引。
+ * @param bin_width 每个bin的宽度。
+ * @param angle 角度。
+ * @return 角度所在的bin索引。
+ */
 int get_bin_at_angle(float bin_width, float angle)
 {
 	int bin_at_angle = (int)round(matrix::wrap(angle, 0.f, 360.f) / bin_width);
 	return wrap_bin(bin_at_angle, 360 / bin_width);
 }
 
+/**
+ * @brief 获取角度的下界。
+ * @param bin_width 每个bin的宽度。
+ * @param angle 角度。
+ * @param angle_offset 偏航角偏移量。
+ * @return 角度的下界。
+ */
 float get_lower_bound_angle(int bin, float bin_width, float angle_offset)
 {
 	bin = wrap_bin(bin, 360 / bin_width);
 	return wrap_360(bin * bin_width + angle_offset - bin_width / 2.f);
 }
 
+/**
+ * @brief 获取偏移量的bin索引。
+ *
+ * @param bin 原始bin索引。
+ * @param bin_width 每个bin的宽度。
+ * @param angle_offset 偏航角偏移量。
+ * @return 偏移量的bin索引。
+ */
 int get_offset_bin_index(int bin, float bin_width, float angle_offset)
 {
 	int offset = get_bin_at_angle(bin_width, angle_offset);
 	return wrap_bin(bin - offset, 360 / bin_width);
 }
 
+/**
+ * @brief 将传感器方向转换为偏航角偏移量。
+ *
+ * @param orientation 传感器方向。
+ * @param q 传感器方向的四元数。
+ * @return 偏航角偏移量。
+ */
 float sensor_orientation_to_yaw_offset(const SensorOrientation orientation, const float q[4])
 {
 	float offset = 0.0f;
@@ -117,11 +151,23 @@ float sensor_orientation_to_yaw_offset(const SensorOrientation orientation, cons
 	return offset;
 }
 
+/**
+ * @brief 将bin索引转换为角度。
+ * @param bin bin索引。
+ * @param bin_width 每个bin的宽度。
+ * @return 角度。
+ */
 int wrap_bin(int bin, int bin_count)
 {
 	return (bin + bin_count) % bin_count;
 }
 
+/**
+ * @brief 将角度转换为bin索引。
+ * @param angle 角度。
+ * @param bin_width 每个bin的宽度。
+ * @return bin索引。
+ */
 float wrap_360(const float angle)
 {
 	return matrix::wrap(angle, 0.0f, 360.0f);

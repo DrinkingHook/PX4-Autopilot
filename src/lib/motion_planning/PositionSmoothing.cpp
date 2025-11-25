@@ -296,6 +296,13 @@ const Vector3f PositionSmoothing::_generateVelocitySetpoint(const Vector3f &posi
 }
 
 
+/**
+ * @brief 生成轨迹
+ * @param position 位置
+ * @param velocity_setpoint 速度设定点
+ * @param delta_time 时间间隔
+ * @param out_setpoints 输出设定点
+ */
 void PositionSmoothing::_generateTrajectory(
 	const Vector3f &position,
 	const Vector3f &velocity_setpoint,

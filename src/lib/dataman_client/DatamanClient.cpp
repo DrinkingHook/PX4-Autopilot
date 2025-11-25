@@ -49,6 +49,7 @@ DatamanClient::DatamanClient()
 
 	} else {
 		// make sure we don't get any stale response by doing an orb_copy
+		// 翻译：确保我们不会收到任何过时的响应，通过执行 orb_copy
 		dataman_response_s response{};
 		orb_copy(ORB_ID(dataman_response), _dataman_response_sub, &response);
 
@@ -83,6 +84,14 @@ DatamanClient::~DatamanClient()
 	}
 }
 
+/**
+ * @brief 同步处理程序，用于处理数据管理器请求和响应。
+ * @param request 请求结构体
+ * @param response 响应结构体
+ * @param start_time 开始时间
+ * @param timeout 超时时间
+ * @return 是否成功
+ */
 bool DatamanClient::syncHandler(const dataman_request_s &request, dataman_response_s &response,
 				const hrt_abstime &start_time, hrt_abstime timeout)
 {
@@ -146,6 +155,15 @@ bool DatamanClient::syncHandler(const dataman_request_s &request, dataman_respon
 	return response_received;
 }
 
+/**
+ * @brief 同步读取数据
+ * @param item 数据项
+ * @param index 数据索引
+ * @param buffer 数据缓冲区
+ * @param length 数据长度
+ * @param timeout 超时时间
+ * @return 是否成功
+ */
 bool DatamanClient::readSync(dm_item_t item, uint32_t index, uint8_t *buffer, uint32_t length, hrt_abstime timeout)
 {
 	if (length > g_per_item_size[item]) {
@@ -182,6 +200,15 @@ bool DatamanClient::readSync(dm_item_t item, uint32_t index, uint8_t *buffer, ui
 	return success;
 }
 
+/**
+ * @brief 同步写入数据
+ * @param item 数据项
+ * @param index 数据索引
+ * @param buffer 数据缓冲区
+ * @param length 数据长度
+ * @param timeout 超时时间
+ * @return 是否成功
+ */
 bool DatamanClient::writeSync(dm_item_t item, uint32_t index, uint8_t *buffer, uint32_t length, hrt_abstime timeout)
 {
 	if (length > g_per_item_size[item]) {
@@ -217,6 +244,12 @@ bool DatamanClient::writeSync(dm_item_t item, uint32_t index, uint8_t *buffer, u
 	return success;
 }
 
+/**
+ * @brief 同步清除数据
+ * @param item 数据项
+ * @param timeout 超时时间
+ * @return 是否成功
+ */
 bool DatamanClient::clearSync(dm_item_t item, hrt_abstime timeout)
 {
 	hrt_abstime timestamp = hrt_absolute_time();
@@ -243,6 +276,14 @@ bool DatamanClient::clearSync(dm_item_t item, hrt_abstime timeout)
 	return success;
 }
 
+/**
+ * @brief 异步清除数据
+ * @param item 数据项
+ * @param index 索引
+ * @param buffer 缓冲区
+ * @param length 长度
+ * @return 是否成功
+ */
 bool DatamanClient::readAsync(dm_item_t item, uint32_t index, uint8_t *buffer, uint32_t length)
 {
 	if (length > g_per_item_size[item]) {
@@ -281,6 +322,14 @@ bool DatamanClient::readAsync(dm_item_t item, uint32_t index, uint8_t *buffer, u
 	return success;
 }
 
+/**
+ * @brief 异步写入数据
+ * @param item 数据项
+ * @param index 索引
+ * @param buffer 缓冲区
+ * @param length 长度
+ * @return 是否成功
+ */
 bool DatamanClient::writeAsync(dm_item_t item, uint32_t index, uint8_t *buffer, uint32_t length)
 {
 	if (length > g_per_item_size[item]) {
@@ -321,6 +370,11 @@ bool DatamanClient::writeAsync(dm_item_t item, uint32_t index, uint8_t *buffer, 
 	return success;
 }
 
+/**
+ * @brief 异步清除数据
+ * @param item 数据项
+ * @return 是否成功
+ */
 bool DatamanClient::clearAsync(dm_item_t item)
 {
 	bool success = false;
@@ -414,6 +468,11 @@ void DatamanClient::update()
 	}
 }
 
+/**
+ * @brief 获取最后一次操作是否完成
+ * @param success 是否成功
+ * @return 是否完成
+ */
 bool DatamanClient::lastOperationCompleted(bool &success)
 {
 	bool completed = false;
@@ -513,6 +572,15 @@ bool DatamanCache::load(dm_item_t item, uint32_t index)
 	return success;
 }
 
+/**
+ * @brief 等待数据加载完成
+ * @param item 数据项
+ * @param index 数据索引
+ * @param buffer 数据缓冲区
+ * @param length 数据长度
+ * @param timeout 超时时间
+ * @return 是否成功
+ */
 bool DatamanCache::loadWait(dm_item_t item, uint32_t index, uint8_t *buffer, uint32_t length, hrt_abstime timeout)
 {
 	if (length > g_per_item_size[item]) {
@@ -560,6 +628,15 @@ bool DatamanCache::loadWait(dm_item_t item, uint32_t index, uint8_t *buffer, uin
 	return success;
 }
 
+/**
+ * @brief 等待数据写入完成
+ * @param item 数据项
+ * @param index 数据索引
+ * @param buffer 数据缓冲区
+ * @param length 数据长度
+ * @param timeout 超时时间
+ * @return 是否成功
+ */
 bool DatamanCache::writeWait(dm_item_t item, uint32_t index, uint8_t *buffer, uint32_t length, hrt_abstime timeout)
 {
 	if (length > g_per_item_size[item]) {

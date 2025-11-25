@@ -99,6 +99,11 @@ GeofenceBreachAvoidance::getFenceViolationTestPoint()
 	return waypointFromBearingAndDistance(_current_pos_lat_lon, _test_point_bearing, _test_point_distance);
 }
 
+/**
+ * @brief 生成固定翼的避障点根据当前位置、航向和距离计算避障点的经纬度坐标。
+ * @param violation_type 违规类型
+ * @param geofence 地理围栏对象
+ */
 Vector2d
 GeofenceBreachAvoidance::generateLoiterPointForFixedWing(geofence_violation_type_u violation_type, Geofence *geofence)
 {
@@ -147,6 +152,11 @@ GeofenceBreachAvoidance::generateLoiterPointForFixedWing(geofence_violation_type
 	}
 }
 
+/**
+ * @brief 生成多旋翼的避障点，根据当前位置、航向和距离计算避障点的经纬度坐标。
+ * @param violation_type 违规类型
+ * @param geofence 地理围栏对象
+ */
 Vector2d
 GeofenceBreachAvoidance::generateLoiterPointForMultirotor(geofence_violation_type_u violation_type, Geofence *geofence)
 {
@@ -158,6 +168,7 @@ GeofenceBreachAvoidance::generateLoiterPointForMultirotor(geofence_violation_typ
 		Vector2d test_point;
 
 		// binary search for the distance from the drone to the geofence in the given direction
+		// 翻译：使用二分查找算法，根据当前位置、航向和距离计算避障点的经纬度坐标。
 		while (fabsf(current_max - current_min) > 0.5f) {
 			test_point = waypointFromBearingAndDistance(_current_pos_lat_lon, _test_point_bearing, current_distance);
 
@@ -194,6 +205,11 @@ GeofenceBreachAvoidance::generateLoiterPointForMultirotor(geofence_violation_typ
 	}
 }
 
+/**
+ * @brief 生成固定翼飞机的避障高度
+ * @param violation_type 违规类型
+ * @return 避障高度
+ */
 float GeofenceBreachAvoidance::generateLoiterAltitudeForFixedWing(geofence_violation_type_u violation_type)
 {
 	if (violation_type.flags.max_altitude_exceeded) {
@@ -204,6 +220,11 @@ float GeofenceBreachAvoidance::generateLoiterAltitudeForFixedWing(geofence_viola
 	}
 }
 
+/**
+ * @brief 生成多旋翼飞机的避障高度
+ * @param violation_type 违规类型
+ * @return 避障高度
+ */
 float GeofenceBreachAvoidance::generateLoiterAltitudeForMulticopter(geofence_violation_type_u violation_type)
 {
 	if (violation_type.flags.max_altitude_exceeded) {
@@ -214,6 +235,10 @@ float GeofenceBreachAvoidance::generateLoiterAltitudeForMulticopter(geofence_vio
 	}
 }
 
+/**
+ * @brief 计算多旋翼飞机的避障距离
+ * @return 避障距离
+ */
 float GeofenceBreachAvoidance::computeBrakingDistanceMultirotor()
 {
 	const float accel_delay_max = math::max(_params.param_mpc_acc_hor, _params.param_mpc_acc_hor_max);
@@ -230,6 +255,10 @@ float GeofenceBreachAvoidance::computeBrakingDistanceMultirotor()
 	return _multirotor_braking_distance;
 }
 
+/**
+ * @brief 计算多旋翼飞机的垂直避障距离
+ * @return 垂直避障距离
+ */
 float GeofenceBreachAvoidance::computeVerticalBrakingDistanceMultirotor()
 {
 	const float accel_delay_max = math::max(_params.param_mpc_acc_up_max, _params.param_mpc_acc_down_max);
@@ -251,6 +280,10 @@ float GeofenceBreachAvoidance::computeVerticalBrakingDistanceMultirotor()
 	return _multirotor_vertical_braking_distance;
 }
 
+/**
+ * @brief 计算多旋翼飞机的水平避障距离
+ * @return 水平避障距离
+ */
 void GeofenceBreachAvoidance::updateMinHorDistToFenceMultirotor()
 {
 	const float accel_delay_max = math::max(_params.param_mpc_acc_hor, _params.param_mpc_acc_hor_max);
@@ -265,6 +298,9 @@ void GeofenceBreachAvoidance::updateMinHorDistToFenceMultirotor()
 
 }
 
+/**
+ * @brief 更新多旋翼飞机的垂直避障距离
+ */
 void GeofenceBreachAvoidance::updateMinVertDistToFenceMultirotor()
 {
 	const float accel_delay_max = math::max(_params.param_mpc_acc_up_max, _params.param_mpc_acc_down_max);
@@ -279,6 +315,11 @@ void GeofenceBreachAvoidance::updateMinVertDistToFenceMultirotor()
 	_min_vert_dist_to_fence_mc =  2.0f * predictor.getCurrentPosition();
 }
 
+/**
+ * @brief 获取从当前位置到测试点的距离
+ * @param distance 距离
+ * @return Vector2d
+ */
 Vector2d GeofenceBreachAvoidance::waypointFromHomeToTestPointAtDist(float distance)
 {
 	Vector2d test_point = getFenceViolationTestPoint();

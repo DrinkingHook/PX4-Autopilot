@@ -143,6 +143,11 @@ MulticopterAttitudeControl::throttle_curve(float throttle_stick_input)
 	return math::min(thrust, _manual_throttle_maximum.getState());
 }
 
+/**
+ * @brief 生成姿态设定点
+ * @param q 当前姿态四元数
+ * @param dt 时间间隔
+ */
 void
 MulticopterAttitudeControl::generate_attitude_setpoint(const Quatf &q, float dt)
 {
