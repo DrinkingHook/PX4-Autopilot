@@ -118,6 +118,9 @@ static int gimbal_thread_main(int argc, char *argv[])
 		// MAVLINK_V2 as well as RC input are supported together.
 		// Whichever signal is updated last, gets control, for RC there is a deadzone
 		// to avoid accidental activation.
+		// 翻译：自动
+		// MAVLINK_V2和RC输入都支持。
+		// 翻译：无论哪个信号更新最后，都会获得控制权，对于RC，有一个死区，以避免意外激活。
 		thread_data.input_objs[thread_data.input_objs_len++] = new InputMavlinkGimbalV2(params);
 
 		thread_data.input_objs[thread_data.input_objs_len++] = new InputRC(params);
@@ -213,11 +216,13 @@ static int gimbal_thread_main(int argc, char *argv[])
 
 			// get input: we cannot make the timeout too large, because the output needs to update
 			// periodically for stabilization and angle updates.
+			// 翻译：获取输入：我们不能使超时太大，因为输出需要定期更新以进行稳定性和角度更新。
 
 			for (int i = 0; i < thread_data.input_objs_len; ++i) {
 
 				const bool already_active = (thread_data.last_input_active == i);
 				// poll only on active input to reduce latency, or on all if none is active
+				// 翻译：如果输入已经激活或没有激活的输入，则轮询以减少延迟。
 				const unsigned int poll_timeout =
 					(already_active || thread_data.last_input_active == -1) ? 20 : 0;
 
@@ -246,6 +251,7 @@ static int gimbal_thread_main(int argc, char *argv[])
 
 				case InputBase::UpdateResult::UpdatedNotActive:
 					// Ignore, input not active
+					// 翻译：忽略，输入不活动
 					break;
 				}
 
@@ -266,6 +272,7 @@ static int gimbal_thread_main(int argc, char *argv[])
 
 			if (thread_data.output_obj->check_and_handle_setpoint_timeout(thread_data.control_data, hrt_absolute_time())) {
 				// Without flagging an update the changes are not processed in the output
+				// 翻译：如果没有标记更新，更改不会在输出中处理。
 				update_result = InputBase::UpdateResult::UpdatedActive;
 			}
 
@@ -276,12 +283,15 @@ static int gimbal_thread_main(int argc, char *argv[])
 
 			// Only publish the mount orientation if the mode is not mavlink v1 or v2
 			// If the gimbal speaks mavlink it publishes its own orientation.
+			// 翻译：仅当模式不是 mavlink v1 或 v2 时才发布云台方向
+			// 	如果云台使用 mavlink，它会发布自己的方向。
 			if (params.mnt_mode_out != MNT_MODE_OUT_MAVLINK_V1 && params.mnt_mode_out != MNT_MODE_OUT_MAVLINK_V2) {
 				thread_data.output_obj->publish();
 			}
 
 		} else {
 			// We still need to wake up regularly to check for thread exit requests
+			// 翻译：为了检查线程退出请求，我们需要定期唤醒。
 			px4_usleep(1e6);
 		}
 	}

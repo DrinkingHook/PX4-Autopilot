@@ -35,6 +35,9 @@
 
 using namespace px4;
 
+/**
+ * @brief 日志回放模块
+ */
 extern "C" __EXPORT int
 replay_main(int argc, char *argv[])
 {

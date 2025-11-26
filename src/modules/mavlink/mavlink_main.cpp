@@ -106,6 +106,7 @@ Mavlink::Mavlink() :
 	mavlink_update_parameters();
 
 	// save the current system- and component ID because we don't allow them to change during operation
+	// 翻译：保存当前系统和组件ID，因为我们不允许在运行期间更改它们
 	int sys_id = _param_mav_sys_id.get();
 
 	if (sys_id > 0 && sys_id < 255) {
@@ -123,6 +124,7 @@ Mavlink::Mavlink() :
 	}
 
 	// ensure topic exists, otherwise we might lose first queued commands
+	// 翻译：确保主题存在，否则我们可能会丢失第一个排队的命令
 	if (orb_exists(ORB_ID(vehicle_command), 0) == PX4_ERROR) {
 		orb_advertise(ORB_ID(vehicle_command), nullptr);
 	}

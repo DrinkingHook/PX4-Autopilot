@@ -79,6 +79,11 @@ void EventBuffer::insert_event(const Event &event)
 	pthread_mutex_unlock(&_mutex);
 }
 
+/**
+ * @brief 获取指定序列号之后的最旧序列号。
+ * @param sequence 指定的序列号。
+ * @return 指定序列号之后的最旧序列号。
+ */
 uint16_t EventBuffer::get_oldest_sequence_after(uint16_t sequence) const
 {
 	pthread_mutex_lock(&_mutex);

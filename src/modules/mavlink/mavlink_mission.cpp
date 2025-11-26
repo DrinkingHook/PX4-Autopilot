@@ -117,6 +117,7 @@ MavlinkMissionManager::load_geofence_stats()
 {
 	mission_stats_entry_s stats;
 	// initialize fence points count
+	// 翻译：初始化围栏点数量
 	bool success = _dataman_client.readSync(DM_KEY_FENCE_POINTS_STATE, 0, reinterpret_cast<uint8_t *>(&stats),
 						sizeof(mission_stats_entry_s));
 
@@ -135,6 +136,7 @@ MavlinkMissionManager::load_safepoint_stats()
 {
 	mission_stats_entry_s stats;
 	// initialize safe points count
+	// 翻译：初始化安全点数量
 	bool success = _dataman_client.readSync(DM_KEY_SAFE_POINTS_STATE, 0, reinterpret_cast<uint8_t *>(&stats),
 						sizeof(mission_stats_entry_s));
 
@@ -151,11 +153,20 @@ MavlinkMissionManager::load_safepoint_stats()
 /**
  * Publish mission topic to notify navigator about changes.
  */
+ /** 发布任务主题以通知导航员有关变更的信息。
+  * @brief 更新当前活动任务状态
+  * @param mission_dataman_id 任务数据管理器ID
+  * @param count 任务数量
+  * @param seq 当前序列号
+  * @param crc32 CRC32校验和
+  * @param write_to_dataman 是否写入数据管理器
+  */
 void
 MavlinkMissionManager::update_active_mission(dm_item_t mission_dataman_id, uint16_t count, int32_t seq, uint32_t crc32,
 		bool write_to_dataman)
 {
 	/* update active mission state */
+	// 翻译：更新当前任务状态
 	_mission_dataman_id = mission_dataman_id;
 	_my_mission_dataman_id = _mission_dataman_id;
 	_count[MAV_MISSION_TYPE_MISSION] = count;
@@ -187,6 +198,12 @@ MavlinkMissionManager::update_active_mission(dm_item_t mission_dataman_id, uint1
 	_offboard_mission_pub.publish(mission);
 }
 
+/**
+ * @brief 更新围栏数量
+ * @param fence_dataman_id 围栏数据管理ID
+ * @param count 围栏数量
+ * @param crc32 CRC32校验和
+ */
 int
 MavlinkMissionManager::update_geofence_count(dm_item_t fence_dataman_id, unsigned count, uint32_t crc32)
 {
@@ -903,6 +920,7 @@ MavlinkMissionManager::handle_mission_count(const mavlink_message_t *msg)
 	mavlink_msg_mission_count_decode(msg, &wpc);
 
 	if (CHECK_SYSID_COMPID_MISSION(wpc)) {
+		// 空闲状态，系统处于等待状态，没有进行任何任务传输
 		if (_state == MAVLINK_WPM_STATE_IDLE) {
 			_time_last_recv = hrt_absolute_time();
 
@@ -930,12 +948,14 @@ MavlinkMissionManager::handle_mission_count(const mavlink_message_t *msg)
 				PX4_DEBUG("WPM: MISSION_COUNT 0, clearing waypoints list and staying in state MAVLINK_WPM_STATE_IDLE");
 
 				switch (_mission_type) {
+				// 主线飞行任务(包含实际的飞行航点和命令序列)
 				case MAV_MISSION_TYPE_MISSION:
 
 					_land_start_marker = -1;
 					_land_marker = -1;
 
 					/* alternate dataman ID anyway to let navigator know about changes */
+					// 翻译：切换数据管理ID，以让导航器知道更改
 
 					if (_mission_dataman_id == DM_KEY_WAYPOINTS_OFFBOARD_0) {
 						update_active_mission(DM_KEY_WAYPOINTS_OFFBOARD_1, 0, 0, 0);
@@ -946,10 +966,12 @@ MavlinkMissionManager::handle_mission_count(const mavlink_message_t *msg)
 
 					break;
 
+				// 地理围栏(定义飞行器的安全飞行区域边界)
 				case MAV_MISSION_TYPE_FENCE:
 					update_geofence_count(_fence_dataman_id == DM_KEY_FENCE_POINTS_0 ? DM_KEY_FENCE_POINTS_1 : DM_KEY_FENCE_POINTS_0, 0, 0);
 					break;
 
+				// 集结点/备用返航点(定义代替的安全着陆点)
 				case MAV_MISSION_TYPE_RALLY:
 					update_safepoint_count(_safepoint_dataman_id == DM_KEY_SAFE_POINTS_0 ? DM_KEY_SAFE_POINTS_1 : DM_KEY_SAFE_POINTS_0, 0,
 							       0);
@@ -997,6 +1019,7 @@ MavlinkMissionManager::handle_mission_count(const mavlink_message_t *msg)
 			_transfer_land_start_marker = -1;
 			_transfer_land_marker = -1;
 
+		// 接收列表状态，px4正在从地面站接收任务列表
 		} else if (_state == MAVLINK_WPM_STATE_GETLIST) {
 			_time_last_recv = hrt_absolute_time();
 
@@ -1009,6 +1032,7 @@ MavlinkMissionManager::handle_mission_count(const mavlink_message_t *msg)
 
 			if (_transfer_seq == 0) {
 				/* looks like our MISSION_REQUEST was lost, try again */
+				// 翻译：看起来我们的 MISSION_REQUEST 丢失了，重新发送请求
 				PX4_DEBUG("WPM: MISSION_COUNT %u from ID %u (again)", wpc.count, msg->sysid);
 
 			} else {
@@ -1065,12 +1089,17 @@ MavlinkMissionManager::handle_mission_item_int(const mavlink_message_t *msg)
 	handle_mission_item_both(msg);
 }
 
+/**
+ * @brief 处理 mavlink_mission_item_t 和 mavlink_mission_item_int_t 消息。
+ */
 void
 MavlinkMissionManager::handle_mission_item_both(const mavlink_message_t *msg)
 {
 
 	// The mavlink_message could also contain a mavlink_mission_item_int_t. We ignore that here
 	// and take care of it later in parse_mavlink_mission_item depending on _int_mode.
+	// 翻译：如果 mavlink_message 包含 mavlink_mission_item_int_t，我们在这里忽略它，
+	// 并在 parse_mavlink_mission_item 中根据 _int_mode 处理它。
 
 	mavlink_mission_item_t wp;
 	mavlink_msg_mission_item_decode(msg, &wp);
@@ -1090,6 +1119,7 @@ MavlinkMissionManager::handle_mission_item_both(const mavlink_message_t *msg)
 					PX4_DEBUG("WPM: MISSION_ITEM ERROR: seq %u was not the expected %u", wp.seq, _transfer_seq);
 
 					/* Item sequence not expected, ignore item */
+					// 翻译：忽略项目，因为它不是预期的序列
 					return;
 				}
 
@@ -1097,6 +1127,8 @@ MavlinkMissionManager::handle_mission_item_both(const mavlink_message_t *msg)
 				if (_transfer_seq == wp.seq + 1) {
 					// Assume this is a duplicate, where we already successfully got all mission items,
 					// but the GCS did not receive the last ack and sent the same item again
+					// 翻译：假设这是重复的，我们已经成功地获得了所有任务项，
+					// 但 GCS 没有收到最后一个确认，发送了相同的项目
 					send_mission_ack(_transfer_partner_sysid, _transfer_partner_compid, MAV_MISSION_ACCEPTED, _transfer_current_crc32);
 
 				} else {
@@ -1147,6 +1179,7 @@ MavlinkMissionManager::handle_mission_item_both(const mavlink_message_t *msg)
 			case MAV_MISSION_TYPE_MISSION: {
 					// check that we don't get a wrong item (hardening against wrong client implementations, the list here
 					// does not need to be complete)
+					// 翻译：检查我们是否收到错误的项目（针对错误的客户端实现进行强化，这里列出的列表不需要完整）
 					if (mission_item.nav_cmd == MAV_CMD_NAV_FENCE_POLYGON_VERTEX_INCLUSION ||
 					    mission_item.nav_cmd == MAV_CMD_NAV_FENCE_POLYGON_VERTEX_EXCLUSION ||
 					    mission_item.nav_cmd == MAV_CMD_NAV_FENCE_CIRCLE_INCLUSION ||
@@ -1266,6 +1299,7 @@ MavlinkMissionManager::handle_mission_item_both(const mavlink_message_t *msg)
 					_land_marker = _transfer_land_marker;
 
 					// Only need to update if the mission actually changed
+					// 翻译：只有在实际更改了任务时才需要更新
 					if (_transfer_current_crc32 != _crc32[MAV_MISSION_TYPE_MISSION]) {
 						update_active_mission(_transfer_dataman_id, _transfer_count, _transfer_current_seq, _transfer_current_crc32);
 					}
@@ -1296,6 +1330,7 @@ MavlinkMissionManager::handle_mission_item_both(const mavlink_message_t *msg)
 				}
 
 				// Note: the switch to idle needs to happen after update_geofence_count is called, for proper unlocking order
+				// 翻译：注意：为了确保正确的解锁顺序，需要在调用 update_geofence_count 之后切换到空闲状态。
 				switch_to_idle_state();
 
 
@@ -1324,6 +1359,11 @@ MavlinkMissionManager::handle_mission_item_both(const mavlink_message_t *msg)
 }
 
 
+/**
+ * @brief 处理MAVLink任务清除全部请求
+ *
+ * @param msg MAVLink消息
+ */
 void
 MavlinkMissionManager::handle_mission_clear_all(const mavlink_message_t *msg)
 {
@@ -1334,6 +1374,7 @@ MavlinkMissionManager::handle_mission_clear_all(const mavlink_message_t *msg)
 
 		if (_state == MAVLINK_WPM_STATE_IDLE) {
 			/* don't touch mission items storage itself, but only items count in mission state */
+			// 翻译：不直接修改任务项存储本身，而是只修改任务状态中的项数
 			_time_last_recv = hrt_absolute_time();
 
 			_mission_type = (MAV_MISSION_TYPE)wpca.mission_type; // this is needed for the returned ack
@@ -1392,6 +1433,13 @@ MavlinkMissionManager::handle_mission_clear_all(const mavlink_message_t *msg)
 	}
 }
 
+/**
+ * @brief 解析MAVLink任务项
+ *
+ * @param mavlink_mission_item MAVLink任务项
+ * @param mission_item 解析后的任务项
+ * @return int 解析结果
+ */
 int
 MavlinkMissionManager::parse_mavlink_mission_item(const mavlink_mission_item_t *mavlink_mission_item,
 		struct mission_item_s *mission_item)
@@ -1401,8 +1449,10 @@ MavlinkMissionManager::parse_mavlink_mission_item(const mavlink_mission_item_t *
 	    (_int_mode && (mavlink_mission_item->frame == MAV_FRAME_GLOBAL_INT ||
 			   mavlink_mission_item->frame == MAV_FRAME_GLOBAL_RELATIVE_ALT_INT))) {
 		// This is a mission item with a global coordinate
+		// 翻译：这是一项具有全球坐标的任务项。
 
 		// Switch to int mode if that is what we are receiving
+		// 翻译：如果收到的是整数模式，则切换到整数模式。
 		if ((mavlink_mission_item->frame == MAV_FRAME_GLOBAL_INT ||
 		     mavlink_mission_item->frame == MAV_FRAME_GLOBAL_RELATIVE_ALT_INT)) {
 			_int_mode = true;
@@ -1412,6 +1462,9 @@ MavlinkMissionManager::parse_mavlink_mission_item(const mavlink_mission_item_t *
 			/* The argument is actually a mavlink_mission_item_int_t in int_mode.
 			 * mavlink_mission_item_t and mavlink_mission_item_int_t have the same
 			 * alignment, so we can just swap float for int32_t. */
+			// 翻译：参数实际上是 int_mode 的 mavlink_mission_item_int_t 类型。
+			// mavlink_mission_item_t 和 mavlink_mission_item_int_t 具有相同的
+			// 对齐方式，因此我们可以直接将 float 替换为 int32_t。
 			const mavlink_mission_item_int_t *item_int
 				= reinterpret_cast<const mavlink_mission_item_int_t *>(mavlink_mission_item);
 			mission_item->lat = ((double)item_int->x) * 1e-7;
@@ -1435,6 +1488,7 @@ MavlinkMissionManager::parse_mavlink_mission_item(const mavlink_mission_item_t *
 
 		// Depending on the received MAV_CMD_* (MAVLink Commands), assign the corresponding
 		// NAV_CMD value to the mission item's nav_cmd.
+		// 翻译：根据接收到的 MAV_CMD_*（MAVLink 命令），将相应的 NAV_CMD 值分配给任务项的 nav_cmd。
 		switch (mavlink_mission_item->command) {
 		case MAV_CMD_NAV_WAYPOINT:
 			mission_item->nav_cmd = NAV_CMD_WAYPOINT;
@@ -1457,6 +1511,7 @@ MavlinkMissionManager::parse_mavlink_mission_item(const mavlink_mission_item_t *
 			mission_item->loiter_exit_xtrack = (mavlink_mission_item->param4 > 0);
 			// Yaw is only valid for multicopter but we set it always because
 			// it's just ignored for fixedwing.
+			// 翻译：偏航角仅对多旋翼飞行器有效，但我们总是设置它，因为它对固定翼飞行器会被忽略。
 			mission_item->yaw = wrap_2pi(math::radians(mavlink_mission_item->param4));
 			break;
 
@@ -1550,6 +1605,7 @@ MavlinkMissionManager::parse_mavlink_mission_item(const mavlink_mission_item_t *
 	} else if (mavlink_mission_item->frame == MAV_FRAME_MISSION) {
 
 		// This is a mission item with no coordinates
+		// 翻译：这是一条没有坐标信息的航点指令
 
 		mission_item->params[0] = mavlink_mission_item->param1;
 		mission_item->params[1] = mavlink_mission_item->param2;
@@ -1560,6 +1616,8 @@ MavlinkMissionManager::parse_mavlink_mission_item(const mavlink_mission_item_t *
 			/* The argument is actually a mavlink_mission_item_int_t in int_mode.
 			 * mavlink_mission_item_t and mavlink_mission_item_int_t have the same
 			 * alignment, so we can just swap float for int32_t. */
+			// 翻译：如果处于整数模式，将参数转换为整数类型
+			// mavlink_mission_item_t 和 mavlink_mission_item_int_t 具有相同的对齐方式，因此我们可以将 float 替换为 int32_t。
 			const mavlink_mission_item_int_t *item_int
 				= reinterpret_cast<const mavlink_mission_item_int_t *>(mavlink_mission_item);
 			mission_item->params[4] = ((double)item_int->x);
@@ -1655,6 +1713,12 @@ MavlinkMissionManager::parse_mavlink_mission_item(const mavlink_mission_item_t *
 	return MAV_MISSION_ACCEPTED;
 }
 
+/**
+ * @brief 格式化航点任务项。
+ * @param mission_item 航点任务项。
+ * @param mavlink_mission_item MAVLink航点任务项。
+ * @return MAVLink操作结果。
+ */
 int
 MavlinkMissionManager::format_mavlink_mission_item(const struct mission_item_s *mission_item,
 		mavlink_mission_item_t *mavlink_mission_item)
@@ -1665,6 +1729,7 @@ MavlinkMissionManager::format_mavlink_mission_item(const struct mission_item_s *
 	mavlink_mission_item->mission_type = _mission_type;
 
 	/* default mappings for generic commands */
+	// 翻译：通用命令的默认映射
 	if (mission_item->frame == MAV_FRAME_MISSION) {
 		mavlink_mission_item->param1 = mission_item->params[0];
 		mavlink_mission_item->param2 = mission_item->params[1];
@@ -1678,6 +1743,9 @@ MavlinkMissionManager::format_mavlink_mission_item(const struct mission_item_s *
 			// This function actually receives a mavlink_mission_item_int_t in _int_mode
 			// which has the same alignment as mavlink_mission_item_t and the only
 			// difference is int32_t vs. float for x and y.
+			// 翻译：如果处于整数模式，将参数转换为整数类型
+			// 它与 mavlink_mission_item_t 具有相同的对齐方式，唯一的区别是
+			// x 和 y 的数据类型分别为 int32_t 和 float。
 			mavlink_mission_item_int_t *item_int =
 				reinterpret_cast<mavlink_mission_item_int_t *>(mavlink_mission_item);
 
@@ -1831,10 +1899,18 @@ MavlinkMissionManager::format_mavlink_mission_item(const struct mission_item_s *
 	return PX4_OK;
 }
 
+/**
+ * @brief 将 mavlink_mission_item_t 中的参数复制到 mission_item_s 中。
+ * @param mission_item 指向 mission_item_s 结构体的指针。
+ * @param mavlink_mission_item 指向 mavlink_mission_item_t 结构体的指针。
+ * @param start_idx 起始索引。
+ * @param end_idx 结束索引。
+ */
 void MavlinkMissionManager::copy_params_from_mavlink_to_mission_item(struct mission_item_s *mission_item,
 		const mavlink_mission_item_t *mavlink_mission_item, int8_t start_idx, int8_t end_idx)
 {
 	// Copy each param1 ~ 7 if they are within the range specified
+	// 翻译：如果参数1到7在指定范围内，则复制它们。
 	if (start_idx <= 1 && 1 <= end_idx) {
 		mission_item->params[0] = mavlink_mission_item->param1;
 	}
@@ -1865,6 +1941,9 @@ void MavlinkMissionManager::copy_params_from_mavlink_to_mission_item(struct miss
 	}
 }
 
+/**
+ * @brief 检查当前活动的航点任务。
+ */
 void MavlinkMissionManager::check_active_mission()
 {
 	// do not send anything over high latency communication
@@ -1893,6 +1972,9 @@ void MavlinkMissionManager::check_active_mission()
 	}
 }
 
+/**
+ * @brief 计算航点任务项的CRC32校验和。
+ */
 uint32_t MavlinkMissionManager::crc32_for_mission_item(const mavlink_mission_item_t &mission_item, uint32_t prev_crc32)
 {
 	union {

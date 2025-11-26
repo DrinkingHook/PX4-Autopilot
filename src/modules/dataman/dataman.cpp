@@ -928,6 +928,14 @@ static int backend_check()
 	return 0;
 }
 
+/**
+ * @brief 持久化数据管理器，一个完整的非易失性数据存储服务。
+ * 提供了一个抽象层来管理各种需要持久化的数据，包括：
+ * - 任务航点(Mission Waypoints)
+ * - 地理围栏点(Fence Points)  
+ * - 结集点(Rally/Safe Points)
+ * - 任务状态(Mission State)
+ */
 int
 dataman_main(int argc, char *argv[])
 {

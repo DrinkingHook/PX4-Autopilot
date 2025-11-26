@@ -56,9 +56,11 @@ void
 PWMIN::start()
 {
 	// NOTE: must first publish here, first publication cannot be in interrupt context
+	// 翻译：NOTE：必须首先发布，第一次发布不能在中断上下文中
 	_pwm_input_pub.update();
 
 	// Initialize the timer isr for measuring pulse widths. Publishing is done inside the isr.
+	// 翻译：初始化用于测量脉冲宽度的定时器中断服务例程。发布在中断服务例程内部完成。
 	timer_init();
 }
 
@@ -87,6 +89,7 @@ PWMIN::timer_init(void)
 
 	/* run with interrupts disabled in case the timer is already
 	 * setup. We don't want it firing while we are doing the setup */
+	// 翻译：在禁用中断的情况下运行，以防定时器已设置。我们不想在设置过程中让它触发。
 	irqstate_t flags = px4_enter_critical_section();
 
 	/* configure input pin */
@@ -98,6 +101,19 @@ PWMIN::timer_init(void)
 	/* Clear no bits, set timer enable bit.*/
 	modifyreg32(PWMIN_TIMER_POWER_REG, 0, PWMIN_TIMER_POWER_BIT);
 
+	/**
+	 * rCR1 = 0;              // 控制寄存器1 - 禁用定时器
+	 * rCR2 = 0;              // 控制寄存器2
+	 * rSMCR = 0;             // 从模式控制寄存器
+	 * rDIER = DIER_PWMIN_A;  // 中断使能寄存器
+	 * rCCER = 0;             // 捕获/比较使能寄存器（解锁CCMR寄存器）
+	 * rCCMR1 = CCMR1_PWMIN;  // 捕获/比较模式寄存器1
+	 * rCCMR2 = CCMR2_PWMIN;  // 捕获/比较模式寄存器2
+	 * rSMCR = SMCR_PWMIN_1;  // 设置PWM输入模式1
+	 * rSMCR = SMCR_PWMIN_2;  // 使能从模式控制器
+	 * rCCER = CCER_PWMIN;    // 配置捕获使能和极性
+	 */
+		
 	/* disable and configure the timer */
 	rCR1 = 0;
 	rCR2 = 0;
