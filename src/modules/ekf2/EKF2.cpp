@@ -67,6 +67,7 @@ EKF2::EKF2(bool multi_mode, const px4::wq_config_t &config, bool replay_mode):
 	_param_ekf2_delay_max(_params->ekf2_delay_max),
 	_param_ekf2_imu_ctrl(_params->ekf2_imu_ctrl),
 	_param_ekf2_vel_lim(_params->ekf2_vel_lim),
+// CONFIG_EKF2_AUXVEL:融合额外的速度测量
 #if defined(CONFIG_EKF2_AUXVEL)
 	_param_ekf2_avel_delay(_params->ekf2_avel_delay),
 #endif // CONFIG_EKF2_AUXVEL
@@ -74,10 +75,12 @@ EKF2::EKF2(bool multi_mode, const px4::wq_config_t &config, bool replay_mode):
 	_param_ekf2_acc_noise(_params->ekf2_acc_noise),
 	_param_ekf2_gyr_b_noise(_params->ekf2_gyr_b_noise),
 	_param_ekf2_acc_b_noise(_params->ekf2_acc_b_noise),
+// CONFIG_EKF2_WIND：估算环境风速
 #if defined(CONFIG_EKF2_WIND)
 	_param_ekf2_wind_nsd(_params->ekf2_wind_nsd),
 #endif // CONFIG_EKF2_WIND
 	_param_ekf2_noaid_noise(_params->ekf2_noaid_noise),
+// CONFIG_EKF2_GNSS：全球导航卫星系统
 #if defined(CONFIG_EKF2_GNSS)
 	_param_ekf2_gps_ctrl(_params->ekf2_gps_ctrl),
 	_param_ekf2_gps_mode(_params->ekf2_gps_mode),
@@ -100,6 +103,7 @@ EKF2::EKF2(bool multi_mode, const px4::wq_config_t &config, bool replay_mode):
 	_param_ekf2_req_fix(_params->ekf2_req_fix),
 	_param_ekf2_gsf_tas(_params->ekf2_gsf_tas),
 #endif // CONFIG_EKF2_GNSS
+// CONFIG_EKF2_BAROMETER：气压计
 #if defined(CONFIG_EKF2_BAROMETER)
 	_param_ekf2_baro_ctrl(_params->ekf2_baro_ctrl),
 	_param_ekf2_baro_delay(_params->ekf2_baro_delay),
@@ -107,6 +111,7 @@ EKF2::EKF2(bool multi_mode, const px4::wq_config_t &config, bool replay_mode):
 	_param_ekf2_baro_gate(_params->ekf2_baro_gate),
 	_param_ekf2_gnd_eff_dz(_params->ekf2_gnd_eff_dz),
 	_param_ekf2_gnd_max_hgt(_params->ekf2_gnd_max_hgt),
+// CONFIG_EKF2_BARO_COMPENSATION：气压补偿
 # if defined(CONFIG_EKF2_BARO_COMPENSATION)
 	_param_ekf2_aspd_max(_params->ekf2_aspd_max),
 	_param_ekf2_pcoef_xp(_params->ekf2_pcoef_xp),
@@ -116,17 +121,20 @@ EKF2::EKF2(bool multi_mode, const px4::wq_config_t &config, bool replay_mode):
 	_param_ekf2_pcoef_z(_params->ekf2_pcoef_z),
 # endif // CONFIG_EKF2_BARO_COMPENSATION
 #endif // CONFIG_EKF2_BAROMETER
+// CONFIG_EKF2_AIRSPEED：空速
 #if defined(CONFIG_EKF2_AIRSPEED)
 	_param_ekf2_asp_delay(_params->ekf2_asp_delay),
 	_param_ekf2_tas_gate(_params->ekf2_tas_gate),
 	_param_ekf2_eas_noise(_params->ekf2_eas_noise),
 	_param_ekf2_arsp_thr(_params->ekf2_arsp_thr),
 #endif // CONFIG_EKF2_AIRSPEED
+// CONFIG_EKF2_SIDESLIP：侧滑角
 #if defined(CONFIG_EKF2_SIDESLIP)
 	_param_ekf2_beta_gate(_params->ekf2_beta_gate),
 	_param_ekf2_beta_noise(_params->ekf2_beta_noise),
 	_param_ekf2_fuse_beta(_params->ekf2_fuse_beta),
 #endif // CONFIG_EKF2_SIDESLIP
+// CONFIG_EKF2_MAGNETOMETER：磁力计
 #if defined(CONFIG_EKF2_MAGNETOMETER)
 	_param_ekf2_mag_delay(_params->ekf2_mag_delay),
 	_param_ekf2_mag_e_noise(_params->ekf2_mag_e_noise),
@@ -146,13 +154,16 @@ EKF2::EKF2(bool multi_mode, const px4::wq_config_t &config, bool replay_mode):
 #endif // CONFIG_EKF2_MAGNETOMETER
 	_param_ekf2_hgt_ref(_params->ekf2_hgt_ref),
 	_param_ekf2_noaid_tout(_params->ekf2_noaid_tout),
+// 地形估算 || 光流融合支持 || 测距仪(高度)融合
 #if defined(CONFIG_EKF2_TERRAIN) || defined(CONFIG_EKF2_OPTICAL_FLOW) || defined(CONFIG_EKF2_RANGE_FINDER)
 	_param_ekf2_min_rng(_params->ekf2_min_rng),
 #endif // CONFIG_EKF2_TERRAIN || CONFIG_EKF2_OPTICAL_FLOW || CONFIG_EKF2_RANGE_FINDER
+// CONFIG_EKF2_TERRAIN：配置地形辅助功能
 #if defined(CONFIG_EKF2_TERRAIN)
 	_param_ekf2_terr_noise(_params->ekf2_terr_noise),
 	_param_ekf2_terr_grad(_params->ekf2_terr_grad),
 #endif // CONFIG_EKF2_TERRAIN
+// CONFIG_EKF2_RANGE_FINDER：配置激光雷达辅助功能
 #if defined(CONFIG_EKF2_RANGE_FINDER)
 	_param_ekf2_rng_ctrl(_params->ekf2_rng_ctrl),
 	_param_ekf2_rng_delay(_params->ekf2_rng_delay),
@@ -169,6 +180,7 @@ EKF2::EKF2(bool multi_mode, const px4::wq_config_t &config, bool replay_mode):
 	_param_ekf2_rng_pos_y(_params->rng_pos_body(1)),
 	_param_ekf2_rng_pos_z(_params->rng_pos_body(2)),
 #endif // CONFIG_EKF2_RANGE_FINDER
+// CONFIG_EKF2_EXTERNAL_VISION：配置外部视觉辅助功能
 #if defined(CONFIG_EKF2_EXTERNAL_VISION)
 	_param_ekf2_ev_delay(_params->ekf2_ev_delay),
 	_param_ekf2_ev_ctrl(_params->ekf2_ev_ctrl),
@@ -182,6 +194,7 @@ EKF2::EKF2(bool multi_mode, const px4::wq_config_t &config, bool replay_mode):
 	_param_ekf2_ev_pos_y(_params->ev_pos_body(1)),
 	_param_ekf2_ev_pos_z(_params->ev_pos_body(2)),
 #endif // CONFIG_EKF2_EXTERNAL_VISION
+// CONFIG_EKF2_OPTICAL_FLOW：配置光学流辅助功能
 #if defined(CONFIG_EKF2_OPTICAL_FLOW)
 	_param_ekf2_of_ctrl(_params->ekf2_of_ctrl),
 	_param_ekf2_of_gyr_src(_params->ekf2_of_gyr_src),
@@ -195,6 +208,7 @@ EKF2::EKF2(bool multi_mode, const px4::wq_config_t &config, bool replay_mode):
 	_param_ekf2_of_pos_y(_params->flow_pos_body(1)),
 	_param_ekf2_of_pos_z(_params->flow_pos_body(2)),
 #endif // CONFIG_EKF2_OPTICAL_FLOW
+// CONFIG_EKF2_DRAG_FUSION：配置气动阻力辅助功能
 #if defined(CONFIG_EKF2_DRAG_FUSION)
 	_param_ekf2_drag_ctrl(_params->ekf2_drag_ctrl),
 	_param_ekf2_drag_noise(_params->ekf2_drag_noise),
@@ -202,6 +216,7 @@ EKF2::EKF2(bool multi_mode, const px4::wq_config_t &config, bool replay_mode):
 	_param_ekf2_bcoef_y(_params->ekf2_bcoef_y),
 	_param_ekf2_mcoef(_params->ekf2_mcoef),
 #endif // CONFIG_EKF2_DRAG_FUSION
+// CONFIG_EKF2_GRAVITY_FUSION：配置重力辅助功能
 #if defined(CONFIG_EKF2_GRAVITY_FUSION)
 	_param_ekf2_grav_noise(_params->ekf2_grav_noise),
 #endif // CONFIG_EKF2_GRAVITY_FUSION
@@ -226,9 +241,13 @@ EKF2::~EKF2()
 	perf_free(_msg_missed_imu_perf);
 }
 
+/**
+ * @brief 发布主题
+ */
 void EKF2::AdvertiseTopics()
 {
 	// advertise expected minimal topic set immediately for logging
+	// 翻译：立即发布预期最小主题集以进行日志记录
 	_attitude_pub.advertise();
 	_local_position_pub.advertise();
 	_estimator_event_flags_pub.advertise();
@@ -238,6 +257,7 @@ void EKF2::AdvertiseTopics()
 
 	if (_multi_mode) {
 		// only force advertise these in multi mode to ensure consistent uORB instance numbering
+		// 翻译：仅在多模式下强制发布这些以确保一致的uORB实例编号
 		_global_position_pub.advertise();
 		_odometry_pub.advertise();
 
@@ -256,6 +276,7 @@ void EKF2::AdvertiseTopics()
 #endif // CONFIG_EKF2_GNSS
 
 	// verbose logging
+	// 翻译：详细日志记录
 	if (_param_ekf2_log_verbose.get()) {
 		_estimator_innovation_test_ratios_pub.advertise();
 		_estimator_innovation_variances_pub.advertise();
@@ -442,17 +463,20 @@ void EKF2::Run()
 	}
 
 	// check for parameter updates
+	// 翻译：检查参数是否更新
 	if (_parameter_update_sub.updated() || !_callback_registered) {
 		// clear update
 		parameter_update_s pupdate;
 		_parameter_update_sub.copy(&pupdate);
 
 		// update parameters from storage
+		// 翻译：从存储中更新参数
 		updateParams();
 
 		VerifyParams();
 
 		// force advertise topics immediately for logging (EKF2_LOG_VERBOSE, per aid source control)
+		// 翻译：立即强制发布主题以进行日志记录（EKF2_LOG_VERBOSE，每个辅助源控制）
 		AdvertiseTopics();
 
 #if defined(CONFIG_EKF2_GNSS)
@@ -468,8 +492,10 @@ void EKF2::Run()
 
 #if defined(CONFIG_EKF2_AIRSPEED)
 		// The airspeed scale factor correcton is only available via parameter as used by the airspeed module
+		// 翻译：空速比例因子校正仅通过参数可用，该参数由空速模块使用
 		param_t param_aspd_scale = param_find("ASPD_SCALE_1");
 
+		// 如果参数有效，则获取空速比例因子
 		if (param_aspd_scale != PARAM_INVALID) {
 			param_get(param_aspd_scale, &_airspeed_scale_factor);
 		}
@@ -479,6 +505,7 @@ void EKF2::Run()
 		_ekf.updateParameters();
 	}
 
+	// 如果未注册回调，则注册回调
 	if (!_callback_registered) {
 #if defined(CONFIG_EKF2_MULTI_INSTANCE)
 
@@ -514,6 +541,7 @@ void EKF2::Run()
 
 				if (_ekf.setEkfGlobalOrigin(latitude, longitude, altitude)) {
 					// Validate the ekf origin status.
+					// 翻译：验证ekf原点状态。
 					uint64_t origin_time {};
 					_ekf.getEkfGlobalOrigin(origin_time, latitude, longitude, altitude);
 					PX4_INFO("%d - New NED origin (LLA): %3.10f, %3.10f, %4.3f\n",
@@ -569,6 +597,7 @@ void EKF2::Run()
 #if defined(CONFIG_EKF2_WIND)
 				// wind direction is given as azimuth where wind blows FROM
 				// PX4 backend expects direction where wind blows TO
+				// 翻译：风向是风从哪个方向吹来的，PX4后端期望风向是风吹向哪个方向
 				const float wind_direction_rad = wrap_pi(math::radians(vehicle_command.param3) + M_PI_F);
 				const float wind_direction_accuracy_rad = math::radians(vehicle_command.param4);
 				_ekf.resetWindToExternalObservation(vehicle_command.param1, wind_direction_rad, vehicle_command.param2,
@@ -863,11 +892,15 @@ void EKF2::Run()
 	ScheduleDelayed(100_ms);
 }
 
+/**
+ * @brief 验证参数
+ */
 void EKF2::VerifyParams()
 {
 #if defined(CONFIG_EKF2_MAGNETOMETER)
 
 	// EKF2_MAG_TYPE obsolete options
+	// 翻译：EKF2_MAG_TYPE过时选项
 	if ((_param_ekf2_mag_type.get() != MagFuseType::AUTO)
 	    && (_param_ekf2_mag_type.get() != MagFuseType::HEADING)
 	    && (_param_ekf2_mag_type.get() != MagFuseType::NONE)
@@ -1368,9 +1401,17 @@ void EKF2::PublishInnovations(const hrt_abstime &timestamp)
 	_estimator_innovations_pub.publish(innovations);
 }
 
+/**
+ * @brief 发布新息检测比率 (Innovation Test Ratios)
+ *
+ * 该函数发布归一化的新息比率，用于判断传感器数据是否通过了异常值检测。
+ * - ratio < 1.0: 数据有效，进行融合。
+ * - ratio > 1.0: 数据异常，拒绝融合。
+ */
 void EKF2::PublishInnovationTestRatios(const hrt_abstime &timestamp)
 {
 	// publish estimator innovation test ratio data
+	// 翻译：发布估计器创新检验比率数据
 	estimator_innovations_s test_ratios{};
 	test_ratios.timestamp_sample = _ekf.time_delayed_us();
 
@@ -1461,6 +1502,12 @@ void EKF2::PublishInnovationTestRatios(const hrt_abstime &timestamp)
 	_estimator_innovation_test_ratios_pub.publish(test_ratios);
 }
 
+/**
+ * @brief 发布新息方差 (Innovation Variances)
+ *
+ * 该函数发布新息的方差，反映了预测误差和测量噪声的综合不确定度。
+ * 主要用于参数调整（如 EKF2_*_NOISE）和滤波器健康度分析。
+ */
 void EKF2::PublishInnovationVariances(const hrt_abstime &timestamp)
 {
 	// publish estimator innovation variance data
@@ -1677,6 +1724,11 @@ void EKF2::PublishLocalPosition(const hrt_abstime &timestamp)
 	_local_position_pub.publish(lpos);
 }
 
+/**
+ * @brief 发布车辆里程计数据
+ * @param timestamp 时间戳
+ * @param imu_sample IMU数据
+ */
 void EKF2::PublishOdometry(const hrt_abstime &timestamp, const imuSample &imu_sample)
 {
 	// generate vehicle odometry data
@@ -1695,15 +1747,19 @@ void EKF2::PublishOdometry(const hrt_abstime &timestamp, const imuSample &imu_sa
 	_ekf.getVelocity().copyTo(odom.velocity);
 
 	// angular_velocity
+	// 翻译：角速度
 	_ekf.getAngularVelocityAndResetAccumulator().copyTo(odom.angular_velocity);
 
 	// velocity covariances
+	// 翻译：速度协方差
 	_ekf.getVelocityVariance().copyTo(odom.velocity_variance);
 
 	// position covariances
+	// 翻译：位置协方差
 	_ekf.getPositionVariance().copyTo(odom.position_variance);
 
 	// orientation covariance
+	// 翻译：姿态协方差
 	_ekf.getRotVarBody().copyTo(odom.orientation_variance);
 
 	odom.reset_counter = _ekf.get_quat_reset_count()
@@ -1717,9 +1773,13 @@ void EKF2::PublishOdometry(const hrt_abstime &timestamp, const imuSample &imu_sa
 	_odometry_pub.publish(odom);
 }
 
+/**
+ * @brief 发布传感器偏差数据
+ */
 void EKF2::PublishSensorBias(const hrt_abstime &timestamp)
 {
 	// estimator_sensor_bias
+	// 翻译：估计器传感器偏差
 	const Vector3f gyro_bias{_ekf.getGyroBias()};
 	const Vector3f accel_bias{_ekf.getAccelBias()};
 
@@ -1728,6 +1788,7 @@ void EKF2::PublishSensorBias(const hrt_abstime &timestamp)
 #endif // CONFIG_EKF2_MAGNETOMETER
 
 	// publish at ~1 Hz, or sooner if there's a change
+	// 翻译：发布频率约为 1 Hz，如有变化则更快。
 	if ((gyro_bias - _last_gyro_bias_published).longerThan(0.001f)
 	    || (accel_bias - _last_accel_bias_published).longerThan(0.001f)
 #if defined(CONFIG_EKF2_MAGNETOMETER)
@@ -1739,6 +1800,7 @@ void EKF2::PublishSensorBias(const hrt_abstime &timestamp)
 		bias.timestamp_sample = _ekf.time_delayed_us();
 
 		// take device ids from sensor_selection_s if not using specific vehicle_imu_s
+		// 翻译：如果未使用特定的 vehicle_imu_s，则从 sensor_selection_s 中获取设备 ID。
 		if ((_device_id_gyro != 0) && (_param_ekf2_imu_ctrl.get() & static_cast<int32_t>(ImuCtrl::GyroBias))) {
 			const Vector3f bias_var{_ekf.getGyroBiasVariance()};
 
@@ -1789,6 +1851,7 @@ void EKF2::PublishSensorBias(const hrt_abstime &timestamp)
 void EKF2::PublishStates(const hrt_abstime &timestamp)
 {
 	// publish estimator states
+	// 翻译：发布估计器状态
 	estimator_states_s states;
 	states.timestamp_sample = _ekf.time_delayed_us();
 	const auto state_vector = _ekf.state().vector();
@@ -1809,6 +1872,7 @@ void EKF2::PublishStatus(const hrt_abstime &timestamp)
 #if defined(CONFIG_EKF2_GNSS)
 	// only report enabled GPS check failures (the param indexes are shifted by 1 bit, because they don't include
 	// the GPS Fix bit, which is always checked)
+	// 翻译：只报告启用的GPS检查失败（参数索引右移1位，因为它们不包括GPS Fix位，该位始终被检查）
 	status.gps_check_fail_flags = _ekf.gps_check_fail_status().value & (((uint16_t)_params->ekf2_gps_check << 1) | 1);
 #endif // CONFIG_EKF2_GNSS
 
@@ -1880,6 +1944,7 @@ void EKF2::PublishStatus(const hrt_abstime &timestamp)
 void EKF2::PublishStatusFlags(const hrt_abstime &timestamp)
 {
 	// publish at ~ 1 Hz (or immediately if filter control status or fault status changes)
+	// 翻译：以每秒1次的频率发布（或立即发布，如果滤波器控制状态或故障状态发生变化）
 	bool update = (timestamp >= _last_status_flags_publish + 1_s);
 
 	// filter control status
@@ -1897,6 +1962,7 @@ void EKF2::PublishStatusFlags(const hrt_abstime &timestamp)
 	}
 
 	// innovation check fail status
+	// 翻译：创新检查失败状态
 	if (_ekf.innov_check_fail_status().value != _innov_check_fail_status) {
 		update = true;
 		_innov_check_fail_status = _ekf.innov_check_fail_status().value;
@@ -1989,6 +2055,9 @@ void EKF2::PublishStatusFlags(const hrt_abstime &timestamp)
 	}
 }
 
+/**
+ * @brief 发布偏航估计器状态
+ */
 #if defined(CONFIG_EKF2_GNSS)
 void EKF2::PublishYawEstimatorStatus(const hrt_abstime &timestamp)
 {
@@ -2042,6 +2111,9 @@ void EKF2::PublishWindEstimate(const hrt_abstime &timestamp)
 }
 #endif // CONFIG_EKF2_WIND
 
+/**
+ * @brief 发布光学流速度
+ */
 #if defined(CONFIG_EKF2_OPTICAL_FLOW)
 void EKF2::PublishOpticalFlowVel(const hrt_abstime &timestamp)
 {
@@ -2075,6 +2147,9 @@ void EKF2::PublishOpticalFlowVel(const hrt_abstime &timestamp)
 }
 #endif // CONFIG_EKF2_OPTICAL_FLOW
 
+/**
+ * @brief 更新空速样本
+ */
 #if defined(CONFIG_EKF2_AIRSPEED)
 void EKF2::UpdateAirspeedSample(ekf2_timestamps_s &ekf2_timestamps)
 {
@@ -2119,6 +2194,7 @@ void EKF2::UpdateAirspeedSample(ekf2_timestamps_s &ekf2_timestamps)
 		if (_airspeed_sub.update(&airspeed)) {
 			// The airspeed measurement received via ORB_ID(airspeed) topic has not been corrected
 			// for scale factor errors and requires the ASPD_SCALE correction to be applied.
+			// 翻译：通过 ORB_ID(airspeed) 主题接收的空速测量值尚未针对比例因子误差进行校正，需要应用 ASPD_SCALE 校正。
 			const float true_airspeed_m_s = airspeed.true_airspeed_m_s * _airspeed_scale_factor;
 
 			if (PX4_ISFINITE(airspeed.true_airspeed_m_s)
@@ -2140,17 +2216,23 @@ void EKF2::UpdateAirspeedSample(ekf2_timestamps_s &ekf2_timestamps)
 }
 #endif // CONFIG_EKF2_AIRSPEED
 
+/**
+ * @brief 更新辅助速度样本
+ */
 #if defined(CONFIG_EKF2_AUXVEL)
 void EKF2::UpdateAuxVelSample(ekf2_timestamps_s &ekf2_timestamps)
 {
 	// EKF auxiliary velocity sample
 	//  - use the landing target pose estimate as another source of velocity data
+	// 翻译：使用着陆目标姿势估计作为另一个速度数据源。
 	landing_target_pose_s landing_target_pose;
 
 	if (_landing_target_pose_sub.update(&landing_target_pose)) {
 		// we can only use the landing target if it has a fixed position and  a valid velocity estimate
+		// 翻译：我们只能使用着陆目标，如果它有一个固定的位置和一个有效的速度估计。
 		if (landing_target_pose.is_static && landing_target_pose.rel_vel_valid) {
 			// velocity of vehicle relative to target has opposite sign to target relative to vehicle
+			// 翻译：车辆相对于目标的速度与目标相对于车辆的速度相反。
 			auxVelSample auxvel_sample{
 				.time_us = landing_target_pose.timestamp,
 				.vel = Vector2f{-landing_target_pose.vx_rel, -landing_target_pose.vy_rel},
@@ -2162,6 +2244,9 @@ void EKF2::UpdateAuxVelSample(ekf2_timestamps_s &ekf2_timestamps)
 }
 #endif // CONFIG_EKF2_AUXVEL
 
+/**
+ * @brief 更新气压样本
+ */
 #if defined(CONFIG_EKF2_BAROMETER)
 void EKF2::UpdateBaroSample(ekf2_timestamps_s &ekf2_timestamps)
 {
@@ -2182,6 +2267,7 @@ void EKF2::UpdateBaroSample(ekf2_timestamps_s &ekf2_timestamps)
 
 		} else if (airdata.calibration_count != _baro_calibration_count) {
 			// existing calibration has changed, reset saved baro bias
+			// 翻译：现有校准已更改，重置保存的气压偏置
 			PX4_DEBUG("%d - baro %" PRIu32 " calibration updated, resetting bias", _instance, _device_id_baro);
 			reset = true;
 		}
@@ -2201,6 +2287,9 @@ void EKF2::UpdateBaroSample(ekf2_timestamps_s &ekf2_timestamps)
 }
 #endif // CONFIG_EKF2_BAROMETER
 
+/**
+ * @brief 更新外部视觉样本
+ */
 #if defined(CONFIG_EKF2_EXTERNAL_VISION)
 bool EKF2::UpdateExtVisionSample(ekf2_timestamps_s &ekf2_timestamps)
 {
@@ -2246,6 +2335,7 @@ bool EKF2::UpdateExtVisionSample(ekf2_timestamps_s &ekf2_timestamps)
 				const float evv_noise_var = sq(_param_ekf2_evv_noise.get());
 
 				// velocity measurement error from ev_data or parameters
+				// 翻译：来自 ev_data 或参数的速度测量误差
 				if ((_param_ekf2_ev_noise_md.get() == 0) && ev_odom_vel_var.isAllFinite()) {
 
 					ev_data.velocity_var(0) = fmaxf(evv_noise_var, ev_odom_vel_var(0));
@@ -2300,6 +2390,7 @@ bool EKF2::UpdateExtVisionSample(ekf2_timestamps_s &ekf2_timestamps)
 		}
 
 		// check for valid orientation data
+		// 翻译：检查有效的方向数据
 		const Quatf ev_odom_q(ev_odom.q);
 		const Vector3f ev_odom_q_var(ev_odom.orientation_variance);
 		const bool non_zero = (fabsf(ev_odom_q(0)) > 0.f) || (fabsf(ev_odom_q(1)) > 0.f)
@@ -2318,6 +2409,7 @@ bool EKF2::UpdateExtVisionSample(ekf2_timestamps_s &ekf2_timestamps)
 			ev_data.quat.normalize();
 
 			// orientation measurement error from ev_data or parameters
+			// 翻译：方向测量误差来自 ev_data 或参数
 			const float eva_noise_var = sq(_param_ekf2_eva_noise.get());
 
 			if ((_param_ekf2_ev_noise_md.get() == 0) && ev_odom_q_var.isAllFinite()) {
@@ -2334,6 +2426,7 @@ bool EKF2::UpdateExtVisionSample(ekf2_timestamps_s &ekf2_timestamps)
 		}
 
 		// use timestamp from external computer, clocks are synchronized when using MAVROS
+		// 翻译：使用外部计算机的时间戳，当使用 MAVROS 时，时钟同步
 		ev_data.time_us = ev_odom.timestamp_sample;
 		ev_data.reset_counter = ev_odom.reset_counter;
 		ev_data.quality = ev_odom.quality;
@@ -2350,6 +2443,9 @@ bool EKF2::UpdateExtVisionSample(ekf2_timestamps_s &ekf2_timestamps)
 }
 #endif // CONFIG_EKF2_EXTERNAL_VISION
 
+/**
+ * @brief 更新光流样本
+ */
 #if defined(CONFIG_EKF2_OPTICAL_FLOW)
 bool EKF2::UpdateFlowSample(ekf2_timestamps_s &ekf2_timestamps)
 {
@@ -2366,11 +2462,13 @@ bool EKF2::UpdateFlowSample(ekf2_timestamps_s &ekf2_timestamps)
 		if (dt > FLT_EPSILON) {
 			// NOTE: the EKF uses the reverse sign convention to the flow sensor. EKF assumes positive LOS rate
 			// is produced by a RH rotation of the image about the sensor axis.
+			// 翻译：注意：EKF 使用与流量传感器相反的符号约定。EKF 假设图像绕传感器轴向右旋转会产生正的视线方向速率。
 			flow_rate = Vector2f(-optical_flow.pixel_flow[0], -optical_flow.pixel_flow[1]) / dt;
 			gyro_rate = Vector3f(-optical_flow.delta_angle[0], -optical_flow.delta_angle[1], -optical_flow.delta_angle[2]) / dt;
 
 		} else if (optical_flow.quality == 0) {
 			// handle special case of SITL and PX4Flow where dt is forced to zero when the quaity is 0
+			// 翻译：处理 SITL 和 PX4Flow 的特殊情况，其中 dt 在质量为 0 时被强制为零。
 			flow_rate.zero();
 			gyro_rate.zero();
 		}
@@ -2385,6 +2483,7 @@ bool EKF2::UpdateFlowSample(ekf2_timestamps_s &ekf2_timestamps)
 		if (Vector2f(optical_flow.pixel_flow).isAllFinite() && optical_flow.integration_timespan_us < 1e6) {
 
 			// Save sensor limits reported by the optical flow sensor
+			// 翻译：保存由光学流传感器报告的传感器限制
 			_ekf.set_optical_flow_limits(optical_flow.max_flow_rate, optical_flow.min_ground_distance,
 						     optical_flow.max_ground_distance);
 
@@ -2396,6 +2495,7 @@ bool EKF2::UpdateFlowSample(ekf2_timestamps_s &ekf2_timestamps)
 #if defined(CONFIG_EKF2_RANGE_FINDER)
 
 		// use optical_flow distance as range sample if distance_sensor unavailable
+		// 翻译：如果距离传感器不可用，则使用光学流距离作为范围样本
 		if (PX4_ISFINITE(optical_flow.distance_m) && (ekf2_timestamps.timestamp > _last_range_sensor_update + 1_s)) {
 
 			int8_t quality = static_cast<float>(optical_flow.quality) / static_cast<float>(UINT8_MAX) * 100.f;
@@ -2453,6 +2553,7 @@ void EKF2::UpdateGpsSample(ekf2_timestamps_s &ekf2_timestamps)
 		const float altitude_ellipsoid = static_cast<float>(vehicle_gps_position.altitude_ellipsoid_m);
 
 		// if pps_compensation is active but not valid, the timestamp_sample will be equal to timestamp
+		// 翻译：如果pps补偿有效但无效，则时间戳样本将等于时间戳
 		const bool pps_compensation = vehicle_gps_position.timestamp_sample > 0
 					      && vehicle_gps_position.timestamp_sample != vehicle_gps_position.timestamp;
 
@@ -2493,6 +2594,9 @@ void EKF2::UpdateGpsSample(ekf2_timestamps_s &ekf2_timestamps)
 	}
 }
 
+/**
+ * @brief 椭球体到海平面的转换
+ */
 float EKF2::altEllipsoidToAmsl(float ellipsoid_alt) const
 {
 	return ellipsoid_alt - _geoid_height_lpf.getState();
@@ -2543,6 +2647,9 @@ void EKF2::UpdateMagSample(ekf2_timestamps_s &ekf2_timestamps)
 }
 #endif // CONFIG_EKF2_MAGNETOMETER
 
+/**
+ * @brief 更新范围采样
+ */
 #if defined(CONFIG_EKF2_RANGE_FINDER)
 void EKF2::UpdateRangeSample(ekf2_timestamps_s &ekf2_timestamps)
 {
@@ -2551,6 +2658,7 @@ void EKF2::UpdateRangeSample(ekf2_timestamps_s &ekf2_timestamps)
 	if (_distance_sensor_selected < 0) {
 
 		// only consider distance sensors that have updated within the last 0.1s
+		// 翻译：只考虑在最近0.1秒内更新的距离传感器
 		const hrt_abstime timestamp_stale = math::max(ekf2_timestamps.timestamp, 100_ms) - 100_ms;
 
 		if (_distance_sensor_subs.advertised()) {
@@ -2558,6 +2666,7 @@ void EKF2::UpdateRangeSample(ekf2_timestamps_s &ekf2_timestamps)
 
 				if (_distance_sensor_subs[i].update(&distance_sensor)) {
 					// only use the first instace which has the correct orientation
+					// 翻译：只使用第一个具有正确方向的实例
 					if ((distance_sensor.timestamp != 0) && (distance_sensor.timestamp > timestamp_stale)
 					    && (distance_sensor.orientation == distance_sensor_s::ROTATION_DOWNWARD_FACING)) {
 
@@ -2587,6 +2696,7 @@ void EKF2::UpdateRangeSample(ekf2_timestamps_s &ekf2_timestamps)
 			_ekf.setRangeData(range_sample);
 
 			// Save sensor limits reported by the rangefinder
+			// 翻译：保存由 rangefinder 报告的传感器限制
 			_ekf.set_rangefinder_limits(distance_sensor.min_distance, distance_sensor.max_distance);
 
 			_last_range_sensor_update = ekf2_timestamps.timestamp;
@@ -2603,6 +2713,9 @@ void EKF2::UpdateRangeSample(ekf2_timestamps_s &ekf2_timestamps)
 }
 #endif // CONFIG_EKF2_RANGE_FINDER
 
+/**
+ * @brief 更新系统标志样本
+ */
 void EKF2::UpdateSystemFlagsSample(ekf2_timestamps_s &ekf2_timestamps)
 {
 	// EKF system flags
@@ -2618,9 +2731,11 @@ void EKF2::UpdateSystemFlagsSample(ekf2_timestamps_s &ekf2_timestamps)
 		    && (ekf2_timestamps.timestamp < vehicle_status.timestamp + 3_s)) {
 
 			// initially set in_air from arming_state (will be overridden if land detector is available)
+			// 翻译：从 arming_state 初始设置 in_air（如果可用，将被覆盖）
 			flags.in_air = (vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_ARMED);
 
 			// let the EKF know if the vehicle motion is that of a fixed wing (forward flight only relative to wind)
+			// 翻译：让 EKF 知道车辆运动是否为固定翼（仅相对于风的前向飞行）
 			flags.is_fixed_wing = (vehicle_status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING);
 
 #if defined(CONFIG_EKF2_SIDESLIP)
@@ -2658,6 +2773,16 @@ void EKF2::UpdateSystemFlagsSample(ekf2_timestamps_s &ekf2_timestamps)
 	}
 }
 
+/**
+ * @brief 更新校准数据
+ * @param timestamp 时间戳
+ * @param cal 校准数据
+ * @param bias 偏移量
+ * @param bias_variance 偏移量方差
+ * @param bias_limit 偏移量限制
+ * @param bias_valid 偏移量是否有效
+ * @param learning_valid 学习是否有效
+ */
 void EKF2::UpdateCalibration(const hrt_abstime &timestamp, InFlightCalibration &cal, const matrix::Vector3f &bias,
 			     const matrix::Vector3f &bias_variance, float bias_limit, bool bias_valid, bool learning_valid)
 {
@@ -2668,6 +2793,7 @@ void EKF2::UpdateCalibration(const hrt_abstime &timestamp, InFlightCalibration &
 
 	// Check if conditions are OK for learning of accelerometer bias values
 	// the EKF is operating in the correct mode and there are no filter faults
+	// 翻译：检查是否满足学习加速度偏移量的条件，EKF处于正确模式且没有滤波故障
 	static constexpr float max_var_allowed = 1e-3f;
 	static constexpr float max_var_ratio = 1e2f;
 
@@ -2677,6 +2803,7 @@ void EKF2::UpdateCalibration(const hrt_abstime &timestamp, InFlightCalibration &
 
 	if (valid && learning_valid) {
 		// consider bias estimates stable when all checks pass consistently and bias hasn't changed more than 10% of the limit
+		// 翻译：考虑偏置估计稳定，当所有检查一致通过且偏置没有改变超过限制的10%时
 		const float bias_change_limit = 0.1f * bias_limit;
 
 		if (!(cal.bias - bias).longerThan(bias_change_limit)) {
@@ -2699,19 +2826,25 @@ void EKF2::UpdateCalibration(const hrt_abstime &timestamp, InFlightCalibration &
 	} else {
 		// conditions are NOT OK for learning bias, reset timestamp
 		// but keep the accumulated calibration time
+		// 翻译：条件不满足学习加速度偏移量，重置时间戳，但保留累积校准时间
 		cal.last_us = 0;
 
 		if (!valid && (cal.total_time_us != 0)) {
 			// if a filter fault has occurred, assume previous learning was invalid and do not
 			// count it towards total learning time.
+			// 翻译：如果发生滤波器故障，则假设先前的学习无效，并不将其计入总学习时间。
 			cal = {};
 		}
 	}
 }
 
+/**
+ * @brief 更新加速度校准
+ */
 void EKF2::UpdateAccelCalibration(const hrt_abstime &timestamp)
 {
 	// the EKF is operating in the correct mode and there are no filter faults
+	// 翻译：如果发生滤波器故障，则假设先前的学习无效，并不将其计入总学习时间。
 	const bool bias_valid = (_param_ekf2_imu_ctrl.get() & static_cast<int32_t>(ImuCtrl::AccelBias))
 				&& _ekf.control_status_flags().tilt_align
 				&& (_ekf.fault_status().value == 0)
@@ -2724,9 +2857,13 @@ void EKF2::UpdateAccelCalibration(const hrt_abstime &timestamp)
 			  bias_valid, learning_valid);
 }
 
+/**
+ * @brief 更新陀螺仪校准
+ */
 void EKF2::UpdateGyroCalibration(const hrt_abstime &timestamp)
 {
 	// the EKF is operating in the correct mode and there are no filter faults
+	// 翻译：如果发生滤波器故障，则假设先前的学习无效，并不将其计入总学习时间。
 	const bool bias_valid = (_param_ekf2_imu_ctrl.get() & static_cast<int32_t>(ImuCtrl::GyroBias))
 				&& _ekf.control_status_flags().tilt_align
 				&& (_ekf.fault_status().value == 0);
@@ -2737,6 +2874,9 @@ void EKF2::UpdateGyroCalibration(const hrt_abstime &timestamp)
 			  bias_valid, learning_valid);
 }
 
+/**
+ * @brief 更新磁力计校准
+ */
 #if defined(CONFIG_EKF2_MAGNETOMETER)
 void EKF2::UpdateMagCalibration(const hrt_abstime &timestamp)
 {
@@ -2752,6 +2892,7 @@ void EKF2::UpdateMagCalibration(const hrt_abstime &timestamp)
 	UpdateCalibration(timestamp, _mag_cal, mag_bias, mag_bias_var, _ekf.getMagBiasLimit(), bias_valid, learning_valid);
 
 	// update stored declination value
+	// 翻译：更新存储的磁偏角值
 	if (!_mag_decl_saved) {
 		float declination_deg;
 
@@ -2861,6 +3002,7 @@ int EKF2::task_spawn(int argc, char *argv[])
 		int multi_instances_allocated = 0;
 
 		// allocate EKF2 instances until all found or arming
+		// 翻译：分配EKF2实例，直到找到所有实例或启动
 		uORB::SubscriptionData<vehicle_status_s> vehicle_status_sub{ORB_ID(vehicle_status)};
 
 		bool ekf2_instance_created[MAX_NUM_IMUS][MAX_NUM_MAGS] {}; // IMUs * mags
@@ -2881,6 +3023,7 @@ int EKF2::task_spawn(int argc, char *argv[])
 					vehicle_mag_sub.update();
 
 					// Mag & IMU data must be valid, first mag can be ignored initially
+					// 翻译：磁力计和IMU数据必须有效，第一个磁力计可以忽略初始值
 					if ((vehicle_mag_sub.advertised() || mag == 0) && (vehicle_imu_sub.advertised())) {
 
 						if (!ekf2_instance_created[imu][mag]) {
@@ -2932,6 +3075,7 @@ int EKF2::task_spawn(int argc, char *argv[])
 
 	{
 		// otherwise launch regular
+		// 翻译：否则启动常规的ekf2实例
 		EKF2 *ekf2_inst = new EKF2(false, px4::wq_configurations::INS0, replay_mode);
 
 		if (ekf2_inst) {

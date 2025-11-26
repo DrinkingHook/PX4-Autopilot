@@ -375,6 +375,7 @@ public:
 
 #if defined(CONFIG_EKF2_GNSS)
 	// set minimum continuous period without GPS fail required to mark a healthy GPS status
+	// 翻译：设置在标记GPS状态为健康所需的最小连续失败时间
 	void set_min_required_gps_health_time(uint32_t time_us) { _min_gps_health_time_us = time_us; }
 
 	const GnssChecks::gps_check_fail_status_u &gps_check_fail_status() const { return _gnss_checks.getFailStatus(); }

@@ -252,9 +252,11 @@ bool EKF2Selector::UpdateErrorScores()
 	bool primary_updated = false;
 
 	// default estimator timeout
+	// 翻译：默认的ekf2实例超时时间
 	const hrt_abstime status_timeout = 50_ms;
 
 	// calculate individual error scores
+	// 翻译：计算每个ekf2实例的错误分数
 	for (uint8_t i = 0; i < EKF2_MAX_INSTANCES; i++) {
 		const bool prev_healthy = _instance[i].healthy.get_state();
 
@@ -316,11 +318,13 @@ bool EKF2Selector::UpdateErrorScores()
 		}
 
 		// if the gyro used by the EKF is faulty, declare the EKF unhealthy without delay
+		// 翻译：如果ekf2实例使用的陀螺仪故障，将ekf2实例标记为不健康
 		if (_gyro_fault_detected && (faulty_gyro_id != 0) && (_instance[i].gyro_device_id == faulty_gyro_id)) {
 			_instance[i].healthy.set_state_and_update(false, hrt_absolute_time());
 		}
 
 		// if the accelerometer used by the EKF is faulty, declare the EKF unhealthy without delay
+		// 翻译：如果ekf2实例使用的加速度计故障，将ekf2实例标记为不健康
 		if (_accel_fault_detected && (faulty_accel_id != 0) && (_instance[i].accel_device_id == faulty_accel_id)) {
 			_instance[i].healthy.set_state_and_update(false, hrt_absolute_time());
 		}
@@ -336,6 +340,7 @@ bool EKF2Selector::UpdateErrorScores()
 	}
 
 	// update relative test ratios if primary has updated
+	// 翻译：如果主ekf2实例更新，更新相对测试比率
 	if (primary_updated) {
 		for (uint8_t i = 0; i < _available_instances; i++) {
 			if (i != _selected_instance) {
@@ -343,6 +348,7 @@ bool EKF2Selector::UpdateErrorScores()
 				const float error_delta = _instance[i].combined_test_ratio - _instance[_selected_instance].combined_test_ratio;
 
 				// reduce error only if its better than the primary instance by at least EKF2_SEL_ERR_RED to prevent unnecessary selection changes
+				// 翻译：如果误差比主实例好至少EKF2_SEL_ERR_RED，减少误差，以防止不必要的选择更改
 				const float threshold = _gyro_fault_detected ? 0.0f : fmaxf(_param_ekf2_sel_err_red.get(), 0.05f);
 
 				if (error_delta > 0 || error_delta < -threshold) {
@@ -351,6 +357,7 @@ bool EKF2Selector::UpdateErrorScores()
 
 					if ((error_delta < -threshold) && (_instance[i].relative_test_ratio < 1.f)) {
 						// increase status publication rate if there's movement towards a potential instance change
+						// 翻译：如果存在向潜在实例更改移动，增加状态发布速率
 						_selector_status_publish = true;
 					}
 				}
@@ -361,9 +368,13 @@ bool EKF2Selector::UpdateErrorScores()
 	return (primary_updated || updated);
 }
 
+/**
+ * @brief 发布车辆姿态
+ */
 void EKF2Selector::PublishVehicleAttitude()
 {
 	// selected estimator_attitude -> vehicle_attitude
+	// 翻译：选择的estimator_attitude -> vehicle_attitude
 	vehicle_attitude_s attitude;
 
 	if (_instance[_selected_instance].estimator_attitude_sub.update(&attitude)) {
@@ -377,11 +388,13 @@ void EKF2Selector::PublishVehicleAttitude()
 		if (_attitude_last.timestamp != 0) {
 			if (!instance_change && (attitude.quat_reset_counter == _attitude_last.quat_reset_counter + 1)) {
 				// propogate deltas from estimator data while maintaining the overall reset counts
+				// 翻译：传播来自估计器数据的增量，同时保持总体重置计数
 				++_quat_reset_counter;
 				_delta_q_reset = Quatf{attitude.delta_q_reset};
 
 			} else if (instance_change || (attitude.quat_reset_counter != _attitude_last.quat_reset_counter)) {
 				// on reset compute deltas from last published data
+				// 翻译：在重置时从上次发布的数据中计算增量
 				++_quat_reset_counter;
 				_delta_q_reset = (Quatf(attitude.q) * Quatf(_attitude_last.q).inversed()).normalized();
 			}
@@ -395,6 +408,7 @@ void EKF2Selector::PublishVehicleAttitude()
 
 		// ensure monotonically increasing timestamp_sample through reset, don't publish
 		//  estimator's attitude for system (vehicle_attitude) if it's stale
+		// 翻译：确保重置后时间戳单调递增，如果估计器的姿态（vehicle_attitude）过时，则不要发布
 		if ((attitude.timestamp_sample <= _attitude_last.timestamp_sample)
 		    || (hrt_elapsed_time(&attitude.timestamp) > 10_ms)) {
 
@@ -402,10 +416,12 @@ void EKF2Selector::PublishVehicleAttitude()
 		}
 
 		// save last primary estimator_attitude as published with original resets
+		// 翻译：保存上次发布的姿态（vehicle_attitude）以供原始重置使用
 		_attitude_last = attitude;
 
 		if (publish) {
 			// republish with total reset count and current timestamp
+			// 翻译：使用总重置计数和当前时间戳重新发布
 			attitude.quat_reset_counter = _quat_reset_counter;
 			_delta_q_reset.copyTo(attitude.delta_q_reset);
 
@@ -415,6 +431,13 @@ void EKF2Selector::PublishVehicleAttitude()
 	}
 }
 
+/**
+ * @brief 发布车辆本地位置
+ *  以home点为原点，及采用Local NED坐标系(X轴)
+ * 	- X轴(North)：指向正北
+ * 	- Y轴(East)：指向正东
+ * 	- Z轴(Down)：指向地心(垂直向下)
+ */
 void EKF2Selector::PublishVehicleLocalPosition()
 {
 	// selected estimator_local_position -> vehicle_local_position
@@ -511,6 +534,7 @@ void EKF2Selector::PublishVehicleLocalPosition()
 
 		// ensure monotonically increasing timestamp_sample through reset, don't publish
 		//  estimator's local position for system (vehicle_local_position) if it's stale
+		// 翻译：确保时间戳样本在重置后单调递增，如果估计器的本地位置（车辆本地位置）已过时，则不要发布该位置。
 		if ((local_position.timestamp_sample <= _local_position_last.timestamp_sample)
 		    || (hrt_elapsed_time(&local_position.timestamp) > 20_ms)) {
 
@@ -518,10 +542,12 @@ void EKF2Selector::PublishVehicleLocalPosition()
 		}
 
 		// save last primary estimator_local_position as published with original resets
+		// 翻译：保存上次发布的主估计器本地位置，以便在重置时使用。
 		_local_position_last = local_position;
 
 		if (publish) {
 			// republish with total reset count and current timestamp
+			// 翻译：使用当前时间戳和重置计数重新发布位置。
 			local_position.xy_reset_counter = _xy_reset_counter;
 			local_position.z_reset_counter = _z_reset_counter;
 			local_position.vxy_reset_counter = _vxy_reset_counter;
@@ -541,6 +567,9 @@ void EKF2Selector::PublishVehicleLocalPosition()
 	}
 }
 
+/**
+ * @brief 发布车辆里程计数据。
+ */
 void EKF2Selector::PublishVehicleOdometry()
 {
 	// selected estimator_odometry -> vehicle_odometry
@@ -569,6 +598,7 @@ void EKF2Selector::PublishVehicleOdometry()
 
 		// ensure monotonically increasing timestamp_sample through reset, don't publish
 		//  estimator's odometry for system (vehicle_odometry) if it's stale
+		// 翻译：确保通过重置单调递增的timestamp_sample，如果估计器的里程计数据（vehicle_odometry）过时，则不要发布。
 		if ((odometry.timestamp_sample <= _odometry_last.timestamp_sample)
 		    || (hrt_elapsed_time(&odometry.timestamp) > 20_ms)) {
 
@@ -576,10 +606,12 @@ void EKF2Selector::PublishVehicleOdometry()
 		}
 
 		// save last primary estimator_odometry as published with original resets
+		// 翻译：保存上次发布的主估计器里程计数据（vehicle_odometry）。
 		_odometry_last = odometry;
 
 		if (publish) {
 			// republish with total reset count and current timestamp
+			// 翻译：重新发布带有总重置计数和当前时间戳的里程计数据。
 			odometry.reset_counter = _odometry_reset_counter;
 
 			odometry.timestamp = hrt_absolute_time();
@@ -588,6 +620,9 @@ void EKF2Selector::PublishVehicleOdometry()
 	}
 }
 
+/**
+ * @brief 发布车辆全局坐标系(GLOBAL Frame 使用的经纬度)
+ */
 void EKF2Selector::PublishVehicleGlobalPosition()
 {
 	// selected estimator_global_position -> vehicle_global_position
@@ -648,6 +683,7 @@ void EKF2Selector::PublishVehicleGlobalPosition()
 
 		// ensure monotonically increasing timestamp_sample through reset, don't publish
 		//  estimator's global position for system (vehicle_global_position) if it's stale
+		// 翻译：确保通过重置单调递增的timestamp_sample，如果估计器的全局位置（vehicle_global_position）过时，则不要发布
 		if ((global_position.timestamp_sample <= _global_position_last.timestamp_sample)
 		    || (hrt_elapsed_time(&global_position.timestamp) > 20_ms)) {
 
@@ -655,10 +691,12 @@ void EKF2Selector::PublishVehicleGlobalPosition()
 		}
 
 		// save last primary estimator_global_position as published with original resets
+		// 翻译：保存上次主要估计器的全局位置，作为原始重置时发布的
 		_global_position_last = global_position;
 
 		if (publish) {
 			// republish with total reset count and current timestamp
+			// 翻译：重新发布带有总重置计数和当前时间戳的全局位置
 			global_position.lat_lon_reset_counter = _lat_lon_reset_counter;
 			global_position.alt_reset_counter = _alt_reset_counter;
 			global_position.delta_alt = _delta_alt_reset;
@@ -669,6 +707,9 @@ void EKF2Selector::PublishVehicleGlobalPosition()
 	}
 }
 
+/**
+ * @brief 发布风速估计
+ */
 void EKF2Selector::PublishWindEstimate()
 {
 	// selected estimator_wind -> wind
@@ -679,6 +720,7 @@ void EKF2Selector::PublishWindEstimate()
 
 		// ensure monotonically increasing timestamp_sample through reset, don't publish
 		//  estimator's wind for system (wind) if it's stale
+		// 翻译：确保重置后时间戳单调递增，不要发布系统（风）的估计风，如果它过时了
 		if ((wind.timestamp_sample <= _wind_last.timestamp_sample)
 		    || (hrt_elapsed_time(&wind.timestamp) > 100_ms)) {
 
@@ -686,11 +728,14 @@ void EKF2Selector::PublishWindEstimate()
 		}
 
 		// save last primary wind
+		// 翻译：保存上一次主风
 		_wind_last = wind;
 
 		// publish estimator's wind for system unless it's stale
+		// 翻译：除非它过时了，否则发布估计风
 		if (publish) {
 			// republish with current timestamp
+			// 翻译：使用当前时间戳重新发布
 			wind.timestamp = hrt_absolute_time();
 			_wind_pub.publish(wind);
 		}
@@ -710,9 +755,11 @@ void EKF2Selector::Run()
 	}
 
 	// update combined test ratio for all estimators
+	// 翻译：更新所有估计器的组合测试比率
 	const bool updated = UpdateErrorScores();
 
 	// if no valid instance then force select first instance with valid IMU
+	// 翻译：如果没有任何有效的实例，则强制选择具有有效IMU的第一个实例
 	if (_selected_instance == INVALID_INSTANCE) {
 		for (uint8_t i = 0; i < EKF2_MAX_INSTANCES; i++) {
 			if ((_instance[i].accel_device_id != 0)
@@ -725,6 +772,7 @@ void EKF2Selector::Run()
 		}
 
 		// if still invalid return early and check again on next scheduled run
+		// 翻译：如果仍然无效，则提前返回并再次在下一个计划运行中检查
 		if (_selected_instance == INVALID_INSTANCE) {
 			ScheduleDelayed(100_ms);
 			return;
@@ -746,6 +794,7 @@ void EKF2Selector::Run()
 		uint8_t best_ekf_different_imu = INVALID_INSTANCE;
 
 		// loop through all available instances to find if an alternative is available
+		// 翻译：遍历所有可用实例以查找是否有替代品可用
 		for (int i = 0; i < _available_instances; i++) {
 			// Use an alternative instance if  -
 			// (healthy and has updated recently)
@@ -753,6 +802,7 @@ void EKF2Selector::Run()
 			// (has relative error less than selected instance and has not been the selected instance for at least 10 seconds
 			// OR
 			// selected instance has stopped updating
+			// 
 			if (_instance[i].healthy.get_state() && (i != _selected_instance)) {
 				const float test_ratio = _instance[i].combined_test_ratio;
 				const float relative_error = _instance[i].relative_test_ratio;
@@ -762,6 +812,7 @@ void EKF2Selector::Run()
 					alternative_error = relative_error;
 
 					// relative error less than selected instance and has not been the selected instance for at least 10 seconds
+					// 翻译：相对误差小于选定实例且未被选定实例选择至少10秒
 					if ((relative_error <= -_rel_err_thresh) && hrt_elapsed_time(&_instance[i].time_last_selected) > 10_s) {
 						lower_error_available = true;
 					}
@@ -772,6 +823,7 @@ void EKF2Selector::Run()
 					best_test_ratio = test_ratio;
 
 					// also check next best available ekf using a different IMU
+					// 翻译：也检查下一个最好的可用ekf使用不同的IMU
 					if (_instance[i].accel_device_id != _instance[_selected_instance].accel_device_id) {
 						best_ekf_different_imu = i;
 					}
@@ -781,8 +833,10 @@ void EKF2Selector::Run()
 
 		if (!_instance[_selected_instance].healthy.get_state()) {
 			// prefer the best healthy instance using a different IMU
+			// 翻译：也检查下一个最好的可用ekf使用不同的IMU
 			if (!SelectInstance(best_ekf_different_imu)) {
 				// otherwise switch to the healthy instance with best overall test ratio
+				// 翻译：否则切换到具有最佳整体测试比率的健康实例
 				SelectInstance(best_ekf);
 			}
 
@@ -793,6 +847,7 @@ void EKF2Selector::Run()
 
 			// if this instance has a significantly lower relative error to the active primary, we consider it as a
 			// better instance and would like to switch to it even if the current primary is healthy
+			// 翻译：如果这个实例相对于活动主实例有显著的相对误差，我们将其视为更好的实例，并且即使当前主实例是健康的，我们也希望切换到它
 			SelectInstance(best_ekf_alternate);
 
 		} else if (_request_instance.load() != INVALID_INSTANCE) {
@@ -800,6 +855,7 @@ void EKF2Selector::Run()
 			const uint8_t new_instance = _request_instance.load();
 
 			// attempt to switch to user manually selected instance
+			// 翻译：尝试切换到用户手动选择的实例
 			if (!SelectInstance(new_instance)) {
 				PX4_ERR("unable to switch to user selected instance %d", new_instance);
 			}
@@ -809,6 +865,7 @@ void EKF2Selector::Run()
 		}
 
 		// publish selector status at ~1 Hz or immediately on any change
+		// 翻译：在~1 Hz或任何更改时立即发布选择器状态
 		if (_selector_status_publish || (hrt_elapsed_time(&_last_status_publish) > 1_s)
 		    || (available_instances_prev != _available_instances)
 		    || (selected_instance_prev != _selected_instance)
@@ -822,6 +879,7 @@ void EKF2Selector::Run()
 	}
 
 	// republish selected estimator data for system
+	// 翻译：重新发布选定的估计器数据以供系统使用
 	PublishVehicleAttitude();
 	PublishVehicleLocalPosition();
 	PublishVehicleGlobalPosition();
@@ -829,9 +887,13 @@ void EKF2Selector::Run()
 	PublishWindEstimate();
 
 	// re-schedule as backup timeout
+	// 翻译：重新安排作为备份超时
 	ScheduleDelayed(FILTER_UPDATE_PERIOD);
 }
 
+/**
+ * @brief 发布估计器选择器状态
+ */
 void EKF2Selector::PublishEstimatorSelectorStatus()
 {
 	estimator_selector_status_s selector_status{};

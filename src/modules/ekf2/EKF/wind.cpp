@@ -39,6 +39,13 @@
 #include "ekf.h"
 #include <ekf_derivation/generated/compute_wind_init_and_cov_from_wind_speed_and_direction.h>
 
+/**
+ * @brief 重置风状态到外部观测
+ * @param wind_speed 风速
+ * @param wind_direction 风向
+ * @param wind_speed_accuracy 风速精度
+ * @param wind_direction_accuracy 风向精度
+ */
 void Ekf::resetWindToExternalObservation(float wind_speed, float wind_direction, float wind_speed_accuracy,
 		float wind_direction_accuracy)
 {
@@ -51,6 +58,7 @@ void Ekf::resetWindToExternalObservation(float wind_speed, float wind_direction,
 		Vector2f wind;
 		Vector2f wind_var;
 
+		// 根据风速和风向计算风的初始值和覆盖率
 		sym::ComputeWindInitAndCovFromWindSpeedAndDirection(wind_speed_constrained, wind_direction, wind_speed_var,
 				wind_direction_var, &wind, &wind_var);
 
