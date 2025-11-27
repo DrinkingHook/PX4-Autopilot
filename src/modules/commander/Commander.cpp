@@ -646,7 +646,7 @@ transition_result_t Commander::arm(arm_disarm_reason_t calling_reason, bool run_
 	events::send<events::px4::enums::arm_disarm_reason_t>(events::ID("commander_armed_by"), events::Log::Info,
 			"Armed by {1}", calling_reason);
 
-	if (_param_com_home_en.get() && !_mission_in_progress) {
+	if (_param_com_home_en.get() && !_mission_in_progress && !_config_overrides.disable_auto_set_home) {
 		_home_position.setHomePosition();
 	}
 
@@ -2224,7 +2224,7 @@ void Commander::landDetectorUpdate()
 			}
 
 			// automatically set or update home position
-			if (_param_com_home_en.get() && !_mission_in_progress) {
+			if (_param_com_home_en.get() && !_mission_in_progress && !_config_overrides.disable_auto_set_home) {
 				// set the home position when taking off
 				if (!_vehicle_land_detected.landed) {
 					if (was_landed) {

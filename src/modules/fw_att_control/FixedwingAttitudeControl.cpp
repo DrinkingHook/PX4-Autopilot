@@ -49,6 +49,7 @@ FixedwingAttitudeControl::FixedwingAttitudeControl(bool vtol) :
 	// 翻译：获取初始参数值
 	parameters_update();
 	_landing_gear_wheel_pub.advertise();
+	_attitude_sp_pub.advertise();
 }
 
 FixedwingAttitudeControl::~FixedwingAttitudeControl()
