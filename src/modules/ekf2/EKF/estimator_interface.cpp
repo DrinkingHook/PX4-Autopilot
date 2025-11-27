@@ -76,9 +76,11 @@ EstimatorInterface::~EstimatorInterface()
 }
 
 // Accumulate imu data and store to buffer at desired rate
+// 翻译：累积imu数据并将其存储到缓冲区中，以期望的速率
 void EstimatorInterface::setIMUData(const imuSample &imu_sample)
 {
 	// TODO: resolve misplaced responsibility
+	// 翻译：TODO：解决职责错置问题
 	if (!_initialised) {
 		_initialised = init(imu_sample.time_us);
 	}
@@ -86,10 +88,12 @@ void EstimatorInterface::setIMUData(const imuSample &imu_sample)
 	_time_latest_us = imu_sample.time_us;
 
 	// the output observer always runs
+	// 翻译：输出观察器始终运行
 	_output_predictor.calculateOutputStates(imu_sample.time_us, imu_sample.delta_ang, imu_sample.delta_ang_dt,
 						imu_sample.delta_vel, imu_sample.delta_vel_dt);
 
 	// accumulate and down-sample imu data and push to the buffer when new downsampled data becomes available
+	// 翻译：累积并下采样imu数据并将其推送到缓冲区，当新下采样数据可用时
 	if (_imu_down_sampler.update(imu_sample)) {
 
 		_imu_updated = true;
@@ -97,6 +101,7 @@ void EstimatorInterface::setIMUData(const imuSample &imu_sample)
 		imuSample imu_downsampled = _imu_down_sampler.getDownSampledImuAndTriggerReset();
 
 		// as a precaution constrain the integration delta time to prevent numerical problems
+		// 翻译：作为预防措施，限制积分delta时间以防止数值问题
 		const float filter_update_period_s = _params.ekf2_predict_us * 1e-6f;
 		const float imu_min_dt = 0.5f * filter_update_period_s;
 		const float imu_max_dt = 2.0f * filter_update_period_s;
@@ -107,10 +112,12 @@ void EstimatorInterface::setIMUData(const imuSample &imu_sample)
 		_imu_buffer.push(imu_downsampled);
 
 		// get the oldest data from the buffer
+		// 翻译：从缓冲区获取最旧的数据
 		_time_delayed_us = _imu_buffer.get_oldest().time_us;
 
 		// calculate the minimum interval between observations required to guarantee no loss of data
 		// this will occur if data is overwritten before its time stamp falls behind the fusion time horizon
+		// 翻译：计算保证数据不丢失所需的最小观测间隔。如果数据在时间戳落后于融合时间范围之前被覆盖，则会发生数据丢失。
 		_min_obs_interval_us = (imu_sample.time_us - _time_delayed_us) / (_obs_buffer_length - 1);
 	}
 

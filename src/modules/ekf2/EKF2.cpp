@@ -62,6 +62,7 @@ EKF2::EKF2(bool multi_mode, const px4::wq_config_t &config, bool replay_mode):
 #if defined(CONFIG_EKF2_WIND)
 	_wind_pub(multi_mode ? ORB_ID(estimator_wind) : ORB_ID(wind)),
 #endif // CONFIG_EKF2_WIND
+	// 获取参数列表，_params参数在 EstimatorInterface 类中初始化
 	_params(_ekf.getParamHandle()),
 	_param_ekf2_predict_us(_params->ekf2_predict_us),
 	_param_ekf2_delay_max(_params->ekf2_delay_max),
