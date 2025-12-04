@@ -66,6 +66,7 @@ rtl_time_estimate_s RtlTimeEstimator::getEstimate() const
 		time_estimate.valid = true;
 		time_estimate.time_estimate = _time_estimate;
 		// Use actual time estimate to compute the safer time estimate with additional scale factor and a margin
+		// 翻译：使用实际时间估计来计算更安全的时间估计，使用额外的缩放因子和余量
 		time_estimate.safe_time_estimate = _param_rtl_time_factor.get() * _time_estimate + _param_rtl_time_margin.get();
 
 	} else {
@@ -86,10 +87,15 @@ void RtlTimeEstimator::update()
 
 		// If any parameter updated, call updateParams() to check if
 		// this class attributes need updating (and do so).
+		// 翻译注释：如果任何参数更新，调用updateParams()检查是否需要更新此类属性（并执行更新）。
 		updateParams();
 	}
 }
 
+/**
+ * @brief 添加垂直距离估计
+ * @param alt 垂直距离
+ */
 void RtlTimeEstimator::addVertDistance(float alt)
 {
 	if (PX4_ISFINITE(alt)) {
@@ -99,6 +105,12 @@ void RtlTimeEstimator::addVertDistance(float alt)
 	}
 }
 
+/**
+ * @brief 添加水平距离估计
+ * @param hor_dist 水平距离
+ * @param direction 方向
+ * @param vert_dist 垂直距离
+ */
 void RtlTimeEstimator::addDistance(float hor_dist, const matrix::Vector2f &direction, float vert_dist)
 {
 	if (PX4_ISFINITE(hor_dist) && PX4_ISFINITE(vert_dist)) {
@@ -128,6 +140,11 @@ void RtlTimeEstimator::addWait(float time_s)
 	}
 }
 
+/**
+ * @brief 计算巡航速度
+ * @param direction_norm 方向向量的单位向量
+ * @return float 巡航速度
+ */
 float RtlTimeEstimator::getCruiseGroundSpeed(const matrix::Vector2f &direction_norm)
 {
 	float cruise_speed = getCruiseSpeed();
@@ -139,6 +156,7 @@ float RtlTimeEstimator::getCruiseGroundSpeed(const matrix::Vector2f &direction_n
 		const float wind_across_dir = matrix::Vector2f(wind - direction_norm * wind_along_dir).norm();
 
 		// Note: use fminf so that we don't _rely_ on tailwind towards direction to make RTL more efficient
+		// 翻译：使用fminf，以便我们不要依赖于方向上的逆风来使RTL更有效率
 		const float ground_speed = sqrtf(cruise_speed * cruise_speed - wind_across_dir * wind_across_dir) + fminf(
 						   0.f, wind_along_dir);
 
@@ -148,6 +166,11 @@ float RtlTimeEstimator::getCruiseGroundSpeed(const matrix::Vector2f &direction_n
 	return cruise_speed;
 }
 
+/**
+ * @brief 计算垂直时间估计值
+ * @param alt 高度
+ * @return float 垂直时间估计值
+ */
 float RtlTimeEstimator::calcVertTimeEstimate(float alt)
 {
 	float vertical_rate{0.1f};
@@ -169,6 +192,10 @@ float RtlTimeEstimator::calcVertTimeEstimate(float alt)
 	return time_estimate;
 }
 
+/**
+ * @brief 计算巡航速度
+ * @return float 巡航速度
+ */
 float RtlTimeEstimator::getCruiseSpeed()
 {
 	float ret = 1e6f;
@@ -192,6 +219,10 @@ float RtlTimeEstimator::getCruiseSpeed()
 	return ret;
 }
 
+/**
+ * @brief 计算风速
+ * @return matrix::Vector2f 风速向量
+ */
 matrix::Vector2f RtlTimeEstimator::get_wind()
 {
 	_wind_sub.update();
@@ -205,6 +236,10 @@ matrix::Vector2f RtlTimeEstimator::get_wind()
 	return wind;
 }
 
+/**
+ * @brief 计算下降速度
+ * @return float 下降速度
+ */
 float RtlTimeEstimator::getClimbRate()
 {
 	float ret = 1e6f;
@@ -224,6 +259,10 @@ float RtlTimeEstimator::getClimbRate()
 	return ret;
 }
 
+/**
+ * @brief 计算下降速度
+ * @return float 下降速度
+ */
 float RtlTimeEstimator::getDescendRate()
 {
 	float ret = 1e6f;

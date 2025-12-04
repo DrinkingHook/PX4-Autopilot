@@ -8,6 +8,7 @@
 orb_advert_t mavlink_log_pub = nullptr;
 
 // required standard deviation of estimate for estimator to publish data
+// 翻译：要求估计的标准偏差，以使估计器发布数据
 static const uint32_t		EST_STDDEV_XY_VALID = 2.0;	// 2.0 m
 static const uint32_t		EST_STDDEV_Z_VALID = 2.0;	// 2.0 m
 static const uint32_t		EST_STDDEV_TZ_VALID = 2.0;	// 2.0 m
@@ -22,6 +23,7 @@ BlockLocalPositionEstimator::BlockLocalPositionEstimator() :
 	WorkItem(MODULE_NAME, px4::wq_configurations::INS0),
 
 	// this block has no parent, and has name LPE
+	// 翻译：这个块没有父块，名称为LPE
 	SuperBlock(nullptr, "LPE"),
 
 	// flow gyro
@@ -41,6 +43,7 @@ BlockLocalPositionEstimator::BlockLocalPositionEstimator() :
 	_xLowPass(this, "X_LP"),
 
 	// use same lp constant for agl
+	// 翻译：使用相同的低通常数用于AGL
 	_aglLowPass(this, "X_LP"),
 
 	// delay
@@ -64,6 +67,7 @@ BlockLocalPositionEstimator::BlockLocalPositionEstimator() :
 	_time_last_target(0),
 
 	// reference altitudes
+	// 翻译：参考高度
 	_altOrigin(0),
 	_altOriginInitialized(false),
 	_altOriginGlobal(false),
@@ -110,6 +114,7 @@ BlockLocalPositionEstimator::BlockLocalPositionEstimator() :
 	_sensors_sub.set_interval_ms(10); // main prediction loop, 100 hz (lockstep requires to run at full rate)
 
 	// assign distance subs to array
+	// 翻译：将距离订阅分配到数组中
 	_dist_subs[0] = &_sub_dist0;
 	_dist_subs[1] = &_sub_dist1;
 	_dist_subs[2] = &_sub_dist2;
@@ -121,6 +126,7 @@ BlockLocalPositionEstimator::BlockLocalPositionEstimator() :
 	initSS();
 
 	// print fusion settings to console
+	// 翻译：打印融合设置到控制台
 	PX4_INFO("fuse gps: %d, flow: %d, vis_pos: %d, "
 		 "landing_target: %d, land: %d, pub_agl_z: %d, flow_gyro: %d, "
 		 "baro: %d\n",
@@ -200,6 +206,7 @@ void BlockLocalPositionEstimator::Run()
 	setDt(dt);
 
 	// auto-detect connected rangefinders while not armed
+	// 翻译：自动检测未武装时连接的测距仪
 	_sub_armed.update();
 	bool armedState = _sub_armed.get().armed;
 
@@ -259,6 +266,7 @@ void BlockLocalPositionEstimator::Run()
 	_lastArmedState = armedState;
 
 	// see which updates are available
+	// 翻译：查看哪些更新可用
 	const bool paramsUpdated = _parameter_update_sub.updated();
 	_baroUpdated = false;
 

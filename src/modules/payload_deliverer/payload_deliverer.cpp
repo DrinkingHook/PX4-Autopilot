@@ -160,9 +160,11 @@ void PayloadDeliverer::handle_vehicle_command(const hrt_abstime &now,  const veh
 		const int32_t gripper_action = (int32_t)roundf(vehicle_command->param2);
 
 		// Flag to indicate if we can process the new gripper command
+		// 翻译：指示我们是否可以处理新的夹爪命令的标志
 		bool process_current_gripper_cmd{false};
 
 		// We are currently in the middle of executing a previous vehicle command. Handle the conflicts
+		// 翻译：我们目前正在执行之前的车辆指令。请处理冲突。
 		if (_cur_vcmd_gripper_action != GRIPPER_ACTION_NONE) {
 
 			if (gripper_action != _cur_vcmd_gripper_action) {
@@ -197,6 +199,7 @@ void PayloadDeliverer::handle_vehicle_command(const hrt_abstime &now,  const veh
 			if ((_gripper.grabbed() && (gripper_action == vehicle_command_s::GRIPPER_ACTION_GRAB)) ||
 			    (_gripper.released() && (gripper_action == vehicle_command_s::GRIPPER_ACTION_RELEASE))) {
 				// First check if we already satisfied the requested command. If so, acknowledge as accepted and don't execute the command
+				// 翻译：首先检查我们是否已经满足了请求的命令。如果已经满足，则确认接受，并且不执行该命令。
 				send_gripper_vehicle_command_ack(now, vehicle_command_ack_s::VEHICLE_CMD_RESULT_ACCEPTED,
 								 vehicle_command->source_system, vehicle_command->source_component);
 

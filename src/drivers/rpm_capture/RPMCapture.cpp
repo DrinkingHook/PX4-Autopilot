@@ -77,6 +77,7 @@ bool RPMCapture::init()
 		return false;
 	}
 
+	// 分配定时器通道
 	int ret = io_timer_allocate_channel(_channel, IOTimerChanMode_RPM);
 
 	if (ret != PX4_OK) {
@@ -84,13 +85,18 @@ bool RPMCapture::init()
 		return false;
 	}
 
+	// _channel 为用户使用的角度(例如M1-M14)
+	// io_timer_channel_get_as_pwm_input(_channel)将其转换为芯片层面的引脚配置
+	// 芯片内部的引脚配置在例如PX4-Autopilot/boards/cuav/x7pro/src/timer_config.cpp中
 	_rpm_capture_gpio = PX4_MAKE_GPIO_EXTI(io_timer_channel_get_as_pwm_input(_channel));
+	// 注册并启用一个GPIO中断(上升沿触发)
 	int ret_val = px4_arch_gpiosetevent(_rpm_capture_gpio, true, false, true, &RPMCapture::gpio_interrupt_callback, this);
 
 	if (ret_val == PX4_OK) {
 		success = true;
 	}
 
+	// 初始化发布器
 	success = success && _rpm_pub.advertise();
 	return success;
 }
@@ -104,10 +110,12 @@ void RPMCapture::Run()
 
 	hrt_abstime now = hrt_absolute_time();
 
+	// 用线程安全的方式检查中断标志位是否被 ISR 置位了
 	if (_interrupt_happened.load()) {
 		// There was an interrupt
 		_period = _hrt_timestamp - _hrt_timestamp_prev;
 		_hrt_timestamp_prev = _hrt_timestamp;
+		// 清除中断标志
 		_interrupt_happened.store(false);
 
 		pwm_input_s pwm_input{};
@@ -116,10 +124,12 @@ void RPMCapture::Run()
 		pwm_input.error_count = _error_count;
 		_pwm_input_pub.publish(pwm_input);
 
+		// 不要在预先设定的超时时间内运行
 		ScheduleClear(); // Do not run on previously scheduled timeout
 
 	} else {
 		// Timeout for no interrupts
+		// 翻译：中断超时
 		_period = UINT32_MAX;
 	}
 
@@ -136,6 +146,7 @@ void RPMCapture::Run()
 
 	if (rpm_raw < RPM_MAX_VALUE) {
 		// Don't update RPM filter with outliers
+		// 翻译：不要使用异常值更新转速过滤器
 		const float dt = math::min((now - _timestamp_last_update) * 1e-6f, 1.f);
 		_timestamp_last_update = now;
 		_rpm_filter.setParameters(dt, RPM_FILTER_TIME_CONSTANT);
@@ -149,6 +160,12 @@ void RPMCapture::Run()
 	_rpm_pub.publish(rpm);
 }
 
+/**
+ * @brief GPIO中断回调函数
+ * @param irq 中断号
+ * @param context 上下文
+ * @param arg 参数
+ */
 int RPMCapture::gpio_interrupt_callback(int irq, void *context, void *arg)
 {
 	RPMCapture *instance = static_cast<RPMCapture *>(arg);
@@ -158,12 +175,18 @@ int RPMCapture::gpio_interrupt_callback(int irq, void *context, void *arg)
 	}
 
 	instance->_hrt_timestamp = hrt_absolute_time();
+	// 在中断回调函数内设置中断标志符号
 	instance->_interrupt_happened.store(true);
 	instance->ScheduleNow();
 
 	return PX4_OK;
 }
 
+/**
+ * @brief 任务启动函数
+ * @param argc 参数个数
+ * @param argv 参数数组
+ */
 int RPMCapture::task_spawn(int argc, char *argv[])
 {
 	RPMCapture *instance = new RPMCapture();

@@ -69,6 +69,9 @@ void MCP9808::RunImpl()
 	perf_end(_cycle_perf);
 }
 
+/**
+ * @brief 测试是否通讯正常
+ */
 int MCP9808::probe()
 {
 	uint16_t manuf_id, device_id;

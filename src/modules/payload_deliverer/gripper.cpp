@@ -152,6 +152,10 @@ void Gripper::update()
 	}
 }
 
+/**
+ * @brief 发布夹爪命令
+ * 	  在PX4-Autopilot/src/lib/mixer_module/functions/FunctionGripper.hpp 处接收并执行相应的操作
+ */
 void Gripper::publish_gripper_command(const int8_t gripper_command)
 {
 	gripper_s gripper{};

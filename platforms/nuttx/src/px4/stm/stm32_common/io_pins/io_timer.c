@@ -447,7 +447,9 @@ static int reallocate_channel_resources(uint32_t channels, io_timer_channel_mode
 
 __EXPORT int io_timer_allocate_channel(unsigned channel, io_timer_channel_mode_t mode)
 {
+	// 进入临界区(暂时屏蔽中断,防止多线程或中断同时修改全局变量)
 	irqstate_t flags = px4_enter_critical_section();
+	// 获取该通道当前已被分配的模式
 	int existing_mode = io_timer_get_channel_mode(channel);
 	int ret = -EBUSY;
 

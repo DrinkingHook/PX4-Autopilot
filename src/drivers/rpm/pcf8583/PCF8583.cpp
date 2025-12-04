@@ -58,6 +58,9 @@ int PCF8583::init()
 	return PX4_OK;
 }
 
+/**
+ * 这个函数是在最底层驱动文件中定义，如 :public device::I2C, 
+ */
 int PCF8583::probe()
 {
 	setRegister(0x00, 0b00100000);

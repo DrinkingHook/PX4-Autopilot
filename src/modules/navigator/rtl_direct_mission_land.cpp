@@ -64,6 +64,7 @@ RtlDirectMissionLand::updateDatamanCache()
 		int32_t end_index = static_cast<int32_t>(_mission.count);
 
 		// Check that we load all data into the cache
+		// 翻译：检查我们是否将所有数据加载到缓存中
 		if (end_index - start_index > _dataman_cache_size_signed) {
 			_dataman_cache.invalidate();
 			_dataman_cache_size_signed = end_index - start_index;
@@ -96,6 +97,7 @@ void RtlDirectMissionLand::on_activation()
 	_needs_climbing = false;
 
 	if (hasMissionLandStart()) {
+		// 指示当前加载的任务项目是否有效的标志
 		_is_current_planned_mission_item_valid = (goToItem(_mission.land_start_index, false) == PX4_OK);
 
 		_needs_climbing = checkNeedsToClimb();
@@ -107,6 +109,7 @@ void RtlDirectMissionLand::on_activation()
 
 	if (_land_detected_sub.get().landed) {
 		// already landed, no need to do anything, invalidad the position mission item.
+		// 翻译：已经着陆，无需执行任何操作，无效化位置任务项目。
 		_is_current_planned_mission_item_valid = false;
 	}
 
@@ -118,6 +121,9 @@ bool RtlDirectMissionLand::setNextMissionItem()
 	return (goToNextPositionItem(true) == PX4_OK);
 }
 
+/**
+ * @brief 设置当前任务项目
+ */
 void RtlDirectMissionLand::setActiveMissionItems()
 {
 	WorkItemType new_work_item_type{WorkItemType::WORK_ITEM_TYPE_DEFAULT};
@@ -125,8 +131,10 @@ void RtlDirectMissionLand::setActiveMissionItems()
 	const position_setpoint_s current_setpoint_copy = pos_sp_triplet->current;
 
 	// Climb to altitude
+	// 翻译：爬升到高度
 	if (_needs_climbing && _work_item_type == WorkItemType::WORK_ITEM_TYPE_DEFAULT) {
 		// TODO: check if we also should use NAV_CMD_LOITER_TO_ALT for rotary wing
+		// 翻译：检查是否也应该对旋翼机使用 NAV_CMD_LOITER_TO_ALT。
 		if (_vehicle_status_sub.get().vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
 			_mission_item.nav_cmd = NAV_CMD_WAYPOINT;
 
@@ -159,11 +167,14 @@ void RtlDirectMissionLand::setActiveMissionItems()
 	} else if (_vehicle_status_sub.get().vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING &&
 		   _vehicle_status_sub.get().is_vtol &&
 		   !_land_detected_sub.get().landed && _work_item_type == WorkItemType::WORK_ITEM_TYPE_DEFAULT) {
+		// vtol已经处于飞行的情况下，那么肯定是已经切换到了固定翼模式。这里预防的应该是vtol刚起飞还没有转换模式就切换到RTL的情况。
 		// Transition to fixed wing if necessary.
+		// 翻译：如果必要，转换到固定翼
 		set_vtol_transition_item(&_mission_item, vtol_vehicle_status_s::VEHICLE_VTOL_STATE_FW);
 		_mission_item.yaw = _navigator->get_local_position()->heading;
 
 		// keep current setpoints (FW position controller generates wp to track during transition)
+		// 翻译：保持当前设定点（FW位置控制器在转换期间生成wp来跟踪）
 		pos_sp_triplet->current.type = position_setpoint_s::SETPOINT_TYPE_POSITION;
 
 		new_work_item_type = WorkItemType::WORK_ITEM_TYPE_TRANSITION_AFTER_TAKEOFF;
@@ -198,6 +209,7 @@ void RtlDirectMissionLand::setActiveMissionItems()
 
 		} else {
 			// convert mission item to a simple waypoint, keep loiter to alt
+			// 翻译：将任务项转换为简单的航点，保持高度保持
 			if (_mission_item.nav_cmd != NAV_CMD_LOITER_TO_ALT) {
 				_mission_item.nav_cmd = NAV_CMD_WAYPOINT;
 			}
@@ -213,6 +225,7 @@ void RtlDirectMissionLand::setActiveMissionItems()
 		mission_item_to_position_setpoint(_mission_item, &pos_sp_triplet->current);
 
 		// Only set the previous position item if the current one really changed
+		// 翻译：只有当当前位置点真的改变时才设置前一个位置点
 		if ((_work_item_type != WorkItemType::WORK_ITEM_TYPE_MOVE_TO_LAND) &&
 		    !position_setpoint_equal(&pos_sp_triplet->current, &current_setpoint_copy)) {
 			pos_sp_triplet->previous = current_setpoint_copy;
@@ -220,6 +233,7 @@ void RtlDirectMissionLand::setActiveMissionItems()
 
 		// prevent lateral guidance from loitering at a waypoint as part of a mission landing if the altitude
 		// is not achieved.
+		// 翻译：防止在任务着陆时在航点上进行横向引导，如果高度未达到
 		const bool fw_on_mission_landing = _vehicle_status_sub.get().vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING
 						   && isLanding() &&
 						   _mission_item.nav_cmd == NAV_CMD_WAYPOINT;
@@ -300,6 +314,7 @@ rtl_time_estimate_s RtlDirectMissionLand::calc_rtl_time_estimate()
 
 					if (!success) {
 						// Could not load the mission item, mark time estimate as invalid.
+						// 翻译注释：无法加载航点，将时间估计标记为无效。
 						_rtl_time_estimator.reset();
 						break;
 					}
@@ -365,6 +380,7 @@ rtl_time_estimate_s RtlDirectMissionLand::calc_rtl_time_estimate()
 									       hor_position_at_calculation_point(1), next_position_mission_item.lat, next_position_mission_item.lon);
 
 							// For fixed wing, add diagonal line
+							// 翻译注释：对于固定翼，添加对角线
 							if ((_vehicle_status_sub.get().vehicle_type != vehicle_status_s::VEHICLE_TYPE_FIXED_WING)
 							    && (!_vehicle_status_sub.get().is_vtol)) {
 
@@ -388,6 +404,7 @@ rtl_time_estimate_s RtlDirectMissionLand::calc_rtl_time_estimate()
 
 					default: {
 							// Default assume can go to the location directly
+							// 翻译注释：默认假设可以直接到达该位置
 							matrix::Vector2f direction{};
 							get_vector_to_next_waypoint(hor_position_at_calculation_point(0), hor_position_at_calculation_point(1),
 										    next_position_mission_item.lat, next_position_mission_item.lon, &direction(0), &direction(1));
@@ -417,6 +434,9 @@ rtl_time_estimate_s RtlDirectMissionLand::calc_rtl_time_estimate()
 	return _rtl_time_estimator.getEstimate();
 }
 
+/**
+ * @brief 检查是否需要爬升到指定的航点
+ */
 bool RtlDirectMissionLand::checkNeedsToClimb()
 {
 	bool needs_climbing{false};
@@ -424,7 +444,9 @@ bool RtlDirectMissionLand::checkNeedsToClimb()
 	if ((_global_pos_sub.get().alt < _rtl_alt) || _enforce_rtl_alt) {
 
 		// If lower than return altitude, climb up first.
+		// 翻译：如果低于返回高度，则先爬升。
 		// If enforce_rtl_alt is true then forcing altitude change even if above.
+		// 翻译：如果强制返回高度，则强制高度变化，即使在上面。
 		needs_climbing = true;
 
 	}

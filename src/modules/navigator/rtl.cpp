@@ -183,11 +183,14 @@ void RTL::on_inactive()
 	_rtl_direct.run(false);
 
 	// Limit inactive calculation to 0.5Hz
+	// 翻译：限制不活动计算为0.5Hz
 	hrt_abstime now{hrt_absolute_time()};
 
 	if ((now - _destination_check_time) > 2_s) {
 		_destination_check_time = now;
+		// 设置RTL类型和目的地类型
 		setRtlTypeAndDestination();
+		// 发布剩余时间估计
 		publishRemainingTimeEstimate();
 	}
 
@@ -430,10 +433,7 @@ void RTL::findRtlDestination(DestinationType &destination_type, PositionYawSetpo
 		min_dist = home_dist;
 	}
 
-        /**
-         * @brief 当rtl_type设置为1或3或则上方的判断将min_dist设置为FLT_MAX,就强制将返回点变为任务降落点
-         *
-         */
+        // 当rtl_type设置为1或3或上方的判断将min_dist设置为了FLT_MAX,并且有任务起始点且有效。就强制将返回点变为任务降落点
 	// consider the mission landing if available and allowed
 	// 翻译：在条件允许的情况下，考虑任务着陆
 	if (((_param_rtl_type.get() == 1) || (_param_rtl_type.get() == 3) || (fabsf(FLT_MAX - min_dist) < FLT_EPSILON))
@@ -458,6 +458,7 @@ void RTL::findRtlDestination(DestinationType &destination_type, PositionYawSetpo
 
 			} else {
 				// Mission landing is not allowed, but home has no approaches. Still use mission landing.
+				// 翻译：不允许进行任务着陆，但返航航线没有进近航线。仍然使用任务着陆。
 				min_dist = FLT_MAX;
 			}
 
@@ -518,6 +519,11 @@ void RTL::findRtlDestination(DestinationType &destination_type, PositionYawSetpo
 	}
 }
 
+/**
+ * @brief 设置着陆位置作为目的地
+ * @param rtl_position 返回位置
+ * @param land_mission_item 着陆任务项
+ */
 void RTL::setLandPosAsDestination(PositionYawSetpoint &rtl_position, mission_item_s &land_mission_item) const
 {
 	rtl_position.alt = land_mission_item.altitude_is_relative ?	land_mission_item.altitude +
@@ -527,11 +533,18 @@ void RTL::setLandPosAsDestination(PositionYawSetpoint &rtl_position, mission_ite
 	rtl_position.yaw = _home_pos_sub.get().yaw;
 }
 
+/**
+ * @brief 设置安全点作为目的地
+ * @param rtl_position 返回位置
+ * @param mission_safe_point 安全点任务项
+ */
 void RTL::setSafepointAsDestination(PositionYawSetpoint &rtl_position,
 				    const mission_item_s &mission_safe_point) const
 {
 	// There is a safe point closer than home/mission landing
+	// 翻译：有一个比家/任务着陆点更近的安全点
 	// TODO: handle all possible mission_safe_point.frame cases
+	// 翻译：TODO：处理所有可能的 mission_safe_point.frame 情况
 	switch (mission_safe_point.frame) {
 	case 0: // MAV_FRAME_GLOBAL
 		rtl_position.lat = mission_safe_point.lat;
@@ -555,16 +568,25 @@ void RTL::setSafepointAsDestination(PositionYawSetpoint &rtl_position,
 	}
 }
 
+/**
+ * @brief 计算返回高度，基于锥形半角角度。
+ * @param rtl_position RTL位置。
+ * @param cone_half_angle_deg 锥形半角角度（度）。
+ * @return 返回高度（米）。
+ */
 float RTL::calculate_return_alt_from_cone_half_angle(const PositionYawSetpoint &rtl_position,
 		float cone_half_angle_deg) const
 {
 	// horizontal distance to destination
+	// 翻译注释：水平距离到目的地。
 	const float destination_dist = get_distance_to_next_waypoint(_global_pos_sub.get().lat, _global_pos_sub.get().lon,
 				       rtl_position.lat, rtl_position.lon);
 
 	// minium rtl altitude to use when outside of horizontal acceptance radius of target position.
+	// 翻译：最小返回高度，当超出水平接受半径时使用。
 	// We choose the minimum height to be two times the distance from the land position in order to
 	// avoid the vehicle touching the ground while still moving horizontally.
+	// 翻译：我们选择最小高度为距地面距离的两倍，以避免车辆在水平移动时触地。
 	const float return_altitude_min_outside_acceptance_rad_amsl = rtl_position.alt + 2.0f * _param_nav_acc_rad.get();
 
 	const float max_return_altitude = rtl_position.alt + _param_rtl_return_alt.get();
@@ -578,9 +600,11 @@ float RTL::calculate_return_alt_from_cone_half_angle(const PositionYawSetpoint &
 		if (destination_dist <= _param_rtl_min_dist.get()) {
 
 			// constrain cone half angle to meaningful values. All other cases are already handled above.
+			// 翻译：将锥角限制在有意义的值范围内。所有其他情况已经在上面处理过了。
 			const float cone_half_angle_rad = radians(constrain(cone_half_angle_deg, 1.0f, 89.0f));
 
 			// minimum altitude we need in order to be within the user defined cone
+			// 翻译：我们需要的最小高度，以确保在用户定义的锥形内。
 			const float cone_intersection_altitude_amsl = destination_dist / tanf(cone_half_angle_rad) + rtl_position.alt;
 
 			return_altitude_amsl = min(cone_intersection_altitude_amsl, return_altitude_amsl);
@@ -592,6 +616,9 @@ float RTL::calculate_return_alt_from_cone_half_angle(const PositionYawSetpoint &
 	return constrain(return_altitude_amsl, _global_pos_sub.get().alt, max_return_altitude);
 }
 
+/**
+ * @brief 初始化RTL_Mission类型
+ */
 void RTL::init_rtl_mission_type()
 {
 	RtlType new_rtl_mission_type{RtlType::RTL_DIRECT_MISSION_LAND};
@@ -617,6 +644,7 @@ void RTL::init_rtl_mission_type()
 		return;
 	}
 
+	// 初始化时清空指针类型
 	if (_rtl_mission_type_handle) {
 		delete _rtl_mission_type_handle;
 		_rtl_mission_type_handle = nullptr;
@@ -661,6 +689,7 @@ void RTL::parameters_update()
 
 		// If any parameter updated, call updateParams() to check if
 		// this class attributes need updating (and do so).
+		// 翻译：如果任何参数更新，调用updateParams()检查是否需要更新此类属性（并执行更新）。
 		updateParams();
 
 		if (!isActive()) {
@@ -730,6 +759,11 @@ loiter_point_s RTL::chooseBestLandingApproach(const land_approaches_s &vtol_land
 	}
 }
 
+/**
+ * @brief 读取垂直起飞着陆接近点
+ * @param rtl_position 垂直起飞着陆位置
+ * @return land_approaches_s 垂直起飞着陆接近点
+ */
 land_approaches_s RTL::readVtolLandApproaches(PositionYawSetpoint rtl_position) const
 {
 

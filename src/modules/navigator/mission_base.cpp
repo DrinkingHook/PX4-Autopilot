@@ -1066,6 +1066,13 @@ int MissionBase::getNonJumpItem(int32_t &mission_index, mission_item_s &mission,
 	return PX4_OK;
 }
 
+/**
+ * @brief 跳转到指定的航点
+ * @param index 要跳转到的航点索引
+ * @param execute_jump 是否执行跳转操作
+ * @param mission_direction_backward 是否反向执行跳转操作
+ * @return PX4_OK 表示成功，PX4_ERROR 表示失败
+ */
 int MissionBase::goToItem(int32_t index, bool execute_jump, bool mission_direction_backward)
 {
 	mission_item_s mission_item;

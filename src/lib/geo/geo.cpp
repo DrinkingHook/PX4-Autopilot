@@ -107,6 +107,13 @@ void MapProjection::project(double lat, double lon, float &x, float &y) const
 	y = static_cast<float>(k * cos_lat * sin(lon_rad - _ref_lon) * CONSTANTS_RADIUS_OF_EARTH);
 }
 
+/**
+ * @brief 将平面坐标转换为经纬度。
+ * @param x 平面坐标x。
+ * @param y 平面坐标y。
+ * @param lat 经度。
+ * @param lon 纬度。
+ */
 void MapProjection::reproject(float x, float y, double &lat, double &lon) const
 {
 	const double x_rad = (double)x / CONSTANTS_RADIUS_OF_EARTH;
@@ -129,6 +136,14 @@ void MapProjection::reproject(float x, float y, double &lat, double &lon) const
 	}
 }
 
+/**
+ * @brief 计算当前位置到下一个航点的距离。
+ * @param lat_now 当前纬度。
+ * @param lon_now 当前经度。
+ * @param lat_next 下一个航点的纬度。
+ * @param lon_next 下一个航点的经度。
+ * @return 当前位置到下一个航点的距离。
+ */
 float get_distance_to_next_waypoint(double lat_now, double lon_now, double lat_next, double lon_next)
 {
 	const double lat_now_rad = math::radians(lat_now);
@@ -145,6 +160,16 @@ float get_distance_to_next_waypoint(double lat_now, double lon_now, double lat_n
 	return static_cast<float>(CONSTANTS_RADIUS_OF_EARTH * 2.0 * c);
 }
 
+/**
+ * @brief 根据起始点、终点和距离生成航点。
+ * @param lat_A 起始点纬度。
+ * @param lon_A 起始点经度。
+ * @param lat_B 终点纬度。
+ * @param lon_B 终点经度。
+ * @param dist 距离。
+ * @param lat_target 目标点纬度。
+ * @param lon_target 目标点经度。
+ */
 void create_waypoint_from_line_and_dist(double lat_A, double lon_A, double lat_B, double lon_B, float dist,
 					double *lat_target, double *lon_target)
 {
@@ -158,6 +183,15 @@ void create_waypoint_from_line_and_dist(double lat_A, double lon_A, double lat_B
 	}
 }
 
+/**
+ * @brief 根据起始点、航向和距离生成航点。
+ * @param lat_start 起始点纬度。
+ * @param lon_start 起始点经度。
+ * @param bearing 航向。
+ * @param dist 距离。
+ * @param lat_target 目标点纬度。
+ * @param lon_target 目标点经度。
+ */
 void waypoint_from_heading_and_distance(double lat_start, double lon_start, float bearing, float dist,
 					double *lat_target, double *lon_target)
 {
@@ -202,6 +236,15 @@ float get_bearing_to_next_waypoint(double lat_now, double lon_now, double lat_ne
 	return wrap_pi(atan2f(y, x));
 }
 
+/**
+ * @brief 计算从当前位置到下一个航点的向量
+ * @param lat_now 当前纬度
+ * @param lon_now 当前经度
+ * @param lat_next 下一个纬度
+ * @param lon_next 下一个经度
+ * @param v_n 向北分量
+ * @param v_e 向东分量
+ */
 void
 get_vector_to_next_waypoint(double lat_now, double lon_now, double lat_next, double lon_next, float *v_n, float *v_e)
 {
@@ -215,6 +258,15 @@ get_vector_to_next_waypoint(double lat_now, double lon_now, double lat_next, dou
 	*v_e = static_cast<float>(CONSTANTS_RADIUS_OF_EARTH * sin(d_lon) * cos(lat_next_rad));
 }
 
+/**
+ * @brief 快速获取到下一个航点的向量
+ * @param lat_now 当前纬度
+ * @param lon_now 当前经度
+ * @param lat_next 下一个纬度
+ * @param lon_next 下一个经度
+ * @param v_n 指向北向量的指针
+ * @param v_e 指向东向量的指针
+ */
 void
 get_vector_to_next_waypoint_fast(double lat_now, double lon_now, double lat_next, double lon_next, float *v_n,
 				 float *v_e)
@@ -232,6 +284,15 @@ get_vector_to_next_waypoint_fast(double lat_now, double lon_now, double lat_next
 	*v_e = static_cast<float>(CONSTANTS_RADIUS_OF_EARTH * d_lon * cos(lat_now_rad));
 }
 
+/**
+ * @brief 将向量添加到全局位置
+ * @param lat_now 当前纬度。
+ * @param lon_now 当前经度。
+ * @param v_n 向北距离。
+ * @param v_e 向东距离。
+ * @param lat_res 结果纬度。
+ * @param lon_res 结果经度。
+ */
 void add_vector_to_global_position(double lat_now, double lon_now, float v_n, float v_e, double *lat_res,
 				   double *lon_res)
 {
@@ -244,12 +305,25 @@ void add_vector_to_global_position(double lat_now, double lon_now, float v_n, fl
 
 // Additional functions - @author Doug Weibel <douglas.weibel@colorado.edu>
 
+/**
+ * @brief 计算当前位置到线段的距离
+ * @param crosstrack_error 结果结构体
+ * @param lat_now 当前纬度。
+ * @param lon_now 当前经度。
+ * @param lat_start 线段起点纬度。
+ * @param lon_start 线段起点经度。
+ * @param lat_end 线段终点纬度。
+ * @param lon_end 线段终点经度。
+ * @return 返回值
+ */
 int get_distance_to_line(struct crosstrack_error_s &crosstrack_error, double lat_now, double lon_now,
 			 double lat_start, double lon_start, double lat_end, double lon_end)
 {
 	// This function returns the distance to the nearest point on the track line.  Distance is positive if current
 	// position is right of the track and negative if left of the track as seen from a point on the track line
 	// headed towards the end point.
+	// 翻译：此函数返回到轨道线上最近点的距离。如果当前位置位于轨道右侧，则距离为正；
+	// 如果位于轨道左侧，则距离为负（从轨道线上朝向终点的方向观察）。
 
 	int return_value = -1;	// Set error flag, cleared when valid result calculated.
 	crosstrack_error.past_end = false;
@@ -288,6 +362,20 @@ int get_distance_to_line(struct crosstrack_error_s &crosstrack_error, double lat
 	return return_value;
 }
 
+/**
+ * @brief 计算从当前位置到弧线的最短距离。
+ *
+ * @param crosstrack_error 结构体，用于存储计算结果。
+ * @param lat_now 当前位置的纬度。
+ * @param lon_now 当前位置的经度。
+ * @param lat_center 弧线中心的纬度。
+ * @param lon_center 弧线中心的经度。
+ * @param radius 弧线的半径。
+ * @param arc_start_bearing 弧线起始角度。
+ * @param arc_sweep 弧线扫过的角度。
+ *
+ * @return 返回值。
+ */
 int get_distance_to_arc(struct crosstrack_error_s *crosstrack_error, double lat_now, double lon_now,
 			double lat_center, double lon_center,
 			float radius, float arc_start_bearing, float arc_sweep)
@@ -295,9 +383,12 @@ int get_distance_to_arc(struct crosstrack_error_s *crosstrack_error, double lat_
 	// This function returns the distance to the nearest point on the track arc.  Distance is positive if current
 	// position is right of the arc and negative if left of the arc as seen from the closest point on the arc and
 	// headed towards the end point.
+	// 翻译：此函数返回到轨迹弧上最近点的距离。如果当前位置位于弧线右侧，则距离为正；
+	// 如果位于弧线左侧，则距离为负（从弧线上的最近点看，并朝向终点方向）。
 
 	// Determine if the current position is inside or outside the sector between the line from the center
 	// to the arc start and the line from the center to the arc end
+	// 翻译：判断当前位置是在圆心到弧起点的连线与圆心到弧终点的连线所构成的扇形区域内还是扇形区域外。
 	float bearing_sector_start = 0.0f;
 	float bearing_sector_end = 0.0f;
 	float bearing_now = get_bearing_to_next_waypoint(lat_now, lon_now, lat_center, lon_center);
@@ -392,6 +483,18 @@ int get_distance_to_arc(struct crosstrack_error_s *crosstrack_error, double lat_
 	return return_value;
 }
 
+/**
+ * @brief 计算从当前位置到下一个位置的水平距离和垂直距离(3D距离)
+ * 	   WGS84坐标系(地球椭球体模型gps数据)
+ * @param lat_now 当前纬度
+ * @param lon_now 当前经度
+ * @param alt_now 当前高度
+ * @param lat_next 下一个位置的纬度
+ * @param lon_next 下一个位置的经度
+ * @param alt_next 下一个位置的高度
+ * @param dist_xy 水平距离
+ * @param dist_z 垂直距离
+ */
 float get_distance_to_point_global_wgs84(double lat_now, double lon_now, float alt_now,
 		double lat_next, double lon_next, float alt_next,
 		float *dist_xy, float *dist_z)
@@ -416,6 +519,18 @@ float get_distance_to_point_global_wgs84(double lat_now, double lon_now, float a
 	return sqrtf(dxy * dxy + dz * dz);
 }
 
+/**
+ * @brief mavlink航点到本地点距离
+ * 	  一般传入参数是NED坐标系
+ * @param x_now 当前X坐标
+ * @param y_now 当前Y坐标
+ * @param z_now 当前Z坐标
+ * @param x_next 下一个位置的X坐标
+ * @param y_next 下一个位置的Y坐标
+ * @param z_next 下一个位置的Z坐标
+ * @param dist_xy 水平距离
+ * @param dist_z 垂直距离
+ */
 float mavlink_wpm_distance_to_point_local(float x_now, float y_now, float z_now,
 		float x_next, float y_next, float z_next,
 		float *dist_xy, float *dist_z)

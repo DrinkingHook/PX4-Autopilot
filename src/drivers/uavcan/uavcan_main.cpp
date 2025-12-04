@@ -430,6 +430,7 @@ UavcanNode::start(uavcan::NodeID node_id, uint32_t bitrate)
 
 		can = new CanInitHelper(board_get_can_interfaces());
 
+		// 翻译：我们没有异常处理，所以不会抛出 bad_alloc 异常。
 		if (can == nullptr) {  // We don't have exceptions so bad_alloc cannot be thrown
 			PX4_ERR("Out of memory");
 			return -1;
@@ -669,6 +670,9 @@ UavcanNode::handle_time_sync(const uavcan::TimerEvent &)
 	_time_sync_master.publish();
 }
 
+/**
+ * init的逻辑也包含在Run函数里面，如果没有初始化才
+ */
 void
 UavcanNode::Run()
 {
@@ -690,6 +694,11 @@ UavcanNode::Run()
 		* CAN driver init
 		 * Note that we instantiate and initialize CanInitHelper only once, because the STM32's bxCAN driver
 		 * shipped with libuavcan does not support deinitialization.
+		 */
+		/**
+		 * 翻译：CAN 驱动程序初始化
+		 * 我们只允许把 CAN 控制器初始化一次，因为 libuavcan 自带的 STM32 bxCAN 驱动压根不支持“反初始化”（deinit）。
+		 * 一旦初始化过，想关掉再重新初始化会出大问题，所以只能一次成功，失败就直接退出程序。
 		 */
 		const int can_init_res = can->init(bitrate);
 
@@ -1469,6 +1478,7 @@ extern "C" __EXPORT int uavcan_main(int argc, char *argv[])
 		int32_t node_id = 1;
 		(void)param_get(param_find("UAVCAN_NODE_ID"), &node_id);
 
+		// 判断是否有效，第三个参数为判断是否为单播地址(正常节点的合法ID)
 		if (node_id < 0 || node_id > uavcan::NodeID::Max || !uavcan::NodeID(node_id).isUnicast()) {
 			PX4_ERR("Invalid Node ID %" PRId32, node_id);
 			::exit(1);
@@ -1484,6 +1494,7 @@ extern "C" __EXPORT int uavcan_main(int argc, char *argv[])
 	}
 
 	/* commands below require the app to be started */
+	// 翻译：以下命令需要应用程序已启动
 	UavcanNode *const inst = UavcanNode::instance();
 
 	if (!inst) {

@@ -190,6 +190,7 @@ void Navigator::run()
 
 		} else if (pret < 0) {
 			/* this is undesirable but not much we can do - might want to flag unhappy status */
+			// 翻译：这虽然令人不快，但我们也无能为力——或许应该标记一下不满状态。
 			PX4_ERR("poll error %d, %d", pret, errno);
 			px4_usleep(10000);
 			continue;
@@ -465,6 +466,7 @@ void Navigator::run()
 
 				// A VEHICLE_CMD_DO_CHANGE_ALTITUDE has the exact same effect as a VEHICLE_CMD_DO_REPOSITION with only the altitude
 				// field populated, this logic is copied from above.
+				// 翻译：VEHICLE_CMD_DO_CHANGE_ALTITUDE 与 VEHICLE_CMD_DO_REPOSITION 的效果相同，仅填充高度字段，此逻辑从上面复制。
 
 				// only supports MAV_FRAME_GLOBAL and MAV_FRAMEs with absolute altitude amsl
 				// 翻译：仅支持 MAV_FRAME_GLOBAL 和 MAV_FRAME 的绝对高度 amsl
@@ -517,6 +519,7 @@ void Navigator::run()
 					if (_vstatus.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING
 					    && (get_position_setpoint_triplet()->current.type != position_setpoint_s::SETPOINT_TYPE_TAKEOFF)) {
 
+						// 预处理停止点坐标
 						preproject_stop_point(rep->current.lat, rep->current.lon);
 					}
 
@@ -551,6 +554,7 @@ void Navigator::run()
 				   get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) {
 
 				// for multicopters the orbit command is directly executed by the orbit flighttask
+				// 翻译：对于多旋翼，绕行命令直接由绕行飞行任务执行。
 
 				vehicle_global_position_s position_setpoint{};
 				position_setpoint.lat = PX4_ISFINITE(cmd.param5) ? cmd.param5 : get_global_position()->lat;
@@ -558,6 +562,7 @@ void Navigator::run()
 				position_setpoint.alt = PX4_ISFINITE(cmd.param7) ? cmd.param7 : get_global_position()->alt;
 
 				// Wait for vehicle_status before handling the next command, otherwise the setpoint could be overwritten
+				// 翻译：在处理下一个命令之前等待vehicle_status，否则设置点可能会被覆盖。
 				_wait_for_vehicle_status_timestamp = hrt_absolute_time();
 
 				if (geofence_allows_position(position_setpoint)) {
@@ -570,6 +575,7 @@ void Navigator::run()
 					rep->current.cruising_throttle = get_cruising_throttle();
 
 					// on entering Loiter mode, reset speed setpoint to default
+					// 翻译：进入Loiter模式时，重置速度设置点为默认值。
 					if (_navigation_mode != &_loiter) {
 						rep->current.cruising_speed = -1.f;
 
@@ -607,6 +613,7 @@ void Navigator::run()
 				position_setpoint.alt = PX4_ISFINITE(cmd.param7) ? cmd.param7 : get_global_position()->alt;
 
 				// Wait for vehicle_status before handling the next command, otherwise the setpoint could be overwritten
+				// 翻译：等待车辆状态，否则设置点可能会被覆盖。
 				_wait_for_vehicle_status_timestamp = hrt_absolute_time();
 
 				if (geofence_allows_position(position_setpoint)) {
@@ -676,7 +683,9 @@ void Navigator::run()
 				}
 
 				// Don't set a yaw setpoint for takeoff, as Navigator doesn't handle the yaw reset.
+				// 翻译：不要为起飞设置偏航设定值，因为导航器不会处理偏航重置。
 				// The yaw setpoint generation is handled by FlightTaskAuto.
+				// 翻译：偏航设定点的生成由 FlightTaskAuto 处理。
 				rep->current.yaw = NAN;
 
 				if (PX4_ISFINITE(cmd.param5) && PX4_ISFINITE(cmd.param6)) {
@@ -685,6 +694,7 @@ void Navigator::run()
 
 				} else {
 					// If one of them is non-finite set the current global position as target
+					// 翻译：如果其中一个不是有限的，将当前全局位置作为目标。
 					rep->current.lat = get_global_position()->lat;
 					rep->current.lon = get_global_position()->lon;
 
@@ -698,6 +708,7 @@ void Navigator::run()
 				rep->next.valid = false;
 
 				// Fixed-wing: vehicle will takeoff towards these coordinates and establish on a loiter there
+				// 翻译：在转换后，车辆将在该位置建立一个环形着陆圈。
 				_takeoff.setLoiterPosition(matrix::Vector2d(cmd.param5, cmd.param6));
 				_takeoff.setLoiterAltitudeAmsl(cmd.param7);
 
@@ -714,9 +725,11 @@ void Navigator::run()
 				}
 
 				// after the transition the vehicle will establish on a loiter at this position
+				// 翻译：在转换后，车辆将在该位置建立一个环形着陆圈。
 				_vtol_takeoff.setLoiterLocation(matrix::Vector2d(cmd.param5, cmd.param6));
 
 				// loiter height is the height above takeoff altitude at which the vehicle will establish on a loiter circle
+				// 翻译：着陆高度是起飞高度以上车辆将建立在环形着陆圈的高度。
 				_vtol_takeoff.setLoiterHeight(cmd.param1);
 #endif //CONFIG_MODE_NAVIGATOR_VTOL_TAKEOFF
 
@@ -725,6 +738,7 @@ void Navigator::run()
 
 				// find NAV_CMD_DO_LAND_START in the mission and
 				// use MAV_CMD_MISSION_START to start the mission from the next item containing a position setpoint
+				// 翻译注释：在任务中找到 NAV_CMD_DO_LAND_START，并使用 MAV_CMD_MISSION_START 从下一个包含位置设定点的项目开始任务。
 				uint8_t result{vehicle_command_ack_s::VEHICLE_CMD_RESULT_ACCEPTED};
 
 				if (_mission.get_land_start_available()) {
@@ -1011,6 +1025,7 @@ void Navigator::run()
 void Navigator::geofence_breach_check()
 {
 	// reset the _time_loitering_after_gf_breach time if no longer in LOITER (and 100ms after it was triggered)
+	// 翻译：如果不再处于LOITER状态（并且在触发后100毫秒后），重置_time_loitering_after_gf_breach时间
 	if (_vstatus.nav_state != vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER
 	    && hrt_elapsed_time(&_time_loitering_after_gf_breach) > 100_ms) {
 		_time_loitering_after_gf_breach = 0;
@@ -1031,7 +1046,9 @@ void Navigator::geofence_breach_check()
 			const float velocity_hor_abs = sqrtf(_local_pos.vx * _local_pos.vx + _local_pos.vy * _local_pos.vy);
 			_gf_breach_avoidance.setHorizontalVelocity(velocity_hor_abs);
 			_gf_breach_avoidance.setClimbRate(-_local_pos.vz);
+			// 计算多旋翼的刹车距离
 			test_point_distance = _gf_breach_avoidance.computeBrakingDistanceMultirotor();
+			// 计算多旋翼的垂直刹车距离
 			vertical_test_point_distance = _gf_breach_avoidance.computeVerticalBrakingDistanceMultirotor();
 
 		} else {
@@ -1060,15 +1077,22 @@ void Navigator::geofence_breach_check()
 
 		if (!position_valid) {
 			// we don't have a valid position yet, so we can't check for geofence violations
+			// 翻译：我们还没有有效的位置，因此无法检查围栏违规
 			return;
 		}
 
+		// 设置水平和垂直测试点距离
 		_gf_breach_avoidance.setHorizontalTestPointDistance(test_point_distance);
+		// 设置垂直测试点距离
 		_gf_breach_avoidance.setVerticalTestPointDistance(vertical_test_point_distance);
+		// 设置测试点方向
 		_gf_breach_avoidance.setTestPointBearing(test_point_bearing);
+		// 设置当前位置
 		_gf_breach_avoidance.setCurrentPosition(current_latitude, current_longitude, current_altitude);
+		// 设置最大水平距离
 		_gf_breach_avoidance.setMaxHorDistHome(_geofence.getMaxHorDistanceHome());
 
+		
 		if (home_global_position_valid()) {
 			_gf_breach_avoidance.setHomePosition(_home_pos.lat, _home_pos.lon, _home_pos.alt);
 		}
@@ -1086,6 +1110,7 @@ void Navigator::geofence_breach_check()
 
 		if (_time_loitering_after_gf_breach > 0) {
 			// if we are in the loitering state after breaching a GF, only allow new ones to be set, but not unset
+			// 翻译：如果我们在GF后进入停留状态，只允许设置新的，但不允许取消设置
 			_geofence_result.geofence_max_dist_triggered |= !_geofence.isCloserThanMaxDistToHome(test_point_latitude,
 					test_point_longitude, test_point_altitude);
 			_geofence_result.geofence_max_alt_triggered |= !_geofence.isBelowMaxAltitude(test_point_altitude);
@@ -1109,11 +1134,14 @@ void Navigator::geofence_breach_check()
 		    _geofence_result.geofence_custom_fence_triggered) {
 
 			/* Issue a warning about the geofence violation once and only if we are armed */
+			// 翻译：只有在我们武装到牙齿的情况下，才对违反地理围栏的行为发出一次警告。
+			// 如果尚未发送重新定位请求，并且当前状态为已启动，并且地理围栏操作为滞留，则执行重新定位操作。
 			if (!_geofence_reposition_sent && _vstatus.arming_state == vehicle_status_s::ARMING_STATE_ARMED
 			    && _geofence.getGeofenceAction() == geofence_result_s::GF_ACTION_LOITER) {
 
 				// we have predicted a geofence violation and if the action is to loiter then
 				// demand a reposition to a location which is inside the geofence
+				// 翻译：我们预测到地理围栏违规，如果操作是滞留，则要求重新定位到围栏内部的位置。
 
 				position_setpoint_triplet_s *rep = get_reposition_triplet();
 
@@ -1127,19 +1155,23 @@ void Navigator::geofence_breach_check()
 					if (_vstatus.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
 						// the computation of the braking distance does not match the actual braking distance. Until we have a better model
 						// we set the loiter point to the current position, that will make sure that the vehicle will loiter inside the fence
+						// 翻译：计算出的制动距离与实际制动距离不符。在找到更优模型之前，我们将停留点设置为当前位置，以确保车辆在围栏内停留。
 						loiter_center_lat_lon =  _gf_breach_avoidance.generateLoiterPointForMultirotor(gf_violation_type,
 									 &_geofence);
 						loiter_latitude = loiter_center_lat_lon(0);
 						loiter_longitude = loiter_center_lat_lon(1);
 
+						// 添加注释：生成多旋翼滞留高度
 						loiter_altitude_amsl = _gf_breach_avoidance.generateLoiterAltitudeForMulticopter(gf_violation_type);
 
 					} else {
 
+						// 添加注释：生成固定翼滞留点
 						loiter_center_lat_lon = _gf_breach_avoidance.generateLoiterPointForFixedWing(gf_violation_type, &_geofence);
 						loiter_latitude = loiter_center_lat_lon(0);
 						loiter_longitude = loiter_center_lat_lon(1);
 
+						// 添加注释：生成固定翼滞留高度
 						loiter_altitude_amsl = _gf_breach_avoidance.generateLoiterAltitudeForFixedWing(gf_violation_type);
 					}
 				}
@@ -1217,6 +1249,9 @@ float Navigator::get_default_acceptance_radius()
 	return _param_nav_acc_rad.get();
 }
 
+/**
+ * @brief 获取高度接受半径
+ */
 float Navigator::get_altitude_acceptance_radius()
 {
 	if (get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) {
@@ -1229,6 +1264,7 @@ float Navigator::get_altitude_acceptance_radius()
 
 		} else if (!force_vtol() && next_sp.type == position_setpoint_s::SETPOINT_TYPE_LAND && next_sp.valid) {
 			// Use separate (tighter) altitude acceptance for clean altitude starting point before FW landing
+			// 翻译：使用单独的（更紧的）高度接受半径，用于在固定翼着陆前的干净高度起始点
 			return _param_nav_fw_altl_rad.get();
 
 		} else {
@@ -1288,12 +1324,16 @@ float Navigator::get_cruising_throttle()
 	}
 }
 
+/**
+ * @brief 获取接受半径
+ */
 float Navigator::get_acceptance_radius()
 {
 	float acceptance_radius = get_default_acceptance_radius(); // the value specified in the parameter NAV_ACC_RAD
 	const position_controller_status_s &pos_ctrl_status = _position_controller_status_sub.get();
 
 	// for fixed-wing and rover, return the max of NAV_ACC_RAD and the controller acceptance radius (e.g. navigation switch distance)
+	// 翻译注释：对于固定翼和陆地车辆，返回 NAV_ACC_RAD 和控制器接受半径（例如导航切换距离）的最大值
 	if (_vstatus.vehicle_type != vehicle_status_s::VEHICLE_TYPE_ROTARY_WING
 	    && PX4_ISFINITE(pos_ctrl_status.acceptance_radius) && pos_ctrl_status.timestamp != 0) {
 
@@ -1303,6 +1343,11 @@ float Navigator::get_acceptance_radius()
 	return acceptance_radius;
 }
 
+/**
+ * @brief 获取航向是否被接受
+ * @param mission_item_yaw 任务航向
+ * @return true 表示航向被接受，false 表示航向未被接受
+ */
 bool Navigator::get_yaw_to_be_accepted(float mission_item_yaw)
 {
 	float yaw = mission_item_yaw;
@@ -1310,11 +1355,18 @@ bool Navigator::get_yaw_to_be_accepted(float mission_item_yaw)
 	return PX4_ISFINITE(yaw);
 }
 
+/**
+ * @brief 加载围栏文件
+ * @param filename 围栏文件名
+ */
 void Navigator::load_fence_from_file(const char *filename)
 {
 	_geofence.loadFromFile(filename);
 }
 
+/**
+ * @brief 处理交通冲突
+ */
 #if CONFIG_NAVIGATOR_ADSB
 void Navigator::take_traffic_conflict_action()
 {
@@ -1377,6 +1429,9 @@ void Navigator::check_traffic()
 }
 #endif // CONFIG_NAVIGATOR_ADSB
 
+/**
+ * @brief 终止land
+ */
 bool Navigator::abort_landing()
 {
 	// only abort if currently landing and position controller status updated
@@ -1448,6 +1503,9 @@ void Navigator::publish_mission_result()
 	_mission_result_updated = false;
 }
 
+/**
+ * @brief 设置任务失败的航向超时
+ */
 void Navigator::set_mission_failure_heading_timeout()
 {
 	if (!_mission_result.failure) {
@@ -1459,6 +1517,10 @@ void Navigator::set_mission_failure_heading_timeout()
 	}
 }
 
+/**
+ * @brief 添加注释：触发高度超时失败安全
+ * @param nav_state：导航状态
+ */
 void Navigator::trigger_hagl_failsafe(const uint8_t nav_state)
 {
 	if ((_navigator_status.failure != navigator_status_s::FAILURE_HAGL) || _navigator_status.nav_state != nav_state) {
@@ -1506,11 +1568,13 @@ void Navigator::publish_vehicle_command(vehicle_command_s &vehicle_command)
 
 	// The camera commands are not processed on the autopilot but will be
 	// sent to the mavlink links to other components.
+	// 翻译：相机命令不会在自动驾驶仪上处理，而是将它们发送到其他组件的MAVLink链接。
 	switch (vehicle_command.command) {
 	case NAV_CMD_IMAGE_START_CAPTURE:
 
 		if (static_cast<int>(vehicle_command.param3) == 1) {
 			// When sending a single capture we need to include the sequence number, thus camera_trigger needs to handle this command
+			// 翻译：当发送单个捕获时，需要包含序列号，因此camera_trigger需要处理此命令
 			vehicle_command.command = vehicle_command_s::VEHICLE_CMD_DO_DIGICAM_CONTROL;
 			vehicle_command.param1 = 0.f; // Session control hide lens
 			vehicle_command.param2 = 0.f; // Zoom absolute position
@@ -1522,7 +1586,9 @@ void Navigator::publish_vehicle_command(vehicle_command_s &vehicle_command)
 
 		} else {
 			// We are only capturing multiple if param3 is 0 or > 1.
+			// 翻译：如果param3为0或大于1，则我们只捕获多个。
 			// For multiple pictures the sequence number does not need to be included, thus there is no need to go through camera_trigger
+			// 翻译：对于多张照片，无需包含序列号，因此无需调用 camera_trigger。
 			_is_capturing_images = true;
 		}
 
@@ -1665,6 +1731,10 @@ Navigator::stop_capturing_images()
 	}
 }
 
+/**
+ * @brief 检查当前位置是否在地理围栏内
+ * @param pos 当前位置
+ */
 bool Navigator::geofence_allows_position(const vehicle_global_position_s &pos)
 {
 	if ((_geofence.getGeofenceAction() != geofence_result_s::GF_ACTION_NONE) &&
@@ -1678,6 +1748,11 @@ bool Navigator::geofence_allows_position(const vehicle_global_position_s &pos)
 	return true;
 }
 
+/**
+ * @brief 预处理停止点坐标
+ * @param lat 停止点纬度
+ * @param lon 停止点经度
+ */
 void Navigator::preproject_stop_point(double &lat, double &lon)
 {
 	// For multirotors we need to account for the braking distance, otherwise the vehicle will overshoot and go back
@@ -1706,6 +1781,9 @@ void Navigator::mode_completed(uint8_t nav_state, uint8_t result)
 }
 
 
+/**
+ * @brief 禁止相机触发器
+ */
 void Navigator::disable_camera_trigger()
 {
 	// Disable camera trigger
@@ -1717,6 +1795,9 @@ void Navigator::disable_camera_trigger()
 	publish_vehicle_command(vehicle_command);
 }
 
+/**
+ * @brief 设置云台中立位置
+ */
 void Navigator::set_gimbal_neutral()
 {
 	vehicle_command_s vehicle_command{};
@@ -1729,6 +1810,9 @@ void Navigator::set_gimbal_neutral()
 	publish_vehicle_command(vehicle_command);
 }
 
+/**
+ * @brief 激活设置云台中立位置的定时器
+ */
 void Navigator::activate_set_gimbal_neutral_timer(const hrt_abstime timestamp)
 {
 	if (_gimbal_neutral_activation_time == UINT64_MAX) {
@@ -1736,12 +1820,16 @@ void Navigator::activate_set_gimbal_neutral_timer(const hrt_abstime timestamp)
 	}
 }
 
+/**
+ * @brief 如果云台控制被激活，则中立化云台
+ */
 void Navigator::neutralize_gimbal_if_control_activated()
 {
 	const hrt_abstime now{hrt_absolute_time()};
 
 	// The time delay must be sufficiently long to allow flight tasks to complete its
 	// destruction and release gimbal control before the navigator takes control of the gimbal.
+	// 翻译：延迟时间必须足够长，以便飞行任务完成其销毁并释放云台控制，然后导航员才能控制云台。
 	if (_gimbal_neutral_activation_time != UINT64_MAX && now > _gimbal_neutral_activation_time + 250_ms) {
 		acquire_gimbal_control();
 		set_gimbal_neutral();
@@ -1750,6 +1838,9 @@ void Navigator::neutralize_gimbal_if_control_activated()
 	}
 }
 
+/**
+ * @brief 发送警告：由于地形原因，下降已停止。
+ */
 void Navigator::sendWarningDescentStoppedDueToTerrain()
 {
 	mavlink_log_critical(&_mavlink_log_pub, "Terrain collision risk, descent is stopped\t");

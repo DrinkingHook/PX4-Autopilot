@@ -193,6 +193,7 @@ bool GyroFFT::SensorSelectionUpdate(bool force)
 			}
 
 			// otherwise use sensor_gyro
+			// 翻译：如果找不到或订阅不到选定的传感器（%u），则使用 sensor_gyro
 			for (uint8_t i = 0; i < MAX_SENSOR_COUNT; i++) {
 				uORB::SubscriptionData<sensor_gyro_s> sensor_gyro_sub{ORB_ID(sensor_gyro), i};
 

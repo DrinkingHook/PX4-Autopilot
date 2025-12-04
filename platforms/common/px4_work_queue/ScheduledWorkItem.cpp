@@ -65,6 +65,9 @@ void ScheduledWorkItem::ScheduleAt(hrt_abstime time_us)
 	hrt_call_at(&_call, time_us, (hrt_callout)&ScheduledWorkItem::schedule_trampoline, this);
 }
 
+/**
+ * @brief 删除注释：
+ */
 void ScheduledWorkItem::ScheduleClear()
 {
 	// first clear any scheduled hrt call, then remove the item from the runnable queue

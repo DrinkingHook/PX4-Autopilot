@@ -106,7 +106,9 @@ void RtlDirect::on_active()
 
 	if (_rtl_state != RTLState::IDLE && _rtl_state != RTLState::LAND) {
 		//check for terrain collision and update altitude if needed
+		// 翻译：检查地形碰撞并更新高度，如果需要的话。
 		// note: it may trigger multiple times during a RTL, as every time the altitude set is reset
+		// 翻译注释：在RTL过程中，每次高度设置重置时，可能会触发多次。
 		updateAltToAvoidTerrainCollisionAndRepublishTriplet(_mission_item);
 	}
 
@@ -125,6 +127,12 @@ void RtlDirect::on_inactive()
 	_vehicle_status_sub.update();
 }
 
+/**
+ * @brief 设置RTL的起始位置和航向。
+ *
+ * @param rtl_position RTL的起始位置和航向。
+ * @param loiter_pos RTL的起始位置和航向。
+ */
 void RtlDirect::setRtlPosition(PositionYawSetpoint rtl_position, loiter_point_s loiter_pos)
 {
 	_home_pos_sub.update();
@@ -132,13 +140,16 @@ void RtlDirect::setRtlPosition(PositionYawSetpoint rtl_position, loiter_point_s 
 	parameters_update();
 
 	// Only allow to set a new approach if the mode is not activated yet.
+	// 翻译：如果模式未激活，则允许设置新的方法。
 	if (!isActive()) {
 		_destination = rtl_position;
 		_force_heading = false;
 
 		// Input sanitation
+		// 翻译：输入检查
 		if (!PX4_ISFINITE(_destination.lat) || !PX4_ISFINITE(_destination.lon)) {
 			// We don't have a valid rtl position, use the home position instead.
+			// 翻译：如果未找到有效的RTL位置，则使用家庭位置。
 			_destination.lat = _home_pos_sub.get().lat;
 			_destination.lon = _home_pos_sub.get().lon;
 			_destination.alt = _home_pos_sub.get().alt;
@@ -147,9 +158,11 @@ void RtlDirect::setRtlPosition(PositionYawSetpoint rtl_position, loiter_point_s 
 
 		if (!PX4_ISFINITE(_destination.alt)) {
 			// Not a valid rtl land altitude. Assume same altitude as home position.
+			// 翻译：如果未找到有效的RTL着陆高度，则使用家庭位置的高度。
 			_destination.alt = _home_pos_sub.get().alt;
 		}
 
+		// 校准降落点
 		_land_approach = sanitizeLandApproach(loiter_pos);
 
 		const float dist_to_destination{get_distance_to_next_waypoint(_land_approach.lat, _land_approach.lon, _destination.lat, _destination.lon)};
@@ -429,6 +442,9 @@ RtlDirect::RTLState RtlDirect::getActivationState()
 	return activation_state;
 }
 
+/**
+ * @brief 计算RTL时间估计：
+ */
 rtl_time_estimate_s RtlDirect::calc_rtl_time_estimate()
 {
 	_global_pos_sub.update();
@@ -446,7 +462,9 @@ rtl_time_estimate_s RtlDirect::calc_rtl_time_estimate()
 	}
 
 	// Calculate RTL time estimate only when there is a valid destination
+	// 翻译：计算RTL时间估计时，只有当目的地有效时才进行计算。
 	// TODO: Also check if vehicle position is valid
+	// 翻译：TODO：当车辆位置有效时，也进行检查。
 	if (PX4_ISFINITE(_destination.lat) && PX4_ISFINITE(_destination.lon) && PX4_ISFINITE(_destination.alt)) {
 
 		loiter_point_s land_approach = sanitizeLandApproach(_land_approach);
@@ -454,9 +472,11 @@ rtl_time_estimate_s RtlDirect::calc_rtl_time_estimate()
 		const float loiter_altitude = min(land_approach.height_m, _rtl_alt);
 
 		// Sum up time estimate for various segments of the landing procedure
+		// 翻译：汇总着陆过程各阶段的预计用时。
 		switch (start_state_for_estimate) {
 		case RTLState::CLIMBING: {
 				// Climb segment is only relevant if the drone is below return altitude
+				// 翻译：爬升段仅在无人机低于返回高度时才相关。
 				if ((_global_pos_sub.get().alt < _rtl_alt) || _enforce_rtl_alt) {
 					_rtl_time_estimator.addVertDistance(_rtl_alt - _global_pos_sub.get().alt);
 				}
@@ -479,14 +499,17 @@ rtl_time_estimate_s RtlDirect::calc_rtl_time_estimate()
 		// FALLTHROUGH
 		case RTLState::LOITER_DOWN: {
 				// when descending, the target altitude is stored in the current mission item
+				// 翻译：当下降时，目标高度存储在当前航点中。
 				float initial_altitude = 0.f;
 
 				if (start_state_for_estimate == RTLState::LOITER_DOWN) {
 					// Take current vehicle altitude as the starting point for calculation
+					// 翻译：以当前飞行器高度作为计算的起始点。
 					initial_altitude = _global_pos_sub.get().alt;  // TODO: Check if this is in the right frame
 
 				} else {
 					// Take the return altitude as the starting point for the calculation
+					// 翻译：以返回高度作为计算的起始点。
 					initial_altitude = _rtl_alt; // CLIMB and RETURN
 				}
 
@@ -496,6 +519,7 @@ rtl_time_estimate_s RtlDirect::calc_rtl_time_estimate()
 		// FALLTHROUGH
 		case RTLState::LOITER_HOLD:
 			// Add land delay (the short pause for deploying landing gear)
+			// 翻译：添加降落延迟（降落前的短暂暂停）。
 			_rtl_time_estimator.addWait(_param_rtl_land_delay.get());
 
 			if (_param_rtl_land_delay.get() < -FLT_EPSILON) { // Set to loiter infinitely and not land. Stop calculation here
@@ -508,6 +532,7 @@ rtl_time_estimate_s RtlDirect::calc_rtl_time_estimate()
 		case RTLState::TRANSITION_TO_MC:
 		case RTLState::MOVE_TO_LAND_HOVER: {
 				// Add cruise segment to home
+				// 翻译：添加巡航段到家。
 				float move_to_land_dist{0.f};
 				matrix::Vector2f direction{};
 
@@ -532,15 +557,18 @@ rtl_time_estimate_s RtlDirect::calc_rtl_time_estimate()
 				float initial_altitude;
 
 				// Add land segment (second landing phase) which comes after LOITER
+				// 翻译注释：添加着陆段（第二个着陆阶段），在LOITER之后。
 				if (start_state_for_estimate == RTLState::LAND) {
 					// If we are in this phase, use the current vehicle altitude  instead
 					// of the altitude paramteter to get a continous time estimate
+					// 翻译：如果我们在这个阶段，使用当前的车辆高度，而不是高度参数来获得连续的时间估计。
 					initial_altitude = _global_pos_sub.get().alt;
 
 
 				} else {
 					// If this phase is not active yet, simply use the loiter altitude,
 					// which is where the LAND phase will start
+					// 翻译：如果这个阶段还没有激活，简单地使用着陆高度，这是着陆阶段将开始的地方。
 					initial_altitude = loiter_altitude;
 				}
 
@@ -570,10 +598,15 @@ void RtlDirect::parameters_update()
 
 		// If any parameter updated, call updateParams() to check if
 		// this class attributes need updating (and do so).
+		// 翻译注释：如果任何参数更新，调用updateParams()检查是否需要更新此类属性（并执行更新）。
 		updateParams();
 	}
 }
 
+/**
+ * @brief 对降落点进行校正
+ * @param land_approach 降落点
+ */
 loiter_point_s RtlDirect::sanitizeLandApproach(loiter_point_s land_approach) const
 {
 	loiter_point_s sanitized_land_approach{land_approach};

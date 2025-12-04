@@ -229,6 +229,9 @@ int TattuCan::custom_command(int argc, char *argv[])
 	return print_usage("Unrecognized command.");
 }
 
+/**
+ * 默认设置为不编译到固件，若要编译到固件则在Kconfig修改为yes，且可选在RS设置为自启动
+ */
 extern "C" __EXPORT int tattu_can_main(int argc, char *argv[])
 {
 	return TattuCan::main(argc, argv);

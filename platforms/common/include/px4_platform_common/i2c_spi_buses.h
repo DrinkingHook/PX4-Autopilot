@@ -340,6 +340,8 @@ protected:
 	virtual ~I2CSPIDriver() = default;
 
 	// *INDENT-OFF* remove once there's astyle >3.1 in CI
+	// 这是虚函数重写的写法，final只能写在虚函数末尾表示，禁止更下层再重写
+	// 完整体写法为 void Run() final override
 	void Run() final
 	{
 		static_cast<T *>(this)->RunImpl();
