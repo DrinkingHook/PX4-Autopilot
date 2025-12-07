@@ -88,6 +88,7 @@ public:
 	bool subscribe() { return _subscription.subscribe(); }
 	void unsubscribe() { _subscription.unsubscribe(); }
 
+	// 快速判断这个 uORB 话题当前有没有人正在发布（有没有节点调用了 orb_advertise 创建了 publisher）
 	bool advertised() { return _subscription.advertised(); }
 
 	/**

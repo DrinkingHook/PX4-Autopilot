@@ -102,12 +102,19 @@ static_assert(sizeof(actuator_armed_s) == 16, "actuator_armed equality operator 
 #if defined(BOARD_HAS_POWER_CONTROL)
 static orb_advert_t tune_control_pub = nullptr;
 
+/**
+ * @brief 播放电源按钮按下音效
+ */
 static void play_power_button_down_tune()
 {
 	// Override any other tunes because power-off sound should have the priority
+	// 翻译：优先播放关机音效，因此请覆盖其他所有音效。
 	set_tune_override(tune_control_s::TUNE_ID_POWER_OFF);
 }
 
+/**
+ * @brief 停止播放音效
+ */
 static void stop_tune()
 {
 	tune_control_s tune_control{};
@@ -117,10 +124,15 @@ static void stop_tune()
 }
 
 static orb_advert_t power_button_state_pub = nullptr;
+
+/**
+ * @brief 电源按钮状态通知回调函数
+ */
 static int power_button_state_notification_cb(board_power_button_state_notification_e request)
 {
 	// Note: this can be called from IRQ handlers, so we publish a message that will be handled
 	// on the main thread of commander.
+	// 翻译：Note：这可以从 IRQ 处理程序中调用，因此我们发布一条消息，该消息将在指挥官的主线程上处理。
 	power_button_state_s button_state{};
 	button_state.timestamp = hrt_absolute_time();
 	const int ret = PWR_BUTTON_RESPONSE_SHUT_DOWN_PENDING;
@@ -204,6 +216,9 @@ static bool wait_for_vehicle_command_reply(const uint32_t cmd,
 	return false;
 }
 
+/**
+ * @brief 广播车辆命令
+ */
 static bool broadcast_vehicle_command(const uint32_t cmd, const float param1 = NAN, const float param2 = NAN,
 				      const float param3 = NAN,  const float param4 = NAN, const double param5 = static_cast<double>(NAN),
 				      const double param6 = static_cast<double>(NAN), const float param7 = NAN)
@@ -2203,6 +2218,9 @@ void Commander::systemPowerUpdate()
 	}
 }
 
+/**
+ * @brief 更新降落检测状态
+ */
 void Commander::landDetectorUpdate()
 {
 	if (_vehicle_land_detected_sub.updated()) {
@@ -2210,6 +2228,7 @@ void Commander::landDetectorUpdate()
 		_vehicle_land_detected_sub.copy(&_vehicle_land_detected);
 
 		// Only take actions if armed
+		// 翻译：仅在武装状态下执行操作。
 		if (isArmed()) {
 			if (!was_landed && _vehicle_land_detected.landed) {
 				mavlink_log_info(&_mavlink_log_pub, "Landing detected\t");
@@ -2224,13 +2243,19 @@ void Commander::landDetectorUpdate()
 			}
 
 			// automatically set or update home position
+			// 翻译：自动设置或更新家庭位置。
 			if (_param_com_home_en.get() && !_mission_in_progress && !_config_overrides.disable_auto_set_home) {
 				// set the home position when taking off
+				// 翻译：当起飞时设置家庭位置。
 				if (!_vehicle_land_detected.landed) {
 					if (was_landed) {
 						_home_position.setHomePosition();
 
 					} else if (_param_com_home_in_air.get()) {
+						// home位在空中的情况如：
+							// 1.飞控控制重启 
+							// 2.飞行器在空中时，安全开关被按下
+							// 3.抛飞
 						_home_position.setInAirHomePosition();
 					}
 				}
@@ -2249,7 +2274,10 @@ void Commander::safetyButtonUpdate()
 
 	if (safety_changed) {
 		// Notify the user if the status of the safety button changes
+		// 翻译注释：如果安全按钮的状态发生变化，则通知用户。
+		// 安全开关有效未禁用
 		if (!_safety.isSafetyDisabled()) {
+			// 安全开关关闭及解除保险状态
 			if (_safety.isSafetyOff()) {
 				set_tune(tune_control_s::TUNE_ID_NOTIFY_POSITIVE);
 

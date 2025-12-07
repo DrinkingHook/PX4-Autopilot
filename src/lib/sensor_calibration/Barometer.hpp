@@ -72,6 +72,7 @@ public:
 	const float &thermal_offset() const { return _thermal_offset; }
 
 	// apply offsets
+	// 翻译：应用偏移量
 	inline float Correct(const float &data) const
 	{
 		return data - _thermal_offset - _offset;

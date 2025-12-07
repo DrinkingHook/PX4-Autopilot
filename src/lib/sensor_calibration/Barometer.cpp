@@ -69,6 +69,10 @@ void Barometer::set_device_id(uint32_t device_id)
 	}
 }
 
+/**
+ * @brief 更新传感器校正数据
+ * @param force 是否强制更新
+ */
 void Barometer::SensorCorrectionsUpdate(bool force)
 {
 	// check if the selected sensor has updated

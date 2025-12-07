@@ -262,6 +262,7 @@ void tune_mission_fail(bool use_buzzer)
 
 /**
  * Blink green LED and play positive tune (if use_buzzer == true).
+ * 翻译：闪烁绿色LED并播放积极音调（如果use_buzzer == true）。
  */
 void tune_positive(bool use_buzzer)
 {
@@ -275,6 +276,7 @@ void tune_positive(bool use_buzzer)
 
 /**
  * Blink white LED and play neutral tune (if use_buzzer == true).
+ * 翻译：闪烁白色LED并播放中性音调（如果use_buzzer == true）。
  */
 void tune_neutral(bool use_buzzer)
 {
@@ -288,6 +290,7 @@ void tune_neutral(bool use_buzzer)
 
 /**
  * Blink red LED and play negative tune (if use_buzzer == true).
+ * 翻译：闪烁红色LED并播放消极音调（如果use_buzzer == true）。
  */
 void tune_negative(bool use_buzzer)
 {

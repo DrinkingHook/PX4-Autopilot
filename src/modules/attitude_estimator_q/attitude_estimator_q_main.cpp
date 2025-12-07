@@ -632,6 +632,7 @@ Attitude estimator q.
 	return 0;
 }
 
+// 早期简易四元数互补滤波姿态估计器，现在已几乎不再使用
 extern "C" __EXPORT int attitude_estimator_q_main(int argc, char *argv[])
 {
 	return AttitudeEstimatorQ::main(argc, argv);

@@ -499,6 +499,9 @@ a temperature cycle.
 	return 0;
 }
 
+/**
+ * @brief 根据实际温度变化对传感器数据做出实时补偿
+ */
 extern "C" __EXPORT int temperature_compensation_main(int argc, char *argv[])
 {
 	return TemperatureCompensationModule::main(argc, argv);

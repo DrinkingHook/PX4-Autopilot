@@ -209,6 +209,9 @@ ControlAllocator::update_allocation_method(bool force)
 	}
 }
 
+/**
+ * @brief 更新有效性的源
+ */
 bool
 ControlAllocator::update_effectiveness_source()
 {
@@ -217,6 +220,7 @@ ControlAllocator::update_effectiveness_source()
 	if (_effectiveness_source_id != source) {
 
 		// try to instanciate new effectiveness source
+		// 翻译：尝试实例化新的有效性源
 		ActuatorEffectiveness *tmp = nullptr;
 
 		switch (source) {
@@ -243,6 +247,7 @@ ControlAllocator::update_effectiveness_source()
 
 		case EffectivenessSource::ROVER_DIFFERENTIAL:
 			// rover_differential_control does allocation and publishes directly to actuator_motors topic
+			// 翻译：rover_differential_control执行分配并直接发布到actuator_motors主题
 			break;
 
 		case EffectivenessSource::FIXED_WING:
@@ -287,17 +292,21 @@ ControlAllocator::update_effectiveness_source()
 		}
 
 		// Replace previous source with new one
+		// 翻译：替换先前的源与新的源
 		if (tmp == nullptr) {
 			// It did not work, forget about it
+			// 翻译：它没有工作，忘记它
 			PX4_ERR("Actuator effectiveness init failed");
 			_param_ca_airframe.set((int)_effectiveness_source_id);
 
 		} else {
 			// Swap effectiveness sources
+			// 翻译：交换有效性源
 			delete _actuator_effectiveness;
 			_actuator_effectiveness = tmp;
 
 			// Save source id
+			// 翻译：保存源id
 			_effectiveness_source_id = source;
 		}
 
@@ -356,6 +365,7 @@ ControlAllocator::Run()
 			ActuatorEffectiveness::FlightPhase flight_phase{ActuatorEffectiveness::FlightPhase::HOVER_FLIGHT};
 
 			// Check if the current flight phase is HOVER or FIXED_WING
+			// 翻译：检查当前飞行阶段是否为悬停或固定翼
 			if (vehicle_status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
 				flight_phase = ActuatorEffectiveness::FlightPhase::HOVER_FLIGHT;
 
@@ -662,9 +672,11 @@ ControlAllocator::publish_control_allocator_status(int matrix_index)
 	control_allocator_status.unallocated_thrust[2] = unallocated_control(5);
 
 	// override control_allocator_status in customized saturation logic for certain effectiveness types
+	// 翻译：在某些有效性类型中，使用自定义饱和逻辑覆盖control_allocator_status
 	_actuator_effectiveness->getUnallocatedControl(matrix_index, control_allocator_status);
 
 	// Allocation success flags
+	// 翻译：分配成功标志
 	control_allocator_status.torque_setpoint_achieved = (Vector3f(control_allocator_status.unallocated_torque[0],
 			control_allocator_status.unallocated_torque[1],
 			control_allocator_status.unallocated_torque[2]).norm_squared() < 1e-6f);
@@ -673,6 +685,7 @@ ControlAllocator::publish_control_allocator_status(int matrix_index)
 			control_allocator_status.unallocated_thrust[2]).norm_squared() < 1e-6f);
 
 	// Actuator saturation
+	// 翻译：执行器饱和
 	const ActuatorVector &actuator_sp = _control_allocation[matrix_index]->getActuatorSetpoint();
 	const ActuatorVector &actuator_min = _control_allocation[matrix_index]->getActuatorMin();
 	const ActuatorVector &actuator_max = _control_allocation[matrix_index]->getActuatorMax();
@@ -687,6 +700,7 @@ ControlAllocator::publish_control_allocator_status(int matrix_index)
 	}
 
 	// Handled motor failures
+	// 翻译：处理电机故障
 	control_allocator_status.handled_motor_failure_mask = _handled_motor_failure_bitmask;
 	control_allocator_status.motor_stop_mask = _motor_stop_mask;
 

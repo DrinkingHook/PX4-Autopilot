@@ -88,10 +88,12 @@ void VotedSensorsUpdate::parametersUpdate()
 		    && (imu.get().accel_device_id != 0) && (imu.get().gyro_device_id != 0)) {
 
 			// find corresponding configured accel priority
+			// 翻译：找到与配置的加速度计优先级对应的配置
 			int8_t accel_cal_index = calibration::FindCurrentCalibrationIndex("ACC", imu.get().accel_device_id);
 
 			if (accel_cal_index >= 0) {
 				// found matching CAL_ACCx_PRIO
+				// 翻译：找到匹配的 CAL_ACCx_PRIO
 				int32_t accel_priority_old = _accel.priority_configured[uorb_index];
 
 				_accel.priority_configured[uorb_index] = calibration::GetCalibrationParamInt32("ACC", "PRIO", accel_cal_index);
@@ -103,6 +105,7 @@ void VotedSensorsUpdate::parametersUpdate()
 
 					} else {
 						// change relative priority to incorporate any sensor faults
+						// 翻译：更改相对优先级以包含任何传感器故障
 						int priority_change = _accel.priority_configured[uorb_index] - accel_priority_old;
 						_accel.priority[uorb_index] = math::constrain(_accel.priority[uorb_index] + priority_change, static_cast<int32_t>(1),
 									      static_cast<int32_t>(100));
@@ -111,10 +114,12 @@ void VotedSensorsUpdate::parametersUpdate()
 			}
 
 			// find corresponding configured gyro priority
+			// 翻译：找到相应的配置陀螺仪优先级
 			int8_t gyro_cal_index = calibration::FindCurrentCalibrationIndex("GYRO", imu.get().gyro_device_id);
 
 			if (gyro_cal_index >= 0) {
 				// found matching CAL_GYROx_PRIO
+				// 翻译：找到匹配的CAL_GYROx_PRIO
 				int32_t gyro_priority_old = _gyro.priority_configured[uorb_index];
 
 				_gyro.priority_configured[uorb_index] = calibration::GetCalibrationParamInt32("GYRO", "PRIO", gyro_cal_index);
@@ -126,6 +131,7 @@ void VotedSensorsUpdate::parametersUpdate()
 
 					} else {
 						// change relative priority to incorporate any sensor faults
+						// 翻译：更改相对优先级以包含任何传感器故障
 						int priority_change = _gyro.priority_configured[uorb_index] - gyro_priority_old;
 						_gyro.priority[uorb_index] = math::constrain(_gyro.priority[uorb_index] + priority_change, static_cast<int32_t>(1),
 									     static_cast<int32_t>(100));
@@ -136,6 +142,10 @@ void VotedSensorsUpdate::parametersUpdate()
 	}
 }
 
+/**
+ * @brief IMU数据轮询函数
+ * @param raw sensor_combined_s结构体
+ */
 void VotedSensorsUpdate::imuPoll(struct sensor_combined_s &raw)
 {
 	const hrt_abstime time_now_us = hrt_absolute_time();
@@ -147,6 +157,7 @@ void VotedSensorsUpdate::imuPoll(struct sensor_combined_s &raw)
 		    && _vehicle_imu_sub[uorb_index].update(&imu_report)) {
 
 			// copy corresponding vehicle_imu_status for accel & gyro error counts
+			// 翻译：复制相应的vehicle_imu_status以获取加速度计和陀螺仪的错误计数
 			vehicle_imu_status_s imu_status{};
 			_vehicle_imu_status_subs[uorb_index].copy(&imu_status);
 
@@ -154,11 +165,13 @@ void VotedSensorsUpdate::imuPoll(struct sensor_combined_s &raw)
 			_gyro_device_id[uorb_index] = imu_report.gyro_device_id;
 
 			// convert the delta velocities to an equivalent acceleration
+			// 翻译：将delta速度转换为等效加速度
 			const float accel_dt_inv = 1.e6f / (float)imu_report.delta_velocity_dt;
 			Vector3f accel_data = Vector3f{imu_report.delta_velocity} * accel_dt_inv;
 
 
 			// convert the delta angles to an equivalent angular rate
+			// 翻译：将delta角度转换为等效角速度
 			const float gyro_dt_inv = 1.e6f / (float)imu_report.delta_angle_dt;
 			Vector3f gyro_rate = Vector3f{imu_report.delta_angle} * gyro_dt_inv;
 
@@ -187,18 +200,22 @@ void VotedSensorsUpdate::imuPoll(struct sensor_combined_s &raw)
 	}
 
 	// find the best sensor
+	// 翻译：找到最佳传感器
 	int accel_best_index = _accel.last_best_vote;
 	int gyro_best_index = _gyro.last_best_vote;
 
 	if (!_parameter_update) {
 		// update current accel/gyro selection, skipped on cycles where parameters update
+		// 翻译：更新当前加速度/陀螺仪选择，跳过参数更新周期
 		_accel.voter.get_best(time_now_us, &accel_best_index);
 		_gyro.voter.get_best(time_now_us, &gyro_best_index);
 
 		if (!_param_sens_imu_mode.get() && ((_selection.timestamp != 0) || (_sensor_selection_sub.updated()))) {
 			// use sensor_selection to find best
+			// 翻译：使用传感器选择来找到最佳的
 			if (_sensor_selection_sub.update(&_selection)) {
 				// reset inconsistency checks against primary
+				// 翻译：重置与主传感器的一致性检查
 				for (int sensor_index = 0; sensor_index < MAX_SENSOR_COUNT; sensor_index++) {
 					_accel_diff[sensor_index].zero();
 					_gyro_diff[sensor_index].zero();
@@ -217,12 +234,14 @@ void VotedSensorsUpdate::imuPoll(struct sensor_combined_s &raw)
 
 		} else {
 			// use sensor voter to find best if SENS_IMU_MODE is enabled or ORB_ID(sensor_selection) has never published
+			// 翻译：如果 SENS_IMU_MODE 启用或 ORB_ID(sensor_selection) 从未发布，则使用传感器投票器查找最佳传感器
 			checkFailover(_accel, "Accel", events::px4::enums::sensor_type_t::accel);
 			checkFailover(_gyro, "Gyro", events::px4::enums::sensor_type_t::gyro);
 		}
 	}
 
 	// write data for the best sensor to output variables
+	// 翻译：将最佳传感器的数据写入输出变量
 	if ((accel_best_index >= 0) && (accel_best_index < MAX_SENSOR_COUNT) && (_accel_device_id[accel_best_index] != 0)
 	    && (gyro_best_index >= 0) && (gyro_best_index < MAX_SENSOR_COUNT) && (_gyro_device_id[gyro_best_index] != 0)) {
 
@@ -285,6 +304,13 @@ void VotedSensorsUpdate::imuPoll(struct sensor_combined_s &raw)
 	}
 }
 
+/**
+ * @brief 检查传感器故障转移
+ * @param sensor 传感器数据
+ * @param sensor_name 传感器名称
+ * @param sensor_type 传感器类型
+ * @return 是否发生故障转移
+ */
 bool VotedSensorsUpdate::checkFailover(SensorData &sensor, const char *sensor_name,
 				       events::px4::enums::sensor_type_t sensor_type)
 {
@@ -338,6 +364,7 @@ bool VotedSensorsUpdate::checkFailover(SensorData &sensor, const char *sensor_na
 				}
 
 				// reduce priority of failed sensor to the minimum
+				// 翻译：将故障传感器的优先级降低到最小值
 				sensor.priority[failover_index] = 1;
 			}
 		}
@@ -349,6 +376,11 @@ bool VotedSensorsUpdate::checkFailover(SensorData &sensor, const char *sensor_na
 	return false;
 }
 
+/**
+ * @brief 初始化传感器类
+ * @param sensor_data 传感器数据
+ * @param sensor_count_max 传感器数量最大值
+ */
 void VotedSensorsUpdate::initSensorClass(SensorData &sensor_data, uint8_t sensor_count_max)
 {
 	bool added = false;
@@ -365,6 +397,7 @@ void VotedSensorsUpdate::initSensorClass(SensorData &sensor_data, uint8_t sensor
 
 			if (i > 0) {
 				/* the first always exists, but for each further sensor, add a new validator */
+				// 翻译：第一个验证器始终存在，但对于每个后续传感器，都需要添加一个新的验证器。
 				if (sensor_data.voter.add_new_validator()) {
 					added = true;
 
@@ -376,12 +409,14 @@ void VotedSensorsUpdate::initSensorClass(SensorData &sensor_data, uint8_t sensor
 	}
 
 	// never decrease the sensor count, as we could end up with mismatching validators
+	// 翻译：永远不要减少传感器数量，因为我们可能会遇到不匹配的验证器。
 	if (max_sensor_index + 1 > sensor_data.subscription_count) {
 		sensor_data.subscription_count = max_sensor_index + 1;
 	}
 
 	if (added) {
 		// force parameter refresh if anything was added
+		// 翻译：如果添加了任何内容，则强制刷新参数。
 		parametersUpdate();
 	}
 }
@@ -396,11 +431,17 @@ void VotedSensorsUpdate::printStatus()
 	_accel.voter.print();
 }
 
+/**
+ * @brief 轮询传感器数据。
+ * @param raw 轮询到的传感器数据。
+ */
 void VotedSensorsUpdate::sensorsPoll(sensor_combined_s &raw)
 {
 	imuPoll(raw);
 
+	// 计算加速度不一致性
 	calcAccelInconsistency();
+	// 计算陀螺仪不一致性
 	calcGyroInconsistency();
 
 	sensors_status_imu_s status{};
@@ -438,6 +479,10 @@ void VotedSensorsUpdate::sensorsPoll(sensor_combined_s &raw)
 	}
 }
 
+/**
+ * @brief 设置传感器数据的相对时间戳。
+ * @param raw 轮询到的传感器数据。
+ */
 void VotedSensorsUpdate::setRelativeTimestamps(sensor_combined_s &raw)
 {
 	if (_last_accel_timestamp[_accel.last_best_vote]) {
@@ -446,6 +491,9 @@ void VotedSensorsUpdate::setRelativeTimestamps(sensor_combined_s &raw)
 	}
 }
 
+/**
+ * @brief 计算加速度不一致性。
+ */
 void VotedSensorsUpdate::calcAccelInconsistency()
 {
 	Vector3f accel_mean{};
@@ -471,6 +519,9 @@ void VotedSensorsUpdate::calcAccelInconsistency()
 	}
 }
 
+/**
+ * @brief 计算陀螺仪不一致性。
+ */
 void VotedSensorsUpdate::calcGyroInconsistency()
 {
 	Vector3f gyro_mean{};

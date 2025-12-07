@@ -179,8 +179,10 @@ int Sensors::parameters_update()
 
 	// 1. mark all existing sensor calibrations active even if sensor is missing
 	//    this preserves the calibration in the event of a parameter export while the sensor is missing
+	// 翻译：即使传感器缺失，也会将所有现有的传感器校准标记为活动状态。这样，在传感器缺失的情况下导出参数时，校准数据仍然有效。
 	// 2. ensure calibration slots are active for the number of sensors currently available
 	//    this to done to eliminate differences in the active set of parameters before and after sensor calibration
+	// 翻译：确保校准槽位与当前可用的传感器数量一致，以消除在传感器校准前后参数集中的差异。
 	for (uint8_t i = 0; i < MAX_SENSOR_COUNT; i++) {
 		// sensor_accel
 		{
@@ -281,10 +283,12 @@ void Sensors::diff_pres_poll()
 		const float temperature = air_data.ambient_temperature;
 
 		// push raw data into validator
+		// 翻译：将原始数据推入校验器中
 		float airspeed_input[3] { diff_pres.differential_pressure_pa, 0.0f, 0.0f };
 		_airspeed_validator.put(diff_pres.timestamp_sample, airspeed_input, diff_pres.error_count, 100); // TODO: real priority?
 
 		// accumulate average for publication
+		// 翻译：累积平均值以供发布
 		_diff_pres_timestamp_sum += diff_pres.timestamp_sample;
 		_diff_pres_pressure_sum += diff_pres.differential_pressure_pa;
 		_baro_pressure_sum += air_data.baro_pressure_pa;
@@ -293,6 +297,7 @@ void Sensors::diff_pres_poll()
 		if ((_diff_pres_count > 0) && hrt_elapsed_time(&_airspeed_last_publish) >= 50_ms) {
 
 			// average data and apply calibration offset (SENS_DPRES_OFF)
+			// 翻译：平均数据并应用校准偏移量 (SENS_DPRES_OFF)
 			const uint64_t timestamp_sample = _diff_pres_timestamp_sum / _diff_pres_count;
 			const float differential_pressure_pa = _diff_pres_pressure_sum / _diff_pres_count - _parameters.diff_pres_offset_pa;
 			const float baro_pressure_pa = _baro_pressure_sum / _diff_pres_count;
@@ -327,6 +332,7 @@ void Sensors::diff_pres_poll()
 						       differential_pressure_pa, baro_pressure_pa, temperature);
 
 			// assume that CAS = IAS as we don't have an CAS-scale here
+			// 翻译：假设 CAS = IAS，因为我们没有 CAS 标度
 			float true_airspeed_m_s = calc_TAS_from_CAS(indicated_airspeed_m_s, baro_pressure_pa, temperature);
 
 			if (PX4_ISFINITE(indicated_airspeed_m_s) && PX4_ISFINITE(true_airspeed_m_s)) {
@@ -427,9 +433,13 @@ void Sensors::InitializeVehicleGPSPosition()
 }
 #endif // CONFIG_SENSORS_VEHICLE_GPS_POSITION
 
+/**
+ * @brief 初始化车辆IMU
+ */
 void Sensors::InitializeVehicleIMU()
 {
 	// create a VehicleIMU instance for each accel/gyro pair
+	// 翻译：创建一个VehicleIMU实例，用于每个加速度计/陀螺仪对
 	for (uint8_t i = 0; i < MAX_SENSOR_COUNT; i++) {
 		if (_vehicle_imu_list[i] == nullptr) {
 
@@ -439,6 +449,8 @@ void Sensors::InitializeVehicleIMU()
 			if (accel_sub.advertised() && gyro_sub.advertised()) {
 				// if the sensors module is responsible for voting (SENS_IMU_MODE 1) then run every VehicleIMU in the same WQ
 				//   otherwise each VehicleIMU runs in a corresponding INSx WQ
+				// 翻译：如果传感器模块负责投票（SENS_IMU_MODE 1），则在同一个WQ中运行每个VehicleIMU
+				//   否则，每个VehicleIMU在相应的INSx WQ中运行
 				const bool multi_mode = (_param_sens_imu_mode.get() == 0);
 				const px4::wq_config_t &wq_config = multi_mode ? px4::ins_instance_to_wq(i) : px4::wq_configurations::INS0;
 
@@ -446,6 +458,7 @@ void Sensors::InitializeVehicleIMU()
 
 				if (imu != nullptr) {
 					// Start VehicleIMU instance and store
+					// 翻译：启动VehicleIMU实例并存储
 					if (imu->Start()) {
 						_vehicle_imu_list[i] = imu;
 
@@ -456,6 +469,7 @@ void Sensors::InitializeVehicleIMU()
 
 			} else {
 				// abort on first failure, try again later
+				// 翻译：在第一次失败时中止，稍后重试
 				return;
 			}
 		}
@@ -509,6 +523,7 @@ void Sensors::Run()
 	perf_begin(_loop_perf);
 
 	// check vehicle status for changes to publication state
+	// 翻译：检查车辆状态以更改发布状态
 	if (_vcontrol_mode_sub.updated()) {
 		vehicle_control_mode_s vcontrol_mode{};
 
@@ -519,6 +534,7 @@ void Sensors::Run()
 
 	// keep adding sensors as long as we are not armed,
 	// when not adding sensors poll for param updates
+	// 翻译：保持添加传感器，直到我们不武装，当不添加传感器时，轮询参数更新
 	if ((!_armed && hrt_elapsed_time(&_last_config_update) > 500_ms) || (_last_config_update == 0)) {
 
 		bool updated = false;
@@ -575,6 +591,7 @@ void Sensors::Run()
 		}
 
 		// sensor device id (not just orb_group_count) must be populated before IMU init can succeed
+		// 翻译：传感器设备ID（不仅仅是orb_group_count）必须在IMU初始化成功之前填充
 		_voted_sensors_update.initializeSensors();
 		InitializeVehicleIMU();
 
@@ -582,12 +599,14 @@ void Sensors::Run()
 
 	} else {
 		// check for parameter updates
+		// 翻译：检查参数更新
 		if (_parameter_update_sub.updated()) {
 			// clear update
 			parameter_update_s pupdate;
 			_parameter_update_sub.copy(&pupdate);
 
 			// update parameters from storage
+			// 翻译：从存储更新参数
 			parameters_update();
 			updateParams();
 		}
@@ -604,11 +623,13 @@ void Sensors::Run()
 
 #if defined(CONFIG_SENSORS_VEHICLE_AIRSPEED)
 	// check analog airspeed
+	// 翻译：检查模拟空速
 	adc_poll();
 	diff_pres_poll();
 #endif // CONFIG_SENSORS_VEHICLE_AIRSPEED
 
 	// backup schedule as a watchdog timeout
+	// 翻译：备份调度作为看门狗超时
 	ScheduleDelayed(10_ms);
 
 	perf_end(_loop_perf);

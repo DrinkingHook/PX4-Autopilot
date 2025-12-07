@@ -119,6 +119,14 @@ void DataValidatorGroup::set_equal_value_threshold(uint32_t threshold)
 	}
 }
 
+/**
+ * @brief 添加一组数据到验证器组中
+ * @param index 数据索引
+ * @param timestamp 时间戳
+ * @param val 数据值
+ * @param error_count 错误计数
+ * @param priority 优先级
+ */
 void DataValidatorGroup::put(unsigned index, uint64_t timestamp, const float val[3], uint32_t error_count,
 			     uint8_t priority)
 {

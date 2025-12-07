@@ -43,6 +43,10 @@ RpmControl::RpmControl(ModuleParams *parent) : ModuleParams(parent)
 	_pid.setIntegralLimit(PID_OUTPUT_LIMIT);
 };
 
+/**
+ * @brief 设置启动进度
+ * @param spoolup_progress 启动进度
+ */
 void RpmControl::setSpoolupProgress(float spoolup_progress)
 {
 	_spoolup_progress = spoolup_progress;
@@ -53,6 +57,9 @@ void RpmControl::setSpoolupProgress(float spoolup_progress)
 	}
 }
 
+/**
+ * @brief 获取执行器校正值：
+ */
 float RpmControl::getActuatorCorrection()
 {
 	hrt_abstime now = hrt_absolute_time();

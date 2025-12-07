@@ -99,6 +99,10 @@ float VehicleAirData::AirTemperatureUpdate(const float temperature_baro, Tempera
 	return math::constrain(temperature, TEMPERATURE_MIN_CELSIUS, TEMPERATURE_MAX_CELSIUS);
 }
 
+/**
+ * @brief 参数更新
+ * @param force 是否强制更新
+ */
 bool VehicleAirData::ParametersUpdate(bool force)
 {
 	// Check if parameters have changed
@@ -149,16 +153,22 @@ void VehicleAirData::Run()
 
 	bool updated[MAX_SENSOR_COUNT] {};
 
+	// 检查传感器是否已连接并更新状态
 	for (int uorb_index = 0; uorb_index < MAX_SENSOR_COUNT; uorb_index++) {
 
+		// 存储当前的发布状态
 		const bool was_advertised = _advertised[uorb_index];
 
+		// 当前还未曾发布过
 		if (!_advertised[uorb_index]) {
 			// use data's timestamp to throttle advertisement checks
+			// 翻译：利用数据的时间戳来限制广告检查次数
 			if ((_last_publication_timestamp[uorb_index] == 0)
 			    || (time_now_us > _last_publication_timestamp[uorb_index] + 1_s)) {
 
+				// 判断是否有人在发布此话题
 				if (_sensor_sub[uorb_index].advertised()) {
+					// 有人在发布，立马刷新状态
 					_advertised[uorb_index] = true;
 
 				} else {
@@ -167,23 +177,29 @@ void VehicleAirData::Run()
 			}
 		}
 
+		// 如果有人在发布，那么就更新传感器订阅和报告
 		if (_advertised[uorb_index]) {
 			int sensor_sub_updates = 0;
 			sensor_baro_s report;
 
+			// 循环读取积压的消息，最多 ORB_QUEUE_LENGTH
 			while ((sensor_sub_updates < sensor_baro_s::ORB_QUEUE_LENGTH) && _sensor_sub[uorb_index].update(&report)) {
 				sensor_sub_updates++;
 
 				if (_calibration[uorb_index].device_id() != report.device_id) {
+					// 记录这个硬件的 device_id
 					_calibration[uorb_index].set_device_id(report.device_id);
 					_priority[uorb_index] = _calibration[uorb_index].priority();
 				}
 
+				// 判断是否使能了校准
 				if (_calibration[uorb_index].enabled()) {
 
+					// 判断是否为传感器第一次执行(进入循环时未发布，判断时发现有人在发布)
 					if (!was_advertised) {
 						if (uorb_index > 0) {
 							/* the first always exists, but for each further sensor, add a new validator */
+							// 翻译：第一个广告始终存在，但对于每个后续传感器，都需要添加一个新的验证器。
 							if (!_voter.add_new_validator()) {
 								PX4_ERR("failed to add validator for %s %i", _calibration[uorb_index].SensorString(), uorb_index);
 							}
@@ -202,14 +218,20 @@ void VehicleAirData::Run()
 						ParametersUpdate(true);
 					}
 
+					// 估计器状态标志已更新
 					if (estimator_status_flags_updated && _selected_sensor_sub_index >= 0 && _selected_sensor_sub_index == uorb_index
 					    && estimator_status_flags.cs_baro_fault && !_last_status_baro_fault) {
+						// 翻译：1 为最低优先级，但仍处于启用状态
 						_priority[uorb_index] = 1; // 1 is min priority while still being enabled
 					}
 
 					// pressure corrected with offset (if available)
+					// 翻译：使用校准数据对压力进行校正
+					// 更新传感器校准数据
 					_calibration[uorb_index].SensorCorrectionsUpdate();
+					// 应用偏差
 					const float pressure_corrected = _calibration[uorb_index].Correct(report.pressure);
+					// 当前当地正确的气压场海平面气压值（QNH）
 					const float pressure_sealevel_pa = _param_sens_baro_qnh.get() * 100.f;
 
 					float data_array[3] {pressure_corrected, report.temperature, getAltitudeFromPressure(pressure_corrected, pressure_sealevel_pa)};
@@ -233,13 +255,17 @@ void VehicleAirData::Run()
 	}
 
 	// check for the current best sensor
+	// 翻译：检查当前最佳的传感器
 	int best_index = 0;
+	// 获取最佳的传感器索引
 	_voter.get_best(time_now_us, &best_index);
 
 	if (best_index >= 0) {
 		// handle selection change (don't process on same iteration as parameter update)
+		// 翻译：处理选择更改（不要与参数更新在同一迭代中处理）
 		if ((_selected_sensor_sub_index != best_index) && !parameter_update) {
 			// clear all registered callbacks
+			// 翻译：清理所有注册的回调
 			for (auto &sub : _sensor_sub) {
 				sub.unregisterCallback();
 			}
@@ -254,9 +280,11 @@ void VehicleAirData::Run()
 		}
 	}
 
+	// 判断相对校准数否完成
 	if (!_relative_calibration_done) {
 		_relative_calibration_done = UpdateRelativeCalibrations(time_now_us);
 
+	// 在启用GNSS高度气压自动校准的情况判断是否校准完成
 	} else if (!_baro_gnss_calibration_done && _param_sens_baro_autocal.get()) {
 		_baro_gnss_calibration_done = BaroGNSSAltitudeOffset();
 	}
@@ -332,6 +360,12 @@ void VehicleAirData::Run()
 	perf_end(_cycle_perf);
 }
 
+/**
+ * @brief 更新相对校准
+ *
+ * @param time_now_us 当前时间（微秒）
+ * @return bool 是否成功更新相对校准
+ */
 bool VehicleAirData::UpdateRelativeCalibrations(const hrt_abstime time_now_us)
 {
 	// delay calibration to allow all drivers to start up
@@ -361,6 +395,9 @@ bool VehicleAirData::UpdateRelativeCalibrations(const hrt_abstime time_now_us)
 	return false;
 }
 
+/**
+ * @brief 检查故障转移
+ */
 void VehicleAirData::CheckFailover(const hrt_abstime &time_now_us)
 {
 	// check failover and report (save failover report for a cycle where parameters didn't update)
@@ -472,6 +509,9 @@ void VehicleAirData::PrintStatus()
 	}
 }
 
+/**
+ * @brief 基于GNSS高度的气压偏移校准
+ */
 bool VehicleAirData::BaroGNSSAltitudeOffset()
 {
 	static constexpr float kEpvReq = 8.f;
