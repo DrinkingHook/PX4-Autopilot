@@ -55,6 +55,7 @@ Please continue reading for [upgrade instructions](#upgrade-guide).
 ### Sensors
 
 - Add [sbgECom INS driver](../sensor/sbgecom.md) ([PX4-Autopilot#24137](https://github.com/PX4/PX4-Autopilot/pull/24137))
+- Quick magnetometer calibration now supports specifying an arbitrary initial heading ([PX4-Autopilot#24637](https://github.com/PX4/PX4-Autopilot/pull/24637))
 
 ### Simulation
 
@@ -93,6 +94,7 @@ Please continue reading for [upgrade instructions](#upgrade-guide).
 
 - [Fixed Wing Takeoff mode](../flight_modes_fw/takeoff.md) will now keep climbing with level wings on position loss.
   A target takeoff waypoint can be set to control takeoff course and loiter altitude. ([PX4-Autopilot#25083](https://github.com/PX4/PX4-Autopilot/pull/25083)).
+- Automatically suppress angular rate oscillations using [Gain compression](../features_fw/gain_compression.md). ([PX4-Autopilot#25840: FW rate control: add gain compression algorithm](https://github.com/PX4/PX4-Autopilot/pull/25840))
 
 ### Rover
 

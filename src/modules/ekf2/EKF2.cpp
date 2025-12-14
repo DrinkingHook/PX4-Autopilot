@@ -2732,12 +2732,14 @@ void EKF2::UpdateSystemFlagsSample(ekf2_timestamps_s &ekf2_timestamps)
 		// vehicle_status
 		vehicle_status_s vehicle_status;
 
+		bool armed = false;
+
 		if (_status_sub.copy(&vehicle_status)
 		    && (ekf2_timestamps.timestamp < vehicle_status.timestamp + 3_s)) {
 
 			// initially set in_air from arming_state (will be overridden if land detector is available)
-			// 翻译：从 arming_state 初始设置 in_air（如果可用，将被覆盖）
-			flags.in_air = (vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_ARMED);
+			armed = (vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_ARMED);
+			flags.in_air = armed;
 
 			// let the EKF know if the vehicle motion is that of a fixed wing (forward flight only relative to wind)
 			// 翻译：让 EKF 知道车辆运动是否为固定翼（仅相对于风的前向飞行）
@@ -2764,6 +2766,9 @@ void EKF2::UpdateSystemFlagsSample(ekf2_timestamps_s &ekf2_timestamps)
 			flags.at_rest = vehicle_land_detected.at_rest;
 			flags.in_air = !vehicle_land_detected.landed;
 			flags.gnd_effect = vehicle_land_detected.in_ground_effect;
+
+			// Enable constant position fusion for engine warmup when landed and armed
+			flags.constant_pos = _param_ekf2_engine_wrm.get() && !flags.in_air && armed;
 		}
 
 		launch_detection_status_s launch_detection_status;
