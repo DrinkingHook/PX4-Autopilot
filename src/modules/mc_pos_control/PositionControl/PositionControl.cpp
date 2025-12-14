@@ -53,6 +53,12 @@ void PositionControl::setVelocityGains(const Vector3f &P, const Vector3f &I, con
 	_gain_vel_d = D;
 }
 
+/**
+* 设置前馈和位置控制执行的最大速度
+* @param vel_horizontal 水平速度限制
+* @param vel_up 向上速度限制
+* @param vel_down 向下速度限制
+*/
 void PositionControl::setVelocityLimits(const float vel_horizontal, const float vel_up, const float vel_down)
 {
 	_lim_vel_horizontal = vel_horizontal;
@@ -60,6 +66,11 @@ void PositionControl::setVelocityLimits(const float vel_horizontal, const float 
 	_lim_vel_down = vel_down;
 }
 
+/**
+* 设置控制器可输出的最小和最大集体归一化推力[0,1]
+* @param min 最小推力 例如 0.1或0
+* @param max 最大推力 例如 0.9或1
+*/
 void PositionControl::setThrustLimits(const float min, const float max)
 {
 	// make sure there's always enough thrust vector length to infer the attitude
@@ -72,6 +83,10 @@ void PositionControl::setHorizontalThrustMargin(const float margin)
 	_lim_thr_xy_margin = margin;
 }
 
+/**
+* 更新悬停推力而不立即影响输出通过调整积分器。
+* 这可以防止传播动态悬停推力信号直接输出到控制器。
+*/
 void PositionControl::updateHoverThrust(const float hover_thrust_new)
 {
 	// Given that the equation for thrust is T = a_sp * Th / g - Th
@@ -102,6 +117,11 @@ void PositionControl::setState(const PositionControlStates &states)
 	_vel_dot = states.acceleration;
 }
 
+/**
+* 通过所需的设定值
+* 注意：NAN 值意味着如果没有更高阶设定值，则不会出现前馈/离开不受控制的状态。
+* @param setpoint 设定点，包括在 update() 中执行的前馈
+*/
 void PositionControl::setInputSetpoint(const trajectory_setpoint_s &setpoint)
 {
 	_pos_sp = Vector3f(setpoint.position);
@@ -170,23 +190,24 @@ void PositionControl::_velocityControl(const float dt)
 	// 翻译：没有来自设置点或相应状态的控制输入，如果它们是NAN。
 	ControlMath::addIfNotNanVector3f(_acc_sp, acc_sp_velocity);
 
+	// 加速度控制
 	_accelerationControl();
 
 	// Integrator anti-windup in vertical direction
-	// 翻译：垂直方向积分反风化。
+	// 翻译：垂直方向积分器抗饱和
 	if ((_thr_sp(2) >= -_lim_thr_min && vel_error(2) >= 0.f) ||
 	    (_thr_sp(2) <= -_lim_thr_max && vel_error(2) <= 0.f)) {
 		vel_error(2) = 0.f;
 	}
 
 	// Prioritize vertical control while keeping a horizontal margin
-	// 翻译：优先垂直控制，同时保持水平余量。
+	// 翻译：优先考虑垂直控制，同时保持水平边距
 	const Vector2f thrust_sp_xy(_thr_sp);
 	const float thrust_sp_xy_norm = thrust_sp_xy.norm();
 	const float thrust_max_squared = math::sq(_lim_thr_max);
 
 	// Determine how much vertical thrust is left keeping horizontal margin
-	// 翻译：确定垂直推力，同时保持水平余量。
+	// 翻译：确定在保持水平余量的情况下还剩下多少垂直推力
 	const float allocated_horizontal_thrust = math::min(thrust_sp_xy_norm, _lim_thr_xy_margin);
 	const float thrust_z_max_squared = thrust_max_squared - math::sq(allocated_horizontal_thrust);
 
@@ -204,7 +225,7 @@ void PositionControl::_velocityControl(const float dt)
 	}
 
 	// Saturate thrust in horizontal direction
-	// 翻译：饱和水平推力。
+	// 翻译：饱和最大垂直推力
 	if (thrust_sp_xy_norm > thrust_max_xy) {
 		_thr_sp.xy() = thrust_sp_xy / thrust_sp_xy_norm * thrust_max_xy;
 	}
@@ -216,9 +237,9 @@ void PositionControl::_velocityControl(const float dt)
 	const Vector2f acc_sp_xy_produced = Vector2f(_thr_sp) * (CONSTANTS_ONE_G / _hover_thrust);
 
 	// The produced acceleration can be greater or smaller than the desired acceleration due to the saturations and the actual vertical thrust (computed independently).
-	// 翻译：由于饱和和实际垂直推力（独立计算），产生的加速度可能大于或小于所需的加速度。
+	// 翻译：对水平方向使用跟踪Anti-Windup：在饱和期间，积分器用于使输出不饱和
 	// The ARW loop needs to run if the signal is saturated only.
-	// 翻译：如果信号饱和，则需要运行ARW循环。
+	// 翻译：仅当信号饱和时才需要运行 ARW 循环。
 	if (_acc_sp.xy().norm_squared() > acc_sp_xy_produced.norm_squared()) {
 		const float arw_gain = 2.f / _gain_vel_p(0);
 		const Vector2f acc_sp_xy = _acc_sp.xy();
@@ -240,23 +261,43 @@ void PositionControl::_velocityControl(const float dt)
 void PositionControl::_accelerationControl()
 {
 	// Assume standard acceleration due to gravity in vertical direction for attitude generation
-	// 翻译：假设垂直方向上的标准重力加速度用于姿态生成。
+	// 翻译：假设垂直方向重力产生的标准加速度用于生成姿态
+	// 初始化竖直方向的“比力”（specific force），从机体加速度计视角
+	// 物理意义: 如果不控制，机体自由落体时 z 轴感受到 -g (负号因为机体 z 向下，重力表现为向上惯性力)
+	// 范围: 固定 -9.81 m/s² (CONSTANTS_ONE_G ≈ 9.81)
 	float z_specific_force = -CONSTANTS_ONE_G;
 
+	// 不忽略垂直加速度设定值以消除其对倾斜设定值的影响
+	// 如果不解耦水平/竖直加速度（默认模式），叠加竖直期望加速度
+	// 物理意义: 加入控制器想要的竖直加速度 _acc_sp(2) (NED: 向上为负，向下为正)
+	// 示例: 悬停 _acc_sp(2)=0 → z_specific_force=-9.81
+	//       向上加速 _acc_sp(2)=-5 → z_specific_force=-9.81-5=-14.81
+	// 范围: 一般 -20 ~ -5 (取决于 _acc_sp(2) ≈ -10 ~ +5 m/s²)
 	if (!_decouple_horizontal_and_vertical_acceleration) {
 		// Include vertical acceleration setpoint for better horizontal acceleration tracking
 		// 翻译：包括垂直加速度设定点以更好地跟踪水平加速度。
 		z_specific_force += _acc_sp(2);
 	}
 
+	// 期望的机体坐标系
 	Vector3f body_z = Vector3f(-_acc_sp(0), -_acc_sp(1), -z_specific_force).normalized();
+	// 限制倾斜角，防止侧翻
 	ControlMath::limitTilt(body_z, Vector3f(0, 0, 1), _lim_tilt);
 	// Convert to thrust assuming hover thrust produces standard gravity
 	// 翻译：假设悬停推力产生标准重力。
+	// collective_thrust_normalized = ( _acc_sp(2) / g ) × hover_thrust  -  hover_thrust
+        //                              = hover_thrust × ( _acc_sp(2)/g  -  1 )
+        // 这里是真正的推力计算， body_z只是期望的机体坐标系用作推力映射
 	const float thrust_ned_z = _acc_sp(2) * (_hover_thrust / CONSTANTS_ONE_G) - _hover_thrust;
 	// Project thrust to planned body attitude
 	// 翻译：将推力投影到计划的机身姿态。
+	// 计算 NED z 与 body_z 的夹角余弦 (投影因子)
+	// 检测机体 Z 轴（body_z）与 NED 向下方向（0,0,1）之间的对齐程度
 	const float cos_ned_body = (Vector3f(0, 0, 1).dot(body_z));
+	// 计算最终集体推力 (collective_thrust)，限幅避免过大/过小
+	// 物理意义: 先投影 thrust_ned_z / cos_ned_body (补偿倾斜)，然后取 min(..., -_lim_thr_min)
+	//           -_lim_thr_min ≈ -0.9 ~ -1.0 (最大向上推力)
+	//           确保 collective_thrust ≤ -_lim_thr_min (更负=更大推力)，但不低于某个最小 (避免坠落)
 	const float collective_thrust = math::min(thrust_ned_z / cos_ned_body, -_lim_thr_min);
 	_thr_sp = body_z * collective_thrust;
 }

@@ -315,6 +315,7 @@ PositionControlStates MulticopterPositionControl::set_vehicle_states(const vehic
 	const Vector2f position_xy(vehicle_local_position.x, vehicle_local_position.y);
 
 	// only set position states if valid and finite
+	// 翻译：仅在有效且有限的情况下设置位置状态
 	if (vehicle_local_position.xy_valid && position_xy.isAllFinite()) {
 		states.position.xy() = position_xy;
 
@@ -335,9 +336,11 @@ PositionControlStates MulticopterPositionControl::set_vehicle_states(const vehic
 		const Vector2f vel_xy_prev = _vel_xy_lp_filter.getState();
 
 		// vel xy notch filter, then low pass filter
+		// 翻译：vel xy 陷波滤波器，然后是低通滤波器
 		states.velocity.xy() = _vel_xy_lp_filter.update(_vel_xy_notch_filter.apply(velocity_xy));
 
 		// vel xy derivative low pass filter
+		// 翻译：vel xy 导数低通滤波器
 		states.acceleration.xy() = _vel_deriv_xy_lp_filter.update((_vel_xy_lp_filter.getState() - vel_xy_prev) / dt_s);
 
 	} else {
@@ -345,6 +348,7 @@ PositionControlStates MulticopterPositionControl::set_vehicle_states(const vehic
 		states.acceleration(0) = states.acceleration(1) = NAN;
 
 		// reset filters to prevent acceleration spikes when regaining velocity
+		// 翻译：重置过滤器以防止恢复速度时出现加速度峰值
 		_vel_xy_lp_filter.reset({});
 		_vel_xy_notch_filter.reset();
 		_vel_deriv_xy_lp_filter.reset({});
@@ -355,9 +359,11 @@ PositionControlStates MulticopterPositionControl::set_vehicle_states(const vehic
 		const float vel_z_prev = _vel_z_lp_filter.getState();
 
 		// vel z notch filter, then low pass filter
+		// 翻译：vel z 陷波滤波器，然后是低通滤波器
 		states.velocity(2) = _vel_z_lp_filter.update(_vel_z_notch_filter.apply(vehicle_local_position.vz));
 
 		// vel z derivative low pass filter
+		// 翻译：vel z 导数低通滤波器
 		states.acceleration(2) = _vel_deriv_z_lp_filter.update((_vel_z_lp_filter.getState() - vel_z_prev) / dt_s);
 
 	} else {
@@ -365,6 +371,7 @@ PositionControlStates MulticopterPositionControl::set_vehicle_states(const vehic
 		states.acceleration(2) = NAN;
 
 		// reset filters to prevent acceleration spikes when regaining velocity
+		// 翻译：重置过滤器以防止恢复速度时出现加速度峰值
 		_vel_z_lp_filter.reset({});
 		_vel_z_notch_filter.reset();
 		_vel_deriv_z_lp_filter.reset({});
@@ -384,6 +391,7 @@ void MulticopterPositionControl::Run()
 	}
 
 	// reschedule backup
+	// 翻译：重新安排备份
 	ScheduleDelayed(100_ms);
 
 	parameters_update(false);
@@ -428,6 +436,10 @@ void MulticopterPositionControl::Run()
 
 		// If a goto setpoint is available this publishes a trajectory setpoint to go there
 		// If trajectory_setpoint is published elsewhere, do not use the goto setpoint
+		// 翻译：如果转到设定点可用，则会发布前往那里的轨迹设定点
+		// 	如果 trajectory_setpoint 在其他地方发布，请勿使用 goto 设定点
+		// goto setpoint 是地面站发送的，相当于目标地点。而 trajectory_setpoint 则是Offboard（离板电脑）、Commander（任务）、避障模块、Planner发送的临时位置设定。
+		// 总的来说为 trajectory_setpoint 优先级比 goto setpoint 优先级高，并且后者为长期目标点
 		const bool goto_setpoint_enable = _vehicle_control_mode.flag_multicopter_position_control_enabled
 						  && !_trajectory_setpoint_sub.updated();
 
@@ -437,14 +449,17 @@ void MulticopterPositionControl::Run()
 
 		_trajectory_setpoint_sub.update(&_setpoint);
 
+		// 调整EKF重置设定点
 		adjustSetpointForEKFResets(vehicle_local_position, _setpoint);
 
 		if (_vehicle_control_mode.flag_multicopter_position_control_enabled) {
 			// set failsafe setpoint if there hasn't been a new
 			// trajectory setpoint since position control started
+			// 翻译：如果没有新的，则设置故障安全设定点自位置控制开始以来的轨迹设定点
 			if ((_setpoint.timestamp < _time_position_control_enabled)
 			    && (vehicle_local_position.timestamp_sample > _time_position_control_enabled)) {
 
+				// 生成故障安全设定点
 				_setpoint = generateFailsafeSetpoint(vehicle_local_position.timestamp_sample, states, false);
 			}
 		}
@@ -453,10 +468,13 @@ void MulticopterPositionControl::Run()
 		    && (_setpoint.timestamp >= _time_position_control_enabled)) {
 
 			// update vehicle constraints and handle smooth takeoff
+			// 翻译：更新车辆约束并处理平稳起飞
 			_vehicle_constraints_sub.update(&_vehicle_constraints);
 
 			// fix to prevent the takeoff ramp to ramp to a too high value or get stuck because of NAN
 			// TODO: this should get obsolete once the takeoff limiting moves into the flight tasks
+			// 翻译：修复以防止起飞坡道坡度过高或因 NAN 而卡住
+			// TODO：一旦起飞限制进入飞行任务，这应该会过时
 			if (!PX4_ISFINITE(_vehicle_constraints.speed_up) || (_vehicle_constraints.speed_up > _param_mpc_z_vel_max_up.get())) {
 				_vehicle_constraints.speed_up = _param_mpc_z_vel_max_up.get();
 			}
@@ -486,12 +504,14 @@ void MulticopterPositionControl::Run()
 				}
 
 				// override with defaults
+				// 翻译：使用默认值覆盖
 				_vehicle_constraints.speed_up = _param_mpc_z_vel_max_up.get();
 				_vehicle_constraints.speed_down = _param_mpc_z_vel_max_dn.get();
 			}
 
 			bool skip_takeoff = _param_com_throw_en.get();
 			// handle smooth takeoff
+			// 翻译：顺利起飞
 			_takeoff.updateTakeoffState(_vehicle_control_mode.flag_armed, _vehicle_land_detected.landed,
 						    _vehicle_constraints.want_takeoff,
 						    _vehicle_constraints.speed_up, skip_takeoff, vehicle_local_position.timestamp_sample);
@@ -505,21 +525,25 @@ void MulticopterPositionControl::Run()
 			}
 
 			// make sure takeoff ramp is not amended by acceleration feed-forward
+			// 翻译：确保起飞坡道不会被加速度前馈修正
 			if (_takeoff.getTakeoffState() == TakeoffState::rampup && PX4_ISFINITE(_setpoint.velocity[2])) {
 				_setpoint.acceleration[2] = NAN;
 			}
 
 			if (not_taken_off || flying_but_ground_contact) {
 				// we are not flying yet and need to avoid any corrections
+				// 翻译：我们还没有起飞，需要避免任何修正
 				_setpoint = PositionControl::empty_trajectory_setpoint;
 				_setpoint.timestamp = vehicle_local_position.timestamp_sample;
 				Vector3f(0.f, 0.f, 100.f).copyTo(_setpoint.acceleration); // High downwards acceleration to make sure there's no thrust
 
 				// prevent any integrator windup
+				// 翻译：防止任何积分饱和
 				_control.resetIntegral();
 			}
 
 			// limit tilt during takeoff ramupup
+			// 翻译：起飞加速时限制倾斜
 			const float tilt_limit_deg = (_takeoff.getTakeoffState() < TakeoffState::flight)
 						     ? _param_mpc_tiltmax_lnd.get() : _param_mpc_tiltmax_air.get();
 			_control.setTiltLimit(_tilt_limit_slew_rate.update(math::radians(tilt_limit_deg), dt));
@@ -530,6 +554,7 @@ void MulticopterPositionControl::Run()
 						 _param_mpc_z_vel_max_dn.get();
 
 			// Allow ramping from zero thrust on takeoff
+			// 翻译：允许起飞时从零推力斜坡
 			const float minimum_thrust = flying ? _param_mpc_thr_min.get() : 0.f;
 			_control.setThrustLimits(minimum_thrust, _param_mpc_thr_max.get());
 
@@ -555,6 +580,11 @@ void MulticopterPositionControl::Run()
 				// because it has less bias but blend it in across the landing speed range
 				//  <  MPC_LAND_SPEED: ramp up using altitude derivative without a step
 				//  >= MPC_LAND_SPEED: use altitude derivative
+				// 翻译：需要改变速度，但高度不受控制。
+				// 将速度设置为位置的导数
+				// 因为它的偏差较小，但在整个着陆速度范围内混合
+				// < MPC_LAND_SPEED：使用高度导数加速，无需步进
+				// >= MPC_LAND_SPEED：使用高度导数
 				float weighting = fminf(fabsf(_setpoint.velocity[2]) / _param_mpc_land_speed.get(), 1.f);
 				states.velocity(2) = vehicle_local_position.z_deriv * weighting + vehicle_local_position.vz * (1.f - weighting);
 			}
@@ -563,6 +593,7 @@ void MulticopterPositionControl::Run()
 			    && (!PX4_ISFINITE(_setpoint.position[0]) || !PX4_ISFINITE(_setpoint.position[1]))) {
 				// Horizontal velocity is not controlled, reset the integrators to avoid
 				// over-corrections when starting again.
+				// 翻译：水平速度不受控制，重置积分器以避免重新开始时过度修正。
 				_control.resetIntegralXY();
 			}
 
@@ -571,14 +602,18 @@ void MulticopterPositionControl::Run()
 			const hrt_abstime now = hrt_absolute_time();
 
 			// Run position control
+			// 翻译：运行位置控制
 			if (_control.update(dt)) {
 
 				// Valid control update - store for fallback
+				// 翻译：有效的控制更新 - 存储备用
 				_last_valid_setpoint = _setpoint;
 
 			} else {
 
 				// Initial update failed - Try fallback if within timeout
+				// 翻译：初始更新失败 - 如果在超时内尝试回退
+				// 当前的设定值存在错误值，尝试使用上一次的设定值
 				if (now < _last_valid_setpoint.timestamp + 200_ms) {
 					// Use last valid setpoint
 					adjustSetpointForEKFResets(vehicle_local_position, _last_valid_setpoint);
@@ -586,6 +621,8 @@ void MulticopterPositionControl::Run()
 				}
 
 				// Still failing / not within timeout - Go to failsafe
+				// 翻译：仍然失败/不在超时内 - 转到故障保护
+				// 使用上一次的设定值如果依然无效，那么使用故障保护设定点
 				if (!_control.update(dt)) {
 
 					_vehicle_constraints = {0, NAN, NAN, false, {}}; // reset constraints
@@ -600,12 +637,16 @@ void MulticopterPositionControl::Run()
 			// Publish internal position control setpoints
 			// on top of the input/feed-forward setpoints these containt the PID corrections
 			// This message is used by other modules (such as Landdetector) to determine vehicle intention.
+			// 发布内部位置控制设定点
+			// 在输入/前馈设定点之上，这些设定点包含 PID 校正
+			// 该消息被其他模块（例如LandDetector）用来确定车辆意图。
 			vehicle_local_position_setpoint_s local_pos_sp{};
 			_control.getLocalPositionSetpoint(local_pos_sp);
 			local_pos_sp.timestamp = hrt_absolute_time();
 			_local_pos_sp_pub.publish(local_pos_sp);
 
 			// Publish attitude setpoint output
+			// 翻译：发布姿态设定点输出
 			vehicle_attitude_setpoint_s attitude_setpoint{};
 			_control.getAttitudeSetpoint(attitude_setpoint);
 			attitude_setpoint.timestamp = hrt_absolute_time();
@@ -613,12 +654,14 @@ void MulticopterPositionControl::Run()
 
 		} else {
 			// an update is necessary here because otherwise the takeoff state doesn't get skipped with non-altitude-controlled modes
+			// 翻译：这里需要进行更新，因为否则非高度控制模式不会跳过起飞状态
 			_takeoff.updateTakeoffState(_vehicle_control_mode.flag_armed, _vehicle_land_detected.landed, false, 10.f, true,
 						    vehicle_local_position.timestamp_sample);
 			_control.resetIntegral();
 		}
 
 		// Publish takeoff status
+		// 翻译：发布起飞状态
 		const uint8_t takeoff_state = static_cast<uint8_t>(_takeoff.getTakeoffState());
 
 		if (takeoff_state != _takeoff_status_pub.get().takeoff_state
@@ -633,10 +676,20 @@ void MulticopterPositionControl::Run()
 	perf_end(_cycle_perf);
 }
 
+/**
+ * @brief 生成故障安全设定点
+ * 生成设定点以桥接不可用的可执行设定点。
+ * 用于处理尚未生成正确设定值以及接收到的设定值无效时的转换。
+ * 这应该只在转换时短暂发生，而绝不会在模式操作期间或按设计发生。
+ * @param now 当前时间
+ * @param states 状态
+ * @param warn 是否警告
+ */
 trajectory_setpoint_s MulticopterPositionControl::generateFailsafeSetpoint(const hrt_abstime &now,
 		const PositionControlStates &states, bool warn)
 {
 	// rate limit the warnings
+	// 翻译：限制警告的速率
 	warn = warn && (now - _last_warn) > 2_s;
 
 	if (warn) {
@@ -647,16 +700,20 @@ trajectory_setpoint_s MulticopterPositionControl::generateFailsafeSetpoint(const
 	trajectory_setpoint_s failsafe_setpoint = PositionControl::empty_trajectory_setpoint;
 	failsafe_setpoint.timestamp = now;
 
+	// 当前水平速度是有效数字 → 我们有能力刹住车
 	if (Vector2f(states.velocity).isAllFinite()) {
 		// don't move along xy
+		// 翻译：不要沿着xy移动
 		failsafe_setpoint.velocity[0] = failsafe_setpoint.velocity[1] = 0.f;
 
 		if (warn) {
 			PX4_WARN("Failsafe: stop and wait");
 		}
 
+	// 水平速度本身都是 NaN/inf → 完全不知道自己在哪飞 → 已经刹不住了
 	} else {
 		// descend with land speed since we can't stop
+		// 翻译：以陆地速度下降，因为我们无法停下来
 		failsafe_setpoint.acceleration[0] = failsafe_setpoint.acceleration[1] = 0.f;
 		failsafe_setpoint.velocity[2] = _param_mpc_land_speed.get();
 
@@ -665,14 +722,18 @@ trajectory_setpoint_s MulticopterPositionControl::generateFailsafeSetpoint(const
 		}
 	}
 
+	// 当前垂直速度是有效数字，则将其设置为0让其稳稳停住
 	if (PX4_ISFINITE(states.velocity(2))) {
 		// don't move along z if we can stop in all dimensions
+		// 翻译：如果我们可以在所有维度上停止，就不要沿着 z 移动
 		if (!PX4_ISFINITE(failsafe_setpoint.velocity[2])) {
 			failsafe_setpoint.velocity[2] = 0.f;
 		}
 
+	// 为无效值不知道往哪里飞，则将其设置为较小的向上加速度
 	} else {
 		// emergency descend with a bit below hover thrust
+		// 翻译：紧急下降，略低于悬停推力
 		failsafe_setpoint.velocity[2] = NAN;
 		failsafe_setpoint.acceleration[2] = .3f;
 
@@ -684,33 +745,45 @@ trajectory_setpoint_s MulticopterPositionControl::generateFailsafeSetpoint(const
 	return failsafe_setpoint;
 }
 
+/**
+* @brief 使用任何 EKF 重置增量调整现有（或旧的）设定点并更新本地计数器
+*
+* @param[in]vehicle_local_position 结构体包含 EKF 重置增量和计数器
+* @param[out]setpoint 要调整的设定点轨迹设定点结构
+*/
 void MulticopterPositionControl::adjustSetpointForEKFResets(const vehicle_local_position_s &vehicle_local_position,
 		trajectory_setpoint_s &setpoint)
 {
 	if ((setpoint.timestamp != 0) && (setpoint.timestamp < vehicle_local_position.timestamp)) {
+		// 水平速度reset
 		if (vehicle_local_position.vxy_reset_counter != _vxy_reset_counter) {
 			setpoint.velocity[0] += vehicle_local_position.delta_vxy[0];
 			setpoint.velocity[1] += vehicle_local_position.delta_vxy[1];
 		}
 
+		// 垂直速度reset
 		if (vehicle_local_position.vz_reset_counter != _vz_reset_counter) {
 			setpoint.velocity[2] += vehicle_local_position.delta_vz;
 		}
 
+		// 水平位置跳变
 		if (vehicle_local_position.xy_reset_counter != _xy_reset_counter) {
 			setpoint.position[0] += vehicle_local_position.delta_xy[0];
 			setpoint.position[1] += vehicle_local_position.delta_xy[1];
 		}
 
+		// 位置reset(GPS位置信息跳变)
 		if (vehicle_local_position.z_reset_counter != _z_reset_counter) {
 			setpoint.position[2] += vehicle_local_position.delta_z;
 		}
 
+		// 偏航reset
 		if (vehicle_local_position.heading_reset_counter != _heading_reset_counter) {
 			setpoint.yaw = wrap_pi(setpoint.yaw + vehicle_local_position.delta_heading);
 		}
 	}
 
+	// 即使 setpoint 已经是最新的，也要让内部滤波器知道跳变了，否则低通滤波器会把跳变当成噪声慢慢滤掉，导致延迟
 	if (vehicle_local_position.vxy_reset_counter != _vxy_reset_counter) {
 		_vel_xy_lp_filter.reset(_vel_xy_lp_filter.getState() + Vector2f(vehicle_local_position.delta_vxy));
 		_vel_xy_notch_filter.reset();
@@ -722,6 +795,7 @@ void MulticopterPositionControl::adjustSetpointForEKFResets(const vehicle_local_
 	}
 
 	// save latest reset counters
+	// 翻译：保存最新的重置计数器
 	_vxy_reset_counter = vehicle_local_position.vxy_reset_counter;
 	_vz_reset_counter = vehicle_local_position.vz_reset_counter;
 	_xy_reset_counter = vehicle_local_position.xy_reset_counter;

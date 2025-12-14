@@ -228,6 +228,8 @@ MulticopterAttitudeControl::generate_attitude_setpoint(const Quatf &q, float dt)
 
 	// Align the desired tilt with the yaw setpoint
 	// 翻译：将期望的倾斜与偏航设定点对齐。
+	// 先应用倾斜旋转（q_sp_rp），再在那个基础上应用偏航旋转（q_sp_yaw），飞机先倾斜产生前进方向，然后整体机头对准设定的 yaw 方向（典型的多旋翼“机头不随倾斜转”的感觉）。
+	// 如果为 q_sp = q_sp_rp * q_sp_yaw 飞机倾斜方向会跟着机头转（像固定翼或直升机那种“机头始终对准飞行方向”的感觉），这不是多旋翼手动模式想要的。
 	Quatf q_sp = q_sp_yaw * q_sp_rp;
 
 	q_sp.copyTo(attitude_setpoint.q_d);
@@ -353,6 +355,7 @@ MulticopterAttitudeControl::Run()
 
 			// Check for new attitude setpoint
 			// 翻译：检查是否有新的姿态设定点。
+			// 设定点在上方 generate_attitude_setpoint(q, dt)函数中发布
 			if (_vehicle_attitude_setpoint_sub.updated()) {
 				vehicle_attitude_setpoint_s vehicle_attitude_setpoint;
 

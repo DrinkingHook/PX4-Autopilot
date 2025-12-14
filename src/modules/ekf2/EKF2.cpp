@@ -777,6 +777,7 @@ void EKF2::Run()
 		const hrt_abstime now = imu_sample_new.time_us;
 
 		// push imu data into estimator
+		// 翻译：将imu数据推入估计器。
 		_ekf.setIMUData(imu_sample_new);
 		PublishAttitude(now); // publish attitude immediately (uses quaternion from output predictor)
 
@@ -1071,6 +1072,7 @@ void EKF2::PublishAttitude(const hrt_abstime &timestamp)
 {
 	if (_ekf.attitude_valid()) {
 		// generate vehicle attitude quaternion data
+		// 翻译：生成车辆姿态四元数数据。
 		vehicle_attitude_s att;
 		att.timestamp_sample = timestamp;
 		_ekf.getQuaternion().copyTo(att.q);
@@ -1082,6 +1084,8 @@ void EKF2::PublishAttitude(const hrt_abstime &timestamp)
 	}  else if (_replay_mode) {
 		// in replay mode we have to tell the replay module not to wait for an update
 		// we do this by publishing an attitude with zero timestamp
+		// 翻译：在回放模式下，我们必须告诉回放模块不要等待更新。
+		// 我们通过发布一个带有零时间戳的姿态来做到这一点。
 		vehicle_attitude_s att{};
 		_attitude_pub.publish(att);
 	}

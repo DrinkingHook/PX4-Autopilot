@@ -141,6 +141,10 @@ public:
 	 * Set the normalized hover thrust
 	 * @param hover_thrust [HOVER_THRUST_MIN, HOVER_THRUST_MAX] with which the vehicle hovers not accelerating down or up with level orientation
 	 */
+	/**
+	* 设置标准化悬停推力
+	* @param hide_thrust [HOVER_THRUST_MIN, HOVER_THRUST_MAX] 车辆悬停时不会以水平方向加速向下或向上
+	*/
 	void setHoverThrust(const float hover_thrust) { _hover_thrust = math::constrain(hover_thrust, HOVER_THRUST_MIN, HOVER_THRUST_MAX); }
 
 	/**
@@ -233,6 +237,7 @@ private:
 	float _lim_thr_xy_margin{}; ///< Margin to keep for horizontal control when saturating prioritized vertical thrust
 	float _lim_tilt{}; ///< Maximum tilt from level the output attitude is allowed to have
 
+	// 翻译：车辆悬停时的推力 [HOVER_THRUST_MIN, HOVER_THRUST_MAX]，不以水平方向向下或向上加速
 	float _hover_thrust{}; ///< Thrust [HOVER_THRUST_MIN, HOVER_THRUST_MAX] with which the vehicle hovers not accelerating down or up with level orientation
 	bool _decouple_horizontal_and_vertical_acceleration{true}; ///< Ignore vertical acceleration setpoint to remove its effect on the tilt setpoint
 

@@ -236,6 +236,11 @@ bool Ekf::initialiseTilt()
 	return true;
 }
 
+/**
+ * @brief 预测状态：
+ * 将imu数据推入估计器。
+ * @param imu_delayed imu数据
+ */
 void Ekf::predictState(const imuSample &imu_delayed)
 {
 	if (std::fabs(_gpos.latitude_rad() - _earth_rate_lat_ref_rad) > math::radians(1.0)) {
@@ -244,43 +249,53 @@ void Ekf::predictState(const imuSample &imu_delayed)
 	}
 
 	// apply imu bias corrections
+	// 翻译：应用 IMU 偏差校正
 	const Vector3f delta_ang_bias_scaled = getGyroBias() * imu_delayed.delta_ang_dt;
 	Vector3f corrected_delta_ang = imu_delayed.delta_ang - delta_ang_bias_scaled;
 
 	// subtract component of angular rate due to earth rotation
+	// 翻译：减去地球自转引起的角速度分量
 	corrected_delta_ang -= _R_to_earth.transpose() * _earth_rate_NED * imu_delayed.delta_ang_dt;
 
 	const Quatf dq(AxisAnglef{corrected_delta_ang});
 
 	// rotate the previous quaternion by the delta quaternion using a quaternion multiplication
+	// 翻译：使用四元数乘法将前一个四元数旋转 delta 四元数
 	_state.quat_nominal = (_state.quat_nominal * dq).normalized();
 	_R_to_earth = Dcmf(_state.quat_nominal);
 
 	// Calculate an earth frame delta velocity
+	// 翻译：计算地球框架下的速度增量
 	const Vector3f delta_vel_bias_scaled = getAccelBias() * imu_delayed.delta_vel_dt;
 	const Vector3f corrected_delta_vel = imu_delayed.delta_vel - delta_vel_bias_scaled;
 	const Vector3f corrected_delta_vel_ef = _R_to_earth * corrected_delta_vel;
 
 	// save the previous value of velocity so we can use trapzoidal integration
+	// 翻译：保存先前的速度值，以便我们可以使用梯形积分
 	const Vector3f vel_last = _state.vel;
 
 	// calculate the increment in velocity using the current orientation
+	// 翻译：使用当前的姿态计算速度增量
 	_state.vel += corrected_delta_vel_ef;
 
 	// compensate for acceleration due to gravity, Coriolis and transport rate
+	// 翻译：补偿重力加速度、Coriolis 加速度和传输速率
 	const Vector3f gravity_acceleration(0.f, 0.f, CONSTANTS_ONE_G); // simplistic model
 	const Vector3f coriolis_acceleration = -2.f * _earth_rate_NED.cross(vel_last);
 	const Vector3f transport_rate = -_gpos.computeAngularRateNavFrame(vel_last).cross(vel_last);
 	_state.vel += (gravity_acceleration + coriolis_acceleration + transport_rate) * imu_delayed.delta_vel_dt;
 
 	// predict position states via trapezoidal integration of velocity
+	// 翻译：通过速度的梯形积分预测位置状态
 	_gpos += (vel_last + _state.vel) * imu_delayed.delta_vel_dt * 0.5f;
 	_state.pos(2) = -_gpos.altitude();
 
 	// constrain states
+	// 翻译：约束状态
 	_state.vel = matrix::constrain(_state.vel, -_params.ekf2_vel_lim, _params.ekf2_vel_lim);
 
 	// calculate a filtered horizontal acceleration this are used for manoeuvre detection elsewhere
+	// 翻译：计算一个平滑的水平加速度，用于其他地方的机动检测
 	_accel_horiz_lpf.update(corrected_delta_vel_ef.xy() / imu_delayed.delta_vel_dt, imu_delayed.delta_vel_dt);
 }
 

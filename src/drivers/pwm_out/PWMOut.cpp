@@ -125,6 +125,12 @@ bool PWMOut::update_pwm_out_state(bool on)
 	return true;
 }
 
+/**
+ * @brief 更新输出
+ * @param outputs 输出数组
+ * @param num_outputs 输出数量
+ * @param num_control_groups_updated 控制组更新数量
+ */
 bool PWMOut::updateOutputs(uint16_t outputs[MAX_ACTUATORS],
 			   unsigned num_outputs, unsigned num_control_groups_updated)
 {
@@ -133,6 +139,7 @@ bool PWMOut::updateOutputs(uint16_t outputs[MAX_ACTUATORS],
 		for (size_t i = 0; i < num_outputs; i++) {
 			if (!_mixing_output.isFunctionSet(i)) {
 				// do not run any signal on disabled channels
+				// 翻译：不要在禁用的通道上运行任何信号
 				outputs[i] = 0;
 			}
 

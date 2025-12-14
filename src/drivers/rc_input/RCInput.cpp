@@ -88,6 +88,8 @@ RCInput::init()
 
 	// dsm_init sets some file static variables and returns a file descriptor
 	// it also powers on the radio if needed
+	// 翻译：dsm_init 设置某些文件的静态变量，返回一个文件描述符，并且
+	// 如果需要的话，还能让无线电机器开机。
 	_rcs_fd = dsm_init(_device);
 
 	if (_rcs_fd < 0) {
@@ -114,6 +116,8 @@ RCInput::init()
 	// If we use the same STM32 pin for PPM input as well as serial input, we
 	// need to configure the serial port, as long as we're actually using that
 	// serial device.
+	// 翻译：如果我们使用同一个STM32 pins来输入 PPM 信息和同时也用作序
+	// 列输入，那么我们就需要配置序列端口，至少是当我们实际使用这个序列设备的时候。
 	if (strcmp(_device, RC_SERIAL_PORT) == 0) {
 		px4_arch_configgpio(RC_SERIAL_PORT_SHARED_PPM_PIN_GPIO_RX);
 	}

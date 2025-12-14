@@ -92,16 +92,20 @@ matrix::Vector3f AttitudeControl::update(const Quatf &q) const
 	qd_dyaw(3) = math::constrain(qd_dyaw(3), -1.f, 1.f);
 
 	// scale the delta yaw angle and re-combine the desired attitude
+	// 翻译：调整偏航角增量并重新组合所需姿态
 	qd = qd_red * Quatf(cosf(_yaw_w * acosf(qd_dyaw(0))), 0.f, 0.f, sinf(_yaw_w * asinf(qd_dyaw(3))));
 
 	// quaternion attitude control law, qe is rotation from q to qd
+	// 翻译：四元数姿态控制律，qe 是从 q 到 qd 的旋转
 	const Quatf qe = q.inversed() * qd;
 
 	// using sin(alpha/2) scaled rotation axis as attitude error (see quaternion definition by axis angle)
 	// also taking care of the antipodal unit quaternion ambiguity
+	// 翻译：使用 sin(alpha/2) 缩放的旋转轴作为姿态误差（参见四元数定义，按轴角，同时考虑对跖点单位四元数的歧义性）。
 	const Vector3f eq = 2.f * qe.canonical().imag();
 
 	// calculate angular rates setpoint
+	// 翻译：计算角速率设定点
 	Vector3f rate_setpoint = eq.emult(_proportional_gain);
 
 	// Feed forward the yaw setpoint rate.
@@ -111,6 +115,13 @@ matrix::Vector3f AttitudeControl::update(const Quatf &q) const
 	// and multiply it by the yaw setpoint rate (yawspeed_setpoint).
 	// This yields a vector representing the commanded rotatation around the world z-axis expressed in the body frame
 	// such that it can be added to the rates setpoint.
+	// 翻译：前馈偏航设定值速率。
+	// yawspeed_setpoint 是前馈的绕世界坐标系 z 轴的指令旋转，
+	// 但我们需要将其应用到机体坐标系中（因为 _rates_sp 是在机体坐标系中表示的）。
+	// 因此，我们通过取 R.transposed（== q.inversed）的最后一列来推断世界坐标系 z 轴（在机体坐标系中表示）。
+	// 并将其乘以偏航设定值速率 (yawspeed_setpoint)。
+	// 这将产生一个向量，表示在机体坐标系中表示的绕世界坐标系 z 轴的指令旋转，
+	// 以便将其添加到速率设定值中。
 	if (std::isfinite(_yawspeed_setpoint)) {
 		rate_setpoint += q.inversed().dcm_z() * _yawspeed_setpoint;
 	}
