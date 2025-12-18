@@ -121,6 +121,11 @@ public:
 	 *
 	 * @return Actuator vector
 	 */
+	/**
+	 * 获取分配的执行器向量
+	 *
+	 * @return 执行器向量
+	 */
 	const ActuatorVector &getActuatorSetpoint() const { return _actuator_sp; }
 
 	/**
@@ -135,12 +140,22 @@ public:
 	 *
 	 * @return Control vector
 	 */
+	/**
+	 * 获取想要的控制向量
+	 *
+	 * @return 控制向量
+	 */
 	const matrix::Vector<float, NUM_AXES> &getControlSetpoint() const { return _control_sp; }
 
 	/**
 	 * Get the allocated control vector
 	 *
 	 * @return Control vector
+	 */
+	/**
+	 * 获取分配的控制向量
+	 *
+	 * @return 控制向量
 	 */
 	matrix::Vector<float, NUM_AXES> getAllocatedControl() const
 	{ return (_effectiveness * (_actuator_sp - _actuator_trim)).emult(_control_allocation_scale); }
@@ -164,6 +179,11 @@ public:
 	 *
 	 * @return Minimum actuator values
 	 */
+	/**
+	 * 获取最小执行器值
+	 *
+	 * @return 最小执行器值
+	 */
 	const ActuatorVector &getActuatorMin() const { return _actuator_min; }
 
 	/**
@@ -177,6 +197,11 @@ public:
 	 * Get the maximum actuator values
 	 *
 	 * @return Maximum actuator values
+	 */
+	/**
+	 * 获取最大执行器值
+	 *
+	 * @return 最大执行器值
 	 */
 	const ActuatorVector &getActuatorMax() const { return _actuator_max; }
 

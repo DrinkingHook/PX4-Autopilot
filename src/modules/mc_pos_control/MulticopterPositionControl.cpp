@@ -121,6 +121,7 @@ void MulticopterPositionControl::parameters_update(bool force)
 
 		if (_param_sys_vehicle_resp.get() >= 0.f) {
 			// make it less sensitive at the lower end
+			// 翻译：使其在低端不那么敏感
 			float responsiveness = _param_sys_vehicle_resp.get() * _param_sys_vehicle_resp.get();
 
 			num_changed += _param_mpc_acc_hor.commit_no_notification(math::lerp(1.f, 15.f, responsiveness));
@@ -213,6 +214,7 @@ void MulticopterPositionControl::parameters_update(bool force)
 		_goto_control.setParamMpcZVAutoUp(_param_mpc_z_v_auto_up.get());
 
 		// Check that the design parameters are inside the absolute maximum constraints
+		// 翻译：检查设计参数是否在绝对最大约束范围内
 		if (_param_mpc_xy_cruise.get() > _param_mpc_xy_vel_max.get()) {
 			_param_mpc_xy_cruise.set(_param_mpc_xy_vel_max.get());
 			_param_mpc_xy_cruise.commit();

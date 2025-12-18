@@ -111,6 +111,10 @@ MulticopterAttitudeControl::parameters_updated()
 	_man_tilt_max = math::radians(_param_mpc_man_tilt_max.get());
 }
 
+/**
+ * @brief 油门曲线
+ * @param throttle_stick_input: 油门杆输入值
+ */
 float
 MulticopterAttitudeControl::throttle_curve(float throttle_stick_input)
 {
@@ -391,6 +395,7 @@ MulticopterAttitudeControl::Run()
 				_quat_reset_counter = v_att.quat_reset_counter;
 			}
 
+			// 更新姿态设定点控制速率
 			Vector3f rates_sp = _attitude_control.update(q);
 
 			const hrt_abstime now = hrt_absolute_time();

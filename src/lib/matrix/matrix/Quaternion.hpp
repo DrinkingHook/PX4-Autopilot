@@ -194,6 +194,14 @@ public:
 	 * @param src source vector (no need to normalize)
 	 * @param eps epsilon threshold which decides if a value is considered zero
 	 */
+	/**
+	 * 由两个向量得到的四元数
+	 * 生成从源向量到目标向量的最短旋转
+	 *
+	 * @param dst 目标向量（无需归一化）
+	 * @param src 源向量（无需归一化）
+	 * @param eps ε 阈值，用于判断值是否为零
+	 */
 	Quaternion(const Vector3<Type> &src, const Vector3<Type> &dst, const Type eps = Type(1e-5))
 	{
 		Quaternion &q = *this;
@@ -204,6 +212,9 @@ public:
 			// handle corner cases with 180 degree rotations
 			// if the two vectors are parallel, cross product is zero
 			// if they point opposite, the dot product is negative
+			// 翻译：处理 180 度旋转的极端情况
+			// 如果两个向量平行，叉积为零
+			// 如果它们指向相反，则点积为负
 			cr = src.abs();
 
 			if (cr(0) < cr(1)) {
@@ -248,6 +259,18 @@ public:
 	 * @param b set quaternion value 1
 	 * @param c set quaternion value 2
 	 * @param d set quaternion value 3
+	 */
+	/**
+	 * 四元数值的构造函数
+	 *
+	 * 实例从表示坐标的四元数值初始化
+	 * 从帧 2 到帧 1 的转换。 
+	 * 零旋转四元数用(1,0,0,0)表示。 
+	 *
+	 * @param 设置四元数值 0
+	 * @param b 设置四元数值1
+	 * @param c 设置四元数值2
+	 * @param d 设置四元数值 3
 	 */
 	Quaternion(Type a, Type b, Type c, Type d)
 	{
@@ -427,6 +450,11 @@ public:
 	 *
 	 * @return inverted quaternion
 	 */
+	/**
+	 * 反转四元数
+	 *
+	 * @return 倒置四元数
+	 */
 	Quaternion inversed() const
 	{
 		const Quaternion &q = *this;
@@ -450,6 +478,10 @@ public:
 	 * Return canonical form of the quaternion
 	 *
 	 * @return quaternion in canonical from
+	 */
+	/**
+	 * 返回四元数的规范形式
+	 * @return 规范形式的四元数
 	 */
 	Quaternion canonical() const
 	{
@@ -512,6 +544,9 @@ public:
 	/**
 	 * Imaginary components of quaternion
 	 */
+	/**
+	 * 四元数的虚部
+	 */
 	Vector3<Type> imag() const
 	{
 		const Quaternion &q = *this;
@@ -524,6 +559,13 @@ public:
 	 *
 	 * == last column of the equivalent rotation matrix
 	 * but calculated more efficiently than a full conversion
+	 */
+	/**
+	 * 对应于姿态四元数的物体 z 轴 /
+	 * 最后一个正交单位基向量
+	 *
+	 * == 等效旋转矩阵的最后一列
+	 * 但计算效率比完全转换更高
 	 */
 	Vector3<Type> dcm_z() const
 	{

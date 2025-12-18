@@ -165,6 +165,11 @@ void EstimatorInterface::setMagData(const magSample &mag_sample)
 }
 #endif // CONFIG_EKF2_MAGNETOMETER
 
+/**
+ * @brief 设置GPS数据
+ * @param gps_sample GPS数据
+ * @param pps_compensation 是否使用PPS补偿
+ */
 #if defined(CONFIG_EKF2_GNSS)
 void EstimatorInterface::setGpsData(const gnssSample &gnss_sample, const bool pps_compensation)
 {
@@ -214,6 +219,10 @@ void EstimatorInterface::setGpsData(const gnssSample &gnss_sample, const bool pp
 }
 #endif // CONFIG_EKF2_GNSS
 
+/**
+ * @brief 设置气压计数据
+ * @param baro_sample 气压计数据
+ */
 #if defined(CONFIG_EKF2_BAROMETER)
 void EstimatorInterface::setBaroData(const baroSample &baro_sample)
 {
@@ -222,6 +231,7 @@ void EstimatorInterface::setBaroData(const baroSample &baro_sample)
 	}
 
 	// Allocate the required buffer size if not previously done
+	// 翻译：如果之前未分配，请分配所需的缓冲区大小。
 	if (_baro_buffer == nullptr) {
 		_baro_buffer = new RingBuffer<baroSample>(_obs_buffer_length);
 
@@ -238,6 +248,7 @@ void EstimatorInterface::setBaroData(const baroSample &baro_sample)
 				- static_cast<int64_t>(_dt_ekf_avg * 5e5f); // seconds to microseconds divided by 2
 
 	// limit data rate to prevent data being lost
+	// 翻译：限制数据传输速率以防止数据丢失
 	if (time_us >= static_cast<int64_t>(_baro_buffer->get_newest().time_us + _min_obs_interval_us)) {
 
 		baroSample baro_sample_new{baro_sample};
@@ -253,6 +264,10 @@ void EstimatorInterface::setBaroData(const baroSample &baro_sample)
 }
 #endif // CONFIG_EKF2_BAROMETER
 
+/**
+ * @brief 设置空速数据
+ * @param airspeed_sample 空速计数据
+ */
 #if defined(CONFIG_EKF2_AIRSPEED)
 void EstimatorInterface::setAirspeedData(const airspeedSample &airspeed_sample)
 {
@@ -261,6 +276,7 @@ void EstimatorInterface::setAirspeedData(const airspeedSample &airspeed_sample)
 	}
 
 	// Allocate the required buffer size if not previously done
+	// 翻译：如果之前未分配，请分配所需的缓冲区大小。
 	if (_airspeed_buffer == nullptr) {
 		_airspeed_buffer = new RingBuffer<airspeedSample>(_obs_buffer_length);
 
@@ -277,6 +293,7 @@ void EstimatorInterface::setAirspeedData(const airspeedSample &airspeed_sample)
 				- static_cast<int64_t>(_dt_ekf_avg * 5e5f); // seconds to microseconds divided by 2
 
 	// limit data rate to prevent data being lost
+	// 翻译：限制数据传输速率以防止数据丢失
 	if (time_us >= static_cast<int64_t>(_airspeed_buffer->get_newest().time_us + _min_obs_interval_us)) {
 
 		airspeedSample airspeed_sample_new{airspeed_sample};
@@ -291,6 +308,10 @@ void EstimatorInterface::setAirspeedData(const airspeedSample &airspeed_sample)
 }
 #endif // CONFIG_EKF2_AIRSPEED
 
+/**
+ * @brief 设置测距仪数据
+ * @param range_sample 测距仪数据
+ */
 #if defined(CONFIG_EKF2_RANGE_FINDER)
 void EstimatorInterface::setRangeData(const sensor::rangeSample &range_sample)
 {
@@ -299,6 +320,7 @@ void EstimatorInterface::setRangeData(const sensor::rangeSample &range_sample)
 	}
 
 	// Allocate the required buffer size if not previously done
+	// 翻译：如果之前未分配，请分配所需的缓冲区大小
 	if (_range_buffer == nullptr) {
 		_range_buffer = new RingBuffer<sensor::rangeSample>(_obs_buffer_length);
 
@@ -315,6 +337,7 @@ void EstimatorInterface::setRangeData(const sensor::rangeSample &range_sample)
 				- static_cast<int64_t>(_dt_ekf_avg * 5e5f); // seconds to microseconds divided by 2
 
 	// limit data rate to prevent data being lost
+	// 翻译：限制数据传输速率以防止数据丢失
 	if (time_us >= static_cast<int64_t>(_range_buffer->get_newest().time_us + _min_obs_interval_us)) {
 
 		sensor::rangeSample range_sample_new{range_sample};
@@ -330,6 +353,10 @@ void EstimatorInterface::setRangeData(const sensor::rangeSample &range_sample)
 }
 #endif // CONFIG_EKF2_RANGE_FINDER
 
+/**
+ * @brief 设置光流计数据
+ * @param flow_sample 光流计数据
+ */
 #if defined(CONFIG_EKF2_OPTICAL_FLOW)
 void EstimatorInterface::setOpticalFlowData(const flowSample &flow)
 {
@@ -338,6 +365,7 @@ void EstimatorInterface::setOpticalFlowData(const flowSample &flow)
 	}
 
 	// Allocate the required buffer size if not previously done
+	// 翻译：如果之前未分配，分配所需的缓冲区大小
 	if (_flow_buffer == nullptr) {
 		_flow_buffer = new RingBuffer<flowSample>(_imu_buffer_length);
 
@@ -354,6 +382,7 @@ void EstimatorInterface::setOpticalFlowData(const flowSample &flow)
 				- static_cast<int64_t>(_dt_ekf_avg * 5e5f); // seconds to microseconds divided by 2
 
 	// limit data rate to prevent data being lost
+	// 翻译：限制数据速率以防止数据丢失
 	if (time_us >= static_cast<int64_t>(_flow_buffer->get_newest().time_us + _min_obs_interval_us)) {
 
 		flowSample optflow_sample_new{flow};
@@ -368,6 +397,10 @@ void EstimatorInterface::setOpticalFlowData(const flowSample &flow)
 }
 #endif // CONFIG_EKF2_OPTICAL_FLOW
 
+/**
+ * @brief 设置外部视觉数据
+ * @param evdata 外部视觉数据
+ */
 #if defined(CONFIG_EKF2_EXTERNAL_VISION)
 void EstimatorInterface::setExtVisionData(const extVisionSample &evdata)
 {
@@ -376,6 +409,7 @@ void EstimatorInterface::setExtVisionData(const extVisionSample &evdata)
 	}
 
 	// Allocate the required buffer size if not previously done
+	// 翻译：如果之前未分配，分配所需的缓冲区大小
 	if (_ext_vision_buffer == nullptr) {
 		_ext_vision_buffer = new RingBuffer<extVisionSample>(_obs_buffer_length);
 
@@ -388,11 +422,13 @@ void EstimatorInterface::setExtVisionData(const extVisionSample &evdata)
 	}
 
 	// calculate the system time-stamp for the mid point of the integration period
+	// 翻译：计算积分期间中间点的系统时间戳
 	const int64_t time_us = evdata.time_us
 				- static_cast<int64_t>(_params.ekf2_ev_delay * 1000)
 				- static_cast<int64_t>(_dt_ekf_avg * 5e5f); // seconds to microseconds divided by 2
 
 	// limit data rate to prevent data being lost
+	// 翻译：限制数据速率以防止数据丢失
 	if (time_us >= static_cast<int64_t>(_ext_vision_buffer->get_newest().time_us + _min_obs_interval_us)) {
 
 		extVisionSample ev_sample_new{evdata};
@@ -408,6 +444,10 @@ void EstimatorInterface::setExtVisionData(const extVisionSample &evdata)
 }
 #endif // CONFIG_EKF2_EXTERNAL_VISION
 
+/**
+ * @brief 设置辅助速度数据
+ * @param auxvel_sample 辅助速度数据
+ */
 #if defined(CONFIG_EKF2_AUXVEL)
 void EstimatorInterface::setAuxVelData(const auxVelSample &auxvel_sample)
 {
@@ -416,6 +456,7 @@ void EstimatorInterface::setAuxVelData(const auxVelSample &auxvel_sample)
 	}
 
 	// Allocate the required buffer size if not previously done
+	// 翻译：如果之前未分配，分配所需的缓冲区大小
 	if (_auxvel_buffer == nullptr) {
 		_auxvel_buffer = new RingBuffer<auxVelSample>(_obs_buffer_length);
 
@@ -432,6 +473,7 @@ void EstimatorInterface::setAuxVelData(const auxVelSample &auxvel_sample)
 				- static_cast<int64_t>(_dt_ekf_avg * 5e5f); // seconds to microseconds divided by 2
 
 	// limit data rate to prevent data being lost
+	// 翻译：限制数据速率以防止数据丢失
 	if (time_us >= static_cast<int64_t>(_auxvel_buffer->get_newest().time_us + _min_obs_interval_us)) {
 
 		auxVelSample auxvel_sample_new{auxvel_sample};
@@ -446,6 +488,10 @@ void EstimatorInterface::setAuxVelData(const auxVelSample &auxvel_sample)
 }
 #endif // CONFIG_EKF2_AUXVEL
 
+/**
+ * @brief 设置系统标志数据
+ * @param system_flags 系统标志数据
+ */
 void EstimatorInterface::setSystemFlagData(const systemFlagUpdate &system_flags)
 {
 	if (!_initialised) {
@@ -453,6 +499,7 @@ void EstimatorInterface::setSystemFlagData(const systemFlagUpdate &system_flags)
 	}
 
 	// Allocate the required buffer size if not previously done
+	// 翻译：如果之前未分配，分配所需的缓冲区大小
 	if (_system_flag_buffer == nullptr) {
 		_system_flag_buffer = new RingBuffer<systemFlagUpdate>(_obs_buffer_length);
 
@@ -468,6 +515,7 @@ void EstimatorInterface::setSystemFlagData(const systemFlagUpdate &system_flags)
 				- static_cast<int64_t>(_dt_ekf_avg * 5e5f); // seconds to microseconds divided by 2
 
 	// limit data rate to prevent data being lost
+	// 翻译：限制数据速率以防止数据丢失
 	if (time_us >= static_cast<int64_t>(_system_flag_buffer->get_newest().time_us + _min_obs_interval_us)) {
 
 		systemFlagUpdate system_flags_new{system_flags};
@@ -481,14 +529,20 @@ void EstimatorInterface::setSystemFlagData(const systemFlagUpdate &system_flags)
 	}
 }
 
+/**
+ * @brief 设置阻力数据
+ * @param imu
+ */
 #if defined(CONFIG_EKF2_DRAG_FUSION)
 void EstimatorInterface::setDragData(const imuSample &imu)
 {
 	// down-sample the drag specific force data by accumulating and calculating the mean when
 	// sufficient samples have been collected
+	// 翻译：当收集到足够的样本后，通过累加并计算平均值来对阻力比力数据进行降采样
 	if (_params.ekf2_drag_ctrl > 0) {
 
 		// Allocate the required buffer size if not previously done
+		// 翻译：如果之前没有分配过，则分配所需的缓冲区大小
 		if (_drag_buffer == nullptr) {
 			_drag_buffer = new RingBuffer<dragSample>(_obs_buffer_length);
 
@@ -501,6 +555,7 @@ void EstimatorInterface::setDragData(const imuSample &imu)
 		}
 
 		// don't use any accel samples that are clipping
+		// 翻译：不要使用任何加速度样本，如果它们被剪切
 		if (imu.delta_vel_clipping[0] || imu.delta_vel_clipping[1] || imu.delta_vel_clipping[2]) {
 			// reset accumulators
 			_drag_sample_count = 0;
@@ -513,12 +568,14 @@ void EstimatorInterface::setDragData(const imuSample &imu)
 
 		_drag_sample_count++;
 		// note acceleration is accumulated as a delta velocity
+		// 翻译：注意加速度是作为delta速度累积的
 		_drag_down_sampled.accelXY(0) += imu.delta_vel(0);
 		_drag_down_sampled.accelXY(1) += imu.delta_vel(1);
 		_drag_down_sampled.time_us += imu.time_us;
 		_drag_sample_time_dt += imu.delta_vel_dt;
 
 		// calculate the downsample ratio for drag specific force data
+		// 翻译：计算拖拽特定力数据的下采样率
 		uint8_t min_sample_ratio = (uint8_t) ceilf((float)_imu_buffer_length / _obs_buffer_length);
 
 		if (min_sample_ratio < 5) {
@@ -526,16 +583,20 @@ void EstimatorInterface::setDragData(const imuSample &imu)
 		}
 
 		// calculate and store means from accumulated values
+		// 翻译：计算并存储累积值的平均值
 		if (_drag_sample_count >= min_sample_ratio) {
 			// note conversion from accumulated delta velocity to acceleration
+			// 翻译：注意从累积的delta速度转换为加速度
 			_drag_down_sampled.accelXY(0) /= _drag_sample_time_dt;
 			_drag_down_sampled.accelXY(1) /= _drag_sample_time_dt;
 			_drag_down_sampled.time_us /= _drag_sample_count;
 
 			// write to buffer
+			// 翻译：写入缓冲区
 			_drag_buffer->push(_drag_down_sampled);
 
 			// reset accumulators
+			// 翻译：重置累加器
 			_drag_sample_count = 0;
 			_drag_down_sampled.accelXY.zero();
 			_drag_down_sampled.time_us = 0;
@@ -545,20 +606,29 @@ void EstimatorInterface::setDragData(const imuSample &imu)
 }
 #endif // CONFIG_EKF2_DRAG_FUSION
 
+/**
+ * @brief 初始化接口
+ * @param timestamp 时间戳
+ * @return 是否成功初始化
+ */
 bool EstimatorInterface::initialise_interface(uint64_t timestamp)
 {
 	const float filter_update_period_ms = _params.ekf2_predict_us / 1000.f;
 
 	// calculate the IMU buffer length required to accomodate the maximum delay with some allowance for jitter
+	// 翻译：计算IMU缓冲区长度，以容纳最大延迟，并允许一些抖动
 	_imu_buffer_length = math::max(2, (int)ceilf(_params.ekf2_delay_max / filter_update_period_ms));
 
 	// set the observation buffer length to handle the minimum time of arrival between observations in combination
 	// with the worst case delay from current time to ekf fusion time
 	// allow for worst case 50% extension of the ekf fusion time horizon delay due to timing jitter
+	// 翻译：设置观测缓冲区长度，以处理观测之间的最小到达时间，并结合当前时间到扩展卡尔曼滤波 (EKF) 融合时间的最坏情况延迟，
+	// 允许由于时间抖动导致的 EKF 融合时间范围延迟最坏情况下延长 50%
 	const float ekf_delay_ms = _params.ekf2_delay_max * 1.5f;
 	_obs_buffer_length = roundf(ekf_delay_ms / filter_update_period_ms);
 
 	// limit to be no longer than the IMU buffer (we can't process data faster than the EKF prediction rate)
+	// 翻译：限制为不超过 IMU 缓冲区（我们不能比 EKF 预测速率更快地处理数据）
 	_obs_buffer_length = math::min(_obs_buffer_length, _imu_buffer_length);
 
 	ECL_DEBUG("EKF max time delay %.1f ms, OBS length %d\n", (double)ekf_delay_ms, _obs_buffer_length);
@@ -577,6 +647,9 @@ bool EstimatorInterface::initialise_interface(uint64_t timestamp)
 	return true;
 }
 
+/**
+ * @brief 获取当前估计器位置
+ */
 Vector3f EstimatorInterface::getPosition() const
 {
 	LatLonAlt lla = _output_predictor.getLatLonAlt();
@@ -597,33 +670,60 @@ Vector3f EstimatorInterface::getPosition() const
 	return Vector3f(x, y, z);
 }
 
+/**
+ * @brief 是否是当前唯一活动的水平辅助数据源
+ * @param aiding_flag 要排除检查的传感器的活跃状态
+ *                   - true: 该传感器当前活跃，要从统计中排除
+ *                   - false: 该传感器当前不活跃，统计所有活跃源
+ */
 bool EstimatorInterface::isOnlyActiveSourceOfHorizontalAiding(const bool aiding_flag) const
 {
 	return aiding_flag && !isOtherSourceOfHorizontalAidingThan(aiding_flag);
 }
 
+/**
+ * @brief 用于判断除了指定的传感器之外，是否还有其他活跃的水平辅助数据源
+ * @param aiding_flag 要排除检查的传感器的活跃状态
+ *                   - true: 该传感器当前活跃，要从统计中排除
+ *                   - false: 该传感器当前不活跃，统计所有活跃源
+ */
 bool EstimatorInterface::isOtherSourceOfHorizontalAidingThan(const bool aiding_flag) const
 {
 	const int nb_sources = getNumberOfActiveHorizontalAidingSources();
 	return aiding_flag ? nb_sources > 1 : nb_sources > 0;
 }
 
+/**
+ * @brief 获取当前活跃的水平辅助数据源的数量
+ */
 int EstimatorInterface::getNumberOfActiveHorizontalAidingSources() const
 {
 	return getNumberOfActiveHorizontalPositionAidingSources() + getNumberOfActiveHorizontalVelocityAidingSources();
 }
 
+/**
+ * @brief 是否是当前唯一活动的水平位置辅助数据源
+ */
 bool EstimatorInterface::isOnlyActiveSourceOfHorizontalPositionAiding(const bool aiding_flag) const
 {
 	return aiding_flag && !isOtherSourceOfHorizontalPositionAidingThan(aiding_flag);
 }
 
+/**
+ * @brief 用于判断除了指定的传感器之外，是否还有其他活跃的水平位置辅助数据源
+ * @param aiding_flag 要排除检查的传感器的活跃状态
+ *                   - true: 该传感器当前活跃，要从统计中排除
+ *                   - false: 该传感器当前不活跃，统计所有活跃源
+ */
 bool EstimatorInterface::isOtherSourceOfHorizontalPositionAidingThan(const bool aiding_flag) const
 {
 	const int nb_sources = getNumberOfActiveHorizontalPositionAidingSources();
 	return aiding_flag ? nb_sources > 1 : nb_sources > 0;
 }
 
+/**
+ * @brief 获取当前活跃的水平位置辅助数据源的数量
+ */
 int EstimatorInterface::getNumberOfActiveHorizontalPositionAidingSources() const
 {
 	return int(_control_status.flags.gnss_pos)
@@ -631,22 +731,37 @@ int EstimatorInterface::getNumberOfActiveHorizontalPositionAidingSources() const
 	       + int(_control_status.flags.aux_gpos);
 }
 
+/**
+ * @brief 检查是否有任何活跃的水平位置辅助数据源
+ */
 bool EstimatorInterface::isHorizontalPositionAidingActive() const
 {
 	return getNumberOfActiveHorizontalPositionAidingSources() > 0;
 }
 
+/**
+ * @brief 检查指定的水平速度源是否是唯一的活跃源
+ */
 bool EstimatorInterface::isOnlyActiveSourceOfHorizontalVelocityAiding(const bool aiding_flag) const
 {
 	return aiding_flag && !isOtherSourceOfHorizontalVelocityAidingThan(aiding_flag);
 }
 
+/**
+ * @brief 用于判断除了指定的传感器之外，是否还有其他活跃的水平速度辅助数据源
+ * @param aiding_flag 要排除检查的传感器的活跃状态
+ *                   - true: 该传感器当前活跃，要从统计中排除
+ *                   - false: 该传感器当前不活跃，统计所有活跃源
+ */
 bool EstimatorInterface::isOtherSourceOfHorizontalVelocityAidingThan(const bool aiding_flag) const
 {
 	const int nb_sources = getNumberOfActiveHorizontalVelocityAidingSources();
 	return aiding_flag ? nb_sources > 1 : nb_sources > 0;
 }
 
+/**
+ * @brief 获取当前活跃的水平速度辅助数据源的数量。
+ */
 int EstimatorInterface::getNumberOfActiveHorizontalVelocityAidingSources() const
 {
 	return int(_control_status.flags.gnss_vel)
@@ -657,27 +772,58 @@ int EstimatorInterface::getNumberOfActiveHorizontalVelocityAidingSources() const
 	       + int(_control_status.flags.fuse_aspd && _control_status.flags.fuse_beta);
 }
 
+/**
+ * @brief 检查是否有任何活跃的水平辅助数据源
+ */
 bool EstimatorInterface::isHorizontalAidingActive() const
 {
 	return getNumberOfActiveHorizontalAidingSources() > 0;
 }
 
+/**
+ * @brief 检查除了指定传感器外，是否还有其他活跃的垂直位置辅助源
+ * 
+ * @param aiding_flag 要排除检查的传感器的活跃状态
+ *                   - true: 该传感器当前活跃，要从统计中排除
+ *                   - false: 该传感器当前不活跃，统计所有活跃源
+ * 
+ * @return bool 
+ *         - 如果 aiding_flag=true: 返回是否有其他活跃源 (nb_sources > 1)
+ *         - 如果 aiding_flag=false: 返回是否有任何活跃源 (nb_sources > 0)
+ * 
+ * @note 这个函数用于检查冗余性：
+ *       1. 当某个传感器活跃时，检查系统是否有备份
+ *       2. 当某个传感器不活跃时，检查系统是否还有其他源可用
+ */
 bool EstimatorInterface::isOtherSourceOfVerticalPositionAidingThan(const bool aiding_flag) const
 {
 	const int nb_sources = getNumberOfActiveVerticalPositionAidingSources();
 	return aiding_flag ? nb_sources > 1 : nb_sources > 0;
 }
 
+/**
+ * @brief 检查是否有活跃的垂直位置辅助数据源
+ */
 bool EstimatorInterface::isVerticalPositionAidingActive() const
 {
 	return getNumberOfActiveVerticalPositionAidingSources() > 0;
 }
 
+/**
+ * @brief 检查指定的垂直位置源是否是唯一的活跃源
+ * 
+ * @param aiding_flag 具体传感器的活跃标志（true表示该传感器活跃）
+ * @return true 该传感器活跃且是唯一活跃的垂直位置源
+ * @return false 该传感器不活跃，或者有其他活跃源
+ */
 bool EstimatorInterface::isOnlyActiveSourceOfVerticalPositionAiding(const bool aiding_flag) const
 {
 	return aiding_flag && !isOtherSourceOfVerticalPositionAidingThan(aiding_flag);
 }
 
+/**
+ * @brief 获取活跃的垂直位置辅助源数量
+ */
 int EstimatorInterface::getNumberOfActiveVerticalPositionAidingSources() const
 {
 	return int(_control_status.flags.gps_hgt)
@@ -686,22 +832,34 @@ int EstimatorInterface::getNumberOfActiveVerticalPositionAidingSources() const
 	       + int(_control_status.flags.ev_hgt);
 }
 
+/**
+ * @brief 检查是否有任何垂直辅助（位置或速度）
+ */
 bool EstimatorInterface::isVerticalAidingActive() const
 {
 	return isVerticalPositionAidingActive() || isVerticalVelocityAidingActive();
 }
 
+/**
+ * @brief 检查是否有活跃的垂直速度辅助
+ */
 bool EstimatorInterface::isVerticalVelocityAidingActive() const
 {
 	return getNumberOfActiveVerticalVelocityAidingSources() > 0;
 }
 
+/**
+ * @brief 获取活跃的垂直速度辅助源数量
+ */
 int EstimatorInterface::getNumberOfActiveVerticalVelocityAidingSources() const
 {
 	return int(_control_status.flags.gnss_vel)
 	       + int(_control_status.flags.ev_vel);
 }
 
+/**
+ * @brief 检查是否有东北方向（水平）的辅助
+ */
 bool EstimatorInterface::isNorthEastAidingActive() const
 {
 	return _control_status.flags.gnss_pos
@@ -709,6 +867,10 @@ bool EstimatorInterface::isNorthEastAidingActive() const
 	       || _control_status.flags.aux_gpos;
 }
 
+/**
+ * @brief 打印缓冲区分配失败的错误信息
+ * @param buffer_name 缓冲区名称
+ */
 void EstimatorInterface::printBufferAllocationFailed(const char *buffer_name)
 {
 	if (buffer_name) {

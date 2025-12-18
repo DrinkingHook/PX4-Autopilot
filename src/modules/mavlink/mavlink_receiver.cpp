@@ -118,6 +118,14 @@ MavlinkReceiver::MavlinkReceiver(Mavlink &parent) :
 {
 }
 
+/**
+ * @brief 发送命令确认消息
+ * @param sysid 系统ID
+ * @param compid 组件ID
+ * @param command 命令ID
+ * @param result 命令结果
+ * @param progress 命令进度
+ */
 void
 MavlinkReceiver::acknowledge(uint8_t sysid, uint8_t compid, uint16_t command, uint8_t result, uint8_t progress)
 {

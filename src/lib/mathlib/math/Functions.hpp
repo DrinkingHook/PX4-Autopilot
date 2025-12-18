@@ -99,6 +99,17 @@ const T expo(const T &value, const T &e)
  * 		0.99 - very strong bent curve, stays zero until maximum stick input
  * @return result of function output
  */
+/*
+ * 所谓的SuperExpo 功能实现。 
+ * 是一个1/(1-x)函数，进一步直观地塑造rc输入曲线。 
+ * 与其他实现相比，我对其进行了增强，以将比例保持在 [-1,1] 之间。 
+ * @param value [-1,1] 函数的输入值
+ * @param e [0,1] 函数参数设置线性和立方形状之间的比率（参见expo）
+ * @param g [0,1) 设置SuperExpo形状的函数参数
+ * 		0 - 纯expo函数
+ * 		0.99 - 非常强的弯曲曲线，保持零直到最大摇杆输入
+ * @return 函数输出结果
+ */
 template<typename T>
 const T superexpo(const T &value, const T &e, const T &g)
 {
@@ -120,6 +131,20 @@ const T superexpo(const T &value, const T &e, const T &g)
  * 		0 - no deadzone, linear -1 to 1
  * 		0.5 - deadzone is half of the span [-0.5,0.5]
  * 		0.99 - almost entire span is deadzone
+ */
+/*
+ * 死区函数在死区外呈线性且连续
+ * 1 		    ------
+ * 	          /
+ * 	       --
+ *           /
+ * -1 ------
+ * 	  -1 -dz dz 1
+ * @param value [-1,1] 函数的输入值
+ * @param dz [0,1) 脱气区与完整跨度之间的比率
+ * 		0 - 无死区，线性 -1 到 1
+ * 		0.5 - 死区是跨度的一半 [-0.5,0.5]
+ * 		0.99 - 几乎整个跨度都是死区
  */
 template<typename T>
 const T deadzone(const T &value, const T &dz)
@@ -206,6 +231,9 @@ const T interpolateNXY(const T &value, const T(&x)[N], const T(&y)[N])
 		index++;
 	}
 
+	// 可能是为了 interpolate函数的代码简化？ 
+	// 当value为[-1,0]时,那么传入参数x_low为-1,x_high为0
+	// 当value为(0,1]时,那么传入参数x_low为0,x_high为1
 	return interpolate(value, x[index], x[index + 1], y[index], y[index + 1]);
 }
 

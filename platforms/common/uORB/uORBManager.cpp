@@ -459,6 +459,7 @@ bool uORB::Manager::orb_data_copy(void *node_handle, void *dst, unsigned &genera
 }
 
 // add item to list of work items to schedule on node update
+// 翻译：将项目添加到在节点更新时调度的项目列表中
 bool uORB::Manager::register_callback(void *node_handle, SubscriptionCallback *callback_sub)
 {
 	return static_cast<DeviceNode *>(node_handle)->register_callback(callback_sub);

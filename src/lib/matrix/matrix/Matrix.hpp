@@ -191,6 +191,7 @@ public:
 	}
 
 	// Element-wise multiplication
+	// 翻译：逐元素乘法
 	Matrix<Type, M, N> emult(const Matrix<Type, M, N> &other) const
 	{
 		Matrix<Type, M, N> res;

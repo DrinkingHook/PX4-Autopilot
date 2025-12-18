@@ -52,6 +52,8 @@ void RateControl::setPidGains(const Vector3f &P, const Vector3f &I, const Vector
 
 /**
  * @brief 设置饱和状态
+ * @param saturation_positive 正向饱和状态
+ * @param saturation_negative 负向饱和状态
  */
 void RateControl::setSaturationStatus(const Vector3<bool> &saturation_positive,
 				      const Vector3<bool> &saturation_negative)
@@ -62,6 +64,8 @@ void RateControl::setSaturationStatus(const Vector3<bool> &saturation_positive,
 
 /**
  * @brief 设置正向饱和状态
+ * @param axis 轴索引
+ * @param is_saturated 是否饱和
  */
 void RateControl::setPositiveSaturationFlag(size_t axis, bool is_saturated)
 {
@@ -72,6 +76,8 @@ void RateControl::setPositiveSaturationFlag(size_t axis, bool is_saturated)
 
 /**
  * @brief 设置负向饱和状态
+ * @param axis 轴索引
+ * @param is_saturated 是否饱和
  */
 void RateControl::setNegativeSaturationFlag(size_t axis, bool is_saturated)
 {
@@ -80,6 +86,15 @@ void RateControl::setNegativeSaturationFlag(size_t axis, bool is_saturated)
 	}
 }
 
+/**
+ * @brief 更新速率控制
+ * @param rate 当前角速度
+ * @param rate_sp 目标角速度
+ * @param angular_accel 角加速度
+ * @param dt 时间间隔
+ * @param landed 是否着陆
+ * @return 控制力矩
+ */
 Vector3f RateControl::update(const Vector3f &rate, const Vector3f &rate_sp, const Vector3f &angular_accel,
 			     const float dt, const bool landed)
 {
@@ -100,6 +115,11 @@ Vector3f RateControl::update(const Vector3f &rate, const Vector3f &rate_sp, cons
 	return torque;
 }
 
+/**
+ * @brief 更新积分项
+ * @param rate_error 角速度误差
+ * @param dt 时间间隔
+ */
 void RateControl::updateIntegral(Vector3f &rate_error, const float dt)
 {
 	for (int i = 0; i < 3; i++) {
@@ -141,6 +161,10 @@ void RateControl::updateIntegral(Vector3f &rate_error, const float dt)
 	}
 }
 
+/**
+ * @brief 获取速率控制状态
+ * @param rate_ctrl_status 速率控制状态
+ */
 void RateControl::getRateControlStatus(rate_ctrl_status_s &rate_ctrl_status)
 {
 	rate_ctrl_status.rollspeed_integ = _rate_int(0);

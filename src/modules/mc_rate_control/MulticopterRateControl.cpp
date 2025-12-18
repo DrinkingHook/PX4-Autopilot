@@ -161,6 +161,7 @@ MulticopterRateControl::Run()
 		// 翻译：更新速率设定点
 		vehicle_rates_setpoint_s vehicle_rates_setpoint{};
 
+		// 如果启用了手动速率设定(及手动模式开启)，则先计算手动设定速率
 		if (_vehicle_control_mode.flag_control_manual_enabled && !_vehicle_control_mode.flag_control_attitude_enabled) {
 			// generate the rate setpoint from sticks
 			// 翻译：从操纵杆生成速率设定点
@@ -189,6 +190,7 @@ MulticopterRateControl::Run()
 				_vehicle_rates_setpoint_pub.publish(vehicle_rates_setpoint);
 			}
 
+		// 如果没有启用手动设定速率，则直接检查其它模块是否有订阅速率是否有更新
 		} else if (_vehicle_rates_setpoint_sub.update(&vehicle_rates_setpoint)) {
 			if (_vehicle_rates_setpoint_sub.copy(&vehicle_rates_setpoint)) {
 				_rates_setpoint(0) = PX4_ISFINITE(vehicle_rates_setpoint.roll)  ? vehicle_rates_setpoint.roll  : rates(0);
@@ -216,6 +218,7 @@ MulticopterRateControl::Run()
 				Vector<bool, 3> saturation_positive;
 				Vector<bool, 3> saturation_negative;
 
+				// 3D 扭矩设定值是否没有正确分配给执行器
 				if (!control_allocator_status.torque_setpoint_achieved) {
 					for (size_t i = 0; i < 3; i++) {
 						if (control_allocator_status.unallocated_torque[i] > FLT_EPSILON) {

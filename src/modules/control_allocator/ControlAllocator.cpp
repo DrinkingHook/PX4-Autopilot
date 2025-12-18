@@ -648,6 +648,11 @@ ControlAllocator::update_effectiveness_matrix_if_needed(EffectivenessUpdateReaso
 	}
 }
 
+/**
+ * @brief 发布控制分配器状态
+ * 	- 执行器饱和状态
+ * @param matrix_index 矩阵索引
+ */
 void
 ControlAllocator::publish_control_allocator_status(int matrix_index)
 {
@@ -692,9 +697,11 @@ ControlAllocator::publish_control_allocator_status(int matrix_index)
 
 	for (int i = 0; i < NUM_ACTUATORS; i++) {
 		if (actuator_sp(i) > (actuator_max(i) - FLT_EPSILON)) {
+			// 执行器已饱和（其值小于或等于期望值），因为其值已达到最大值
 			control_allocator_status.actuator_saturation[i] = control_allocator_status_s::ACTUATOR_SATURATION_UPPER;
 
 		} else if (actuator_sp(i) < (actuator_min(i) + FLT_EPSILON)) {
+			// 执行器已饱和（其值大于或等于期望值），因为其值已达到最小值
 			control_allocator_status.actuator_saturation[i] = control_allocator_status_s::ACTUATOR_SATURATION_LOWER;
 		}
 	}

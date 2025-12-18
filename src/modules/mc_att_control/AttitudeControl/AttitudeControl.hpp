@@ -68,6 +68,10 @@ public:
 	 * Set hard limit for output rate setpoints
 	 * @param rate_limit [rad/s] 3D vector containing limits for roll, pitch, yaw
 	 */
+	/**
+	 * 设置输出速率设定值的硬性限制
+	 * @param rate_limit [rad/s] 包含横滚、俯仰、偏航限制值的三维向量
+	 */
 	void setRateLimit(const matrix::Vector3f &rate_limit) { _rate_limit = rate_limit; }
 
 	/**
@@ -75,6 +79,11 @@ public:
 	 * @param qd desired vehicle attitude setpoint
 	 * @param yawspeed_setpoint [rad/s] yaw feed forward angular rate in world frame
 	 */
+	/**
+	* 设置新的姿态设定值，替换之前跟踪的设定值
+	* @param qd 期望的车辆姿态设定值
+	* @param yawspeed_setpoint [rad/s] 偏航角速度（世界坐标系中的前向角速率）
+	*/
 	void setAttitudeSetpoint(const matrix::Quatf &qd, const float yawspeed_setpoint)
 	{
 		_attitude_setpoint_q = qd;
@@ -87,6 +96,11 @@ public:
 	 * Optional use to avoid glitches when attitude estimate reference e.g. heading changes.
 	 * @param q_delta delta rotation to apply
 	 */
+	/**
+	* 通过增量旋转调整上次已知的姿态设定点
+	* 可选，用于避免姿态估计参考（例如航向）发生变化时出现故障。
+	* @param q_delta 要应用的增量旋转
+	*/
 	void adaptAttitudeSetpoint(const matrix::Quatf &q_delta)
 	{
 		_attitude_setpoint_q = q_delta * _attitude_setpoint_q;
@@ -101,10 +115,13 @@ public:
 	matrix::Vector3f update(const matrix::Quatf &q) const;
 
 private:
+	// 比例增益
 	matrix::Vector3f _proportional_gain;
 	matrix::Vector3f _rate_limit;
 	float _yaw_w{0.f}; ///< yaw weight [0,1] to deprioritize caompared to roll and pitch
 
+	// 最新已知姿态设定点，例如来自位置控制
 	matrix::Quatf _attitude_setpoint_q; ///< latest known attitude setpoint e.g. from position control
+	// 最新已知的偏航速度前馈设定点
 	float _yawspeed_setpoint{0.f}; ///< latest known yawspeed feed-forward setpoint
 };

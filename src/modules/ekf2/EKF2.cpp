@@ -2936,6 +2936,7 @@ int EKF2::task_spawn(int argc, char *argv[])
 		replay_mode = true;
 	}
 
+// 启用了 EKF2 多实例支持
 #if defined(CONFIG_EKF2_MULTI_INSTANCE)
 	bool multi_mode = false;
 	int32_t imu_instances = 0;
@@ -2944,11 +2945,14 @@ int EKF2::task_spawn(int argc, char *argv[])
 	int32_t sens_imu_mode = 1;
 	param_get(param_find("SENS_IMU_MODE"), &sens_imu_mode);
 
+	// 传感器模块不进行自动选择，运行多个EKF实例
 	if (sens_imu_mode == 0) {
 		// ekf selector requires SENS_IMU_MODE = 0
+		// 翻译：ekf 选择器要求 SENS_IMU_MODE = 0
 		multi_mode = true;
 
 		// IMUs (1 - MAX_NUM_IMUS supported)
+		// 翻译：IMU数量（1 - 支持 MAX_NUM_IMUS）
 		param_get(param_find("EKF2_MULTI_IMU"), &imu_instances);
 
 		if (imu_instances < 1 || imu_instances > MAX_NUM_IMUS) {
@@ -2996,6 +3000,7 @@ int EKF2::task_spawn(int argc, char *argv[])
 
 	if (multi_mode && !replay_mode) {
 		// Start EKF2Selector if it's not already running
+		// 翻译：如果 EKF2Selector 尚未运行，则启动它
 		if (_ekf2_selector.load() == nullptr) {
 			EKF2Selector *inst = new EKF2Selector();
 

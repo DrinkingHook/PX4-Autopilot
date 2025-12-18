@@ -76,6 +76,12 @@ public:
 	 * @param deltatime time in seconds since last update
 	 * @return actual value that complies with the slew rate
 	 */
+	/**
+	 * 更新转换率
+	 * @param new_value 所需的新值
+	 * @param deltatime 自上次更新以来的时间（以秒为单位）
+	 * @return 符合转换率的实际值
+	 */
 	Type update(const Type new_value, const float deltatime)
 	{
 		// Limit the rate of change of the value

@@ -143,6 +143,12 @@ Type unwrap_pi(const Type last_angle, const Type new_angle)
  * @param[in] val Number to take the sign from
  * @return -1 if val < 0, 0 if val == 0, 1 if val > 0
  */
+/**
+ * 类型安全的符号/符号函数
+ *
+ * @param[in] val 要从中获取符号的数字
+ * @return 如果 val < 0，则返回 -1；如果 val == 0，则返回 0；如果 val > 0，则返回 1
+ */
 template<typename T>
 int sign(T val)
 {

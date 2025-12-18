@@ -127,13 +127,16 @@ private:
 	matrix::Vector3f _gain_p; ///< rate control proportional gain for all axes x, y, z
 	matrix::Vector3f _gain_i; ///< rate control integral gain
 	matrix::Vector3f _gain_d; ///< rate control derivative gain
+	// 积分项最大绝对值
 	matrix::Vector3f _lim_int; ///< integrator term maximum absolute value
+	// 扭矩前馈增益的直接比率仅对直升机有用
 	matrix::Vector3f _gain_ff; ///< direct rate to torque feed forward gain only useful for helicopters
 
 	// States
 	matrix::Vector3f _rate_int; ///< integral term of the rate controller
 
 	// Feedback from control allocation
+	// 翻译：控制分配的反馈
 	matrix::Vector<bool, 3> _control_allocator_saturation_negative;
 	matrix::Vector<bool, 3> _control_allocator_saturation_positive;
 };

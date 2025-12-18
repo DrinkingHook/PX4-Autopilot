@@ -108,6 +108,7 @@ public:
 		return Type(std::sqrt(a.dot(a)));
 	}
 
+	// 计算向量模长平方
 	Type norm_squared() const
 	{
 		const Vector &a(*this);

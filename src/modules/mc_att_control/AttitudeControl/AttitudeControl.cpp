@@ -53,14 +53,25 @@ void AttitudeControl::setProportionalGain(const matrix::Vector3f &proportional_g
 	}
 }
 
+/**
+ * @brief 姿态控制更新
+ * @param q 当前的姿态四元数
+ * @param qd 期望的姿态四元数
+ * @return 控制输出
+ */
 matrix::Vector3f AttitudeControl::update(const Quatf &q) const
 {
 	Quatf qd = _attitude_setpoint_q;
 
 	// calculate reduced desired attitude neglecting vehicle's yaw to prioritize roll and pitch
 	// 翻译：计算减少的期望姿态，忽略车辆的yaw，优先考虑roll和pitch
+	// 四元数对应一个完整的旋转，可提取三个正交轴（x,y,z）在世界系中的方向。
+	// 从四元数中取出任意一个轴的数据都不包含完整的机体的xyz轴上的姿态数据。
+	// 只取一个轴（如e_z），只能确定roll/pitch（倾斜），无法唯一确定yaw（偏航）。一个轴只提供两个自由度（方向向量），不足以表达完整三自由度姿态。
 	const Vector3f e_z = q.dcm_z();
 	const Vector3f e_z_d = qd.dcm_z();
+	// 这里生成的四元数是从完整的四元数中提取的Z轴数据重新生成的，所以只有两个自由度，丢弃了yaw轴数据。
+	// 它也是一个合法的单位四元数（规范化的），数学上完整表示一个旋转。只是这个旋转绕Z轴的自由度未定义（yaw任意），所以姿态控制上不完整（缺yaw。
 	Quatf qd_red(e_z, e_z_d);
 
 	if (fabsf(qd_red(1)) > (1.f - 1e-5f) || fabsf(qd_red(2)) > (1.f - 1e-5f)) {
@@ -77,6 +88,8 @@ matrix::Vector3f AttitudeControl::update(const Quatf &q) const
 		// This is a right multiplication as the tilt error quaternion is obtained from two Z vectors expressed in the world frame.
 		// 翻译：从当前到期望推力矢量的旋转转换到世界框架的减少期望姿态。
 		// 这是一个右乘法，因为倾斜误差四元数是从世界框架中的两个Z矢量获得的。
+		// 先应用当前实际姿态 q（把世界坐标系转到当前机体坐标系）。
+		// 再在当前机体坐标系上应用那个“最小扶正旋转” qd_red。
 		qd_red *= q;
 	}
 
@@ -106,6 +119,7 @@ matrix::Vector3f AttitudeControl::update(const Quatf &q) const
 
 	// calculate angular rates setpoint
 	// 翻译：计算角速率设定点
+	// 乘上比例增益 _proportional_gain
 	Vector3f rate_setpoint = eq.emult(_proportional_gain);
 
 	// Feed forward the yaw setpoint rate.
