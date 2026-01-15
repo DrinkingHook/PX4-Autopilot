@@ -435,6 +435,7 @@ MulticopterAttitudeControl::Run()
 			_manual_throttle_minimum.update(_param_mpc_manthr_min.get(), dt);
 		}
 
+		// 用于确保车辆在预选加速启动期间不会起飞(限制最大值)
 		if (_spooled_up) {
 			_manual_throttle_maximum.update(1.f, dt);
 

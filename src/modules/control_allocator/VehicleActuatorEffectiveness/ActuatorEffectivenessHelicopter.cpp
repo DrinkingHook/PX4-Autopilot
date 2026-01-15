@@ -143,6 +143,14 @@ bool ActuatorEffectivenessHelicopter::getEffectivenessMatrix(Configuration &conf
 	return true;
 }
 
+/**
+ * @brief 更新设定点
+ * @param control_sp 控制设定点
+ * @param matrix_index 矩阵索引
+ * @param actuator_sp 电机设定点
+ * @param actuator_min 电机最小值
+ * @param actuator_max 电机最大值
+ */
 void ActuatorEffectivenessHelicopter::updateSetpoint(const matrix::Vector<float, NUM_AXES> &control_sp,
 		int matrix_index, ActuatorVector &actuator_sp, const ActuatorVector &actuator_min, const ActuatorVector &actuator_max)
 {
@@ -158,9 +166,11 @@ void ActuatorEffectivenessHelicopter::updateSetpoint(const matrix::Vector<float,
 	// throttle/collective pitch curve
 	const float throttle = (math::interpolateN(-control_sp(ControlAxis::THRUST_Z), _geometry.throttle_curve)
 				+ rpm_control_output) * spoolup_progress;
+	// 集体螺距
 	const float collective_pitch = math::interpolateN(-control_sp(ControlAxis::THRUST_Z), _geometry.pitch_curve);
 
 	// actuator mapping
+	// 翻译：执行器映射
 	actuator_sp(0) = mainMotorEnaged() ? throttle : NAN;
 
 	actuator_sp(1) = control_sp(ControlAxis::YAW) * _geometry.yaw_sign
@@ -168,6 +178,7 @@ void ActuatorEffectivenessHelicopter::updateSetpoint(const matrix::Vector<float,
 			 + throttle * _geometry.yaw_throttle_scale;
 
 	// Saturation check for yaw
+	// 翻译：偏航饱和度检查
 	if (actuator_sp(1) < actuator_min(1)) {
 		setSaturationFlag(_geometry.yaw_sign, _saturation_flags.yaw_neg, _saturation_flags.yaw_pos);
 
@@ -223,6 +234,9 @@ bool ActuatorEffectivenessHelicopter::mainMotorEnaged()
 	return _main_motor_engaged;
 }
 
+/**
+ * @brief 油门相应进度
+ */
 float ActuatorEffectivenessHelicopter::throttleSpoolupProgress()
 {
 	vehicle_status_s vehicle_status;

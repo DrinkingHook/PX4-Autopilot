@@ -292,14 +292,18 @@ private:
 	param_t _param_handle_rev_range{PARAM_INVALID};
 	hrt_abstime _lowrate_schedule_interval{300_ms};
 	ActuatorTest _actuator_test{_function_assignment};
+	// 翻译：每个输出位。如果设置，则输出配置为可逆（仅限电机）。
 	uint32_t _reversible_mask{0}; ///< per-output bits. If set, the output is configured to be reversible (motors only)
 	bool _was_all_disabled{false};
 
+	// 翻译：当前调度回调
 	uORB::SubscriptionCallbackWorkItem *_subscription_callback{nullptr}; ///< current scheduling callback
 
 
 	DEFINE_PARAMETERS(
+	    // 翻译：多旋翼飞行器空中模式
 		(ParamInt<px4::params::MC_AIRMODE>) _param_mc_airmode,   ///< multicopter air-mode
+		// 翻译：电机控制信号建模因子
 		(ParamFloat<px4::params::THR_MDL_FAC>) _param_thr_mdl_fac ///< thrust to motor control signal modelling factor
 	)
 };

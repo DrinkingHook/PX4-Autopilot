@@ -160,21 +160,37 @@ public:
 	const char *_device_name{DEFAULT_DEVICE_NAME};
 
 	enum MAVLINK_MODE {
+		// 标准地面站
 		MAVLINK_MODE_NORMAL = 0,
+		// 自定义模式
 		MAVLINK_MODE_CUSTOM,
+		// 机载伴随电脑
 		MAVLINK_MODE_ONBOARD,
+		// ON-Screen Display(屏显)模式
 		MAVLINK_MODE_OSD,
+		// 特殊“魔法”模式
 		MAVLINK_MODE_MAGIC,
+		// 配置/调试模式
 		MAVLINK_MODE_CONFIG,
+		// lridium卫星通信模式
 		MAVLINK_MODE_IRIDIUM,
+		// 最小化模式
 		MAVLINK_MODE_MINIMAL,
+		// 外部视觉模式
 		MAVLINK_MODE_EXTVISION,
+		// 外部视觉最小模式
 		MAVLINK_MODE_EXTVISIONMIN,
+		// 云台模式
 		MAVLINK_MODE_GIMBAL,
+		// 机载低带宽模式
 		MAVLINK_MODE_ONBOARD_LOW_BANDWIDTH,
+		// uAvionix专用模式
 		MAVLINK_MODE_UAVIONIX,
+		// 通用低带宽模式
 		MAVLINK_MODE_LOW_BANDWIDTH,
+		// 距离传感器模式
 		MAVLINK_MODE_DISTANCE_SENSOR,
+		// 枚举计数器
 		MAVLINK_MODE_COUNT
 	};
 

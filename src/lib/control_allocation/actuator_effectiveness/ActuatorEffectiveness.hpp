@@ -48,7 +48,9 @@
 
 enum class AllocationMethod {
 	NONE = -1,
+	// 过饱和时直接裁剪，不做额外补偿
 	PSEUDO_INVERSE = 0,
+	// 过饱和时优先保证滚转/俯仰 → 偏航 → 油门，逐步投影回可行域
 	SEQUENTIAL_DESATURATION = 1,
 	AUTO = 2,
 };

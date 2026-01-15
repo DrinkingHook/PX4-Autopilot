@@ -173,6 +173,9 @@ const T expo_deadzone(const T &value, const T &e, const T &dz)
  * y_low -------
  *         x_low   x_high
  */
+ /**
+  * @brief 以两个拐点为参数的恒定线性函数
+  */
 template<typename T>
 const T interpolate(const T &value, const T &x_low, const T &x_high, const T &y_low, const T &y_high)
 {
@@ -202,6 +205,9 @@ const T interpolate(const T &value, const T &x_low, const T &x_high, const T &y_
  * y[0] -------
  *        0 1/(N-1) 2/(N-1) ... 1
  */
+ /**
+  * @brief 以 1/N 为间隔、N 个拐点为参数的恒定分段线性函数
+  */
 template<typename T, size_t N>
 const T interpolateN(const T &value, const T(&y)[N])
 {

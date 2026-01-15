@@ -62,6 +62,10 @@ public:
 	 * Set value ignoring slew rate for initialization purpose
 	 * @param value new applied value
 	 */
+	/**
+	* 设置初始化时忽略转换速率的值
+	* @param value 新应用的值
+	*/
 	void setForcedValue(const Type value) { _value = value; }
 
 	/**

@@ -133,6 +133,7 @@ ControlAllocator::parameters_updated()
 		_control_allocation[i]->updateParameters();
 	}
 
+	// 必要时更新有效性矩阵
 	update_effectiveness_matrix_if_needed(EffectivenessUpdateReason::CONFIGURATION_UPDATE);
 }
 
@@ -465,6 +466,7 @@ ControlAllocator::Run()
 
 			// Do allocation
 			// 翻译：进行分配
+			// 这里调用 mixAirmodeRP() 等，基于 _control_sp 计算初步 _actuator_sp
 			_control_allocation[i]->allocate();
 			// 执行襟翼和扰流板--现只有固定翼和vtol机型有，此函数为虚函数，其它机型则运行空函数
 			_actuator_effectiveness->allocateAuxilaryControls(dt, i, _control_allocation[i]->_actuator_sp); //flaps and spoilers
@@ -556,9 +558,11 @@ ControlAllocator::update_effectiveness_matrix_if_needed(EffectivenessUpdateReaso
 					}
 
 					if (_param_r_rev.get() & (1u << actuator_type_idx)) {
+						// 支持反向旋转
 						minimum[selected_matrix](actuator_idx_matrix[selected_matrix]) = -1.f;
 
 					} else {
+						// 只支持正向（普通电机/油门类）
 						minimum[selected_matrix](actuator_idx_matrix[selected_matrix]) = 0.f;
 					}
 
@@ -595,6 +599,7 @@ ControlAllocator::update_effectiveness_matrix_if_needed(EffectivenessUpdateReaso
 			for (int motors_idx = 0; motors_idx < _num_actuators[0] && motors_idx < actuator_motors_s::NUM_CONTROLS; motors_idx++) {
 				int selected_matrix = _control_allocation_selection_indexes[actuator_idx];
 
+				// 如果索引到执行器被标记为故障，那么则置输出矩阵为0
 				if (_handled_motor_failure_bitmask & (1 << motors_idx)) {
 					ActuatorEffectiveness::EffectivenessMatrix &matrix = config.effectiveness_matrices[selected_matrix];
 
@@ -796,12 +801,15 @@ ControlAllocator::check_for_motor_failures()
 		if (failure_detector_status.fd_motor) {
 			if (_handled_motor_failure_bitmask != failure_detector_status.motor_failure_mask) {
 				// motor failure bitmask changed
+				// 翻译：电机故障位掩码已更改
 				switch ((FailureMode)_param_ca_failure_mode.get()) {
 				case FailureMode::REMOVE_FIRST_FAILING_MOTOR: {
 						// Count number of failed motors
+						// 翻译：记录故障电机的数量
 						const int num_motors_failed = math::countSetBits(failure_detector_status.motor_failure_mask);
 
 						// Only handle if it is the first failure
+						// 翻译：只处理第一次失败
 						if (_handled_motor_failure_bitmask == 0 && num_motors_failed == 1) {
 							_handled_motor_failure_bitmask = failure_detector_status.motor_failure_mask;
 							PX4_WARN("Removing motor from allocation (0x%x)", _handled_motor_failure_bitmask);
@@ -882,11 +890,13 @@ int ControlAllocator::print_status()
 	}
 
 	// Print current airframe
+	// 翻译：打印当前机架类型
 	if (_actuator_effectiveness != nullptr) {
 		PX4_INFO("Effectiveness Source: %s", _actuator_effectiveness->name());
 	}
 
 	// Print current effectiveness matrix
+	// 翻译：打印当前有效性矩阵
 	for (int i = 0; i < _num_control_allocation; ++i) {
 		const ActuatorEffectiveness::EffectivenessMatrix &effectiveness = _control_allocation[i]->getEffectivenessMatrix();
 

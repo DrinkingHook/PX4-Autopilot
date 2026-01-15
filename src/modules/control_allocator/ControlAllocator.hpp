@@ -200,6 +200,8 @@ private:
 
 	// Reflects motor failures that are currently handled, not motor failures that are reported.
 	// For example, the system might report two motor failures, but only the first one is handled by CA
+	// 翻译：反映的是当前正在处理的电机故障，而不是已报告的电机故障。
+	// 例如，系统可能报告两个电机故障，但只有第一个故障由 CA 处理。
 	uint16_t _handled_motor_failure_bitmask{0};
 	uint16_t _motor_stop_mask{0};
 

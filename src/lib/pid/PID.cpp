@@ -34,6 +34,9 @@
 #include "PID.hpp"
 #include "lib/mathlib/math/Functions.hpp"
 
+/**
+ * @brief 设置增益
+ */
 void PID::setGains(const float P, const float I, const float D)
 {
 	_gain_proportional = P;

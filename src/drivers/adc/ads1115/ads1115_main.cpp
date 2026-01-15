@@ -83,6 +83,7 @@ void ADS1115::RunImpl()
 
 	if (ready == 1) {
 		// I2C transaction success and status register reported conversion as finished
+		// 翻译：I2C 事务成功，状态寄存器报告转换已完成
 		if (_ready_counter == 0) { PX4_INFO("ADS1115: reported ready"); }
 
 		if (_ready_counter < MAX_READY_COUNTER) { _ready_counter++; }
@@ -92,6 +93,7 @@ void ADS1115::RunImpl()
 
 		if (ch != Channel::Invalid) {
 			// Store current readings and mark channel as read
+			// 翻译：存储当前读数并将通道标记为已读
 			const unsigned index{ch2u(ch)};
 			_adc_report.channel_id[index] = index;
 			_adc_report.raw_data[index] = value;
@@ -99,10 +101,12 @@ void ADS1115::RunImpl()
 
 		} else {
 			// we will retry the same channel again
+			// 翻译：我们将再次尝试同一频道
 			perf_count(_comms_errors);
 		}
 
 		// Find the next unread channel in the bitmask
+		// 翻译：在位掩码中查找下一个未读取的通道
 		uint8_t next_index{0};
 
 		for (; next_index < 4 && (_channel_cycle_mask & (1u << next_index)); next_index++) {}
@@ -116,8 +120,10 @@ void ADS1115::RunImpl()
 
 	} else if (ready == 0) {
 		// I2C transaction success but status register reported conversion still in progress
+		// 翻译：I2C 事务成功，但状态寄存器报告转换仍在进行中。
 		perf_count(_comms_errors);
 		// Reset the channel to unstick the device
+		// 翻译：重置通道以解除设备卡住状态
 		readChannel(Channel::A0);
 
 	} else if (ready == -1) {
@@ -127,6 +133,7 @@ void ADS1115::RunImpl()
 
 		perf_count(_comms_errors);
 		// Reset the channel to unstick the device
+		// 翻译：重置通道以解除设备卡住状态
 		readChannel(Channel::A0);
 	}
 

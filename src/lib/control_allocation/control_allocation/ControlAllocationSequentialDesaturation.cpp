@@ -41,6 +41,7 @@
 #include "ControlAllocationSequentialDesaturation.hpp"
 
 
+// 分配
 void
 ControlAllocationSequentialDesaturation::allocate()
 {
@@ -122,8 +123,10 @@ void
 ControlAllocationSequentialDesaturation::mixAirmodeRP()
 {
 	// Airmode for roll and pitch, but not yaw
+	// 翻译：空中模式支持横滚和俯仰，但不支持偏航
 
 	// Mix without yaw
+	// 翻译：不考虑偏航，直接分配
 	ActuatorVector thrust_z;
 
 	for (int i = 0; i < _num_actuators; i++) {

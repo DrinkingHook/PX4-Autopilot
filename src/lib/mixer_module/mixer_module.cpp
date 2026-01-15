@@ -241,6 +241,10 @@ void MixingOutput::cleanupFunctions()
 	}
 }
 
+/**
+ * @brief 更新订阅
+ * @param allow_wq_switch 是否允许工作队列切换。
+ */
 bool MixingOutput::updateSubscriptions(bool allow_wq_switch)
 {
 	if (!_need_function_update || _armed.armed) {
@@ -265,10 +269,10 @@ bool MixingOutput::updateSubscriptions(bool allow_wq_switch)
 		// 翻译：如果我们运行电机输出那么可能切换工作队列
 		for (unsigned i = 0; i < _max_num_outputs; i++) {
 			// read function directly from param, as _function_assignment[i] is updated later
-			// 翻译：直接从参数中读取功能，由于_function_assignment [i]将稍后更新
+			// 翻译：直接从参数中读取功能，由于 _function_assignment [i]将稍后更新
 			int32_t function;
 
-                        // function等参数 在initParamHandles中初始化
+            		// _param_handles 等参数 在 initParamHandles 中初始化
 			if (_param_handles[i].function != PARAM_INVALID && param_get(_param_handles[i].function, &function) == 0) {
 				if (function >= (int32_t)OutputFunction::Motor1 && function <= (int32_t)OutputFunction::MotorMax) {
 					switch_requested = true;
@@ -305,7 +309,7 @@ bool MixingOutput::updateSubscriptions(bool allow_wq_switch)
 	for (int i = 0; i < _max_num_outputs; ++i) {
 		int32_t val;
 
-		// function等参数 在initParamHandles中初始化
+		// function 等参数 在 initParamHandles 中初始化
 		if (_param_handles[i].function != PARAM_INVALID && param_get(_param_handles[i].function, &val) == 0) {
 			_function_assignment[i] = (OutputFunction)val;
 
@@ -324,7 +328,7 @@ bool MixingOutput::updateSubscriptions(bool allow_wq_switch)
 				 * 当第一次运行时 i = 0,p = 2 时会创建 Motor1 的 provider 实例，并记录 provider_indexes[0] = 2
 				 * 当第二次运行时 i = 1,p = 2 时会复用
 				 * 当第三次运行时 i = 2,p = 3 时会创建 Servo1 的 provider 实例，并记录 provider_indexes[1] = 3
-				*/
+				 */
 				for (int existing = 0; existing < next_provider; ++existing) {
 					if (provider_indexes[existing] == p) {
 						found_index = existing;
@@ -473,8 +477,9 @@ bool MixingOutput::update()
 		}
 
 		/* Update the armed status and check that we're not locked down.
-		 * 翻译：更新武装状态并且检查我们是不是没有被锁定
 		 * We also need to arm throttle for the ESC calibration. */
+		// 翻译：更新武装状态并且检查我们是不是没有被锁定
+		// 我们还需要为电调校准启用油门
 		_throttle_armed = (_armed.armed && !_armed.lockdown) || _armed.in_esc_calibration_mode;
 	}
 

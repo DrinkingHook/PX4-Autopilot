@@ -384,6 +384,7 @@ void RCInput::Run()
 
 		if (_vehicle_cmd_sub.update(&vcmd)) {
 			// Check for a pairing command
+			// 翻译：检查配对命令
 			if (vcmd.command == vehicle_command_s::VEHICLE_CMD_START_RX_PAIR) {
 
 				uint8_t cmd_ret = vehicle_command_ack_s::VEHICLE_CMD_RESULT_UNSUPPORTED;
@@ -392,6 +393,7 @@ void RCInput::Run()
 				if (!_rc_scan_locked && !_armed) {
 					if ((int)vcmd.param1 == 0) {
 						// DSM binding command
+						// 翻译：DSM 绑定命令
 						int dsm_bind_mode = (int)vcmd.param2;
 
 						int dsm_bind_pulses = 0;
@@ -412,12 +414,14 @@ void RCInput::Run()
 					}
 
 				} else {
+					// 展示拒绝
 					cmd_ret = vehicle_command_ack_s::VEHICLE_CMD_RESULT_TEMPORARILY_REJECTED;
 				}
 
 #endif // SPEKTRUM_POWER
 
 				// publish acknowledgement
+				// 翻译：发布确认信息
 				vehicle_command_ack_s command_ack{};
 				command_ack.command = vcmd.command;
 				command_ack.result = cmd_ret;
@@ -430,9 +434,11 @@ void RCInput::Run()
 		}
 
 
+// 信号接收强度指示
 #if defined(ADC_RC_RSSI_CHANNEL)
 
 		// update ADC sampling
+		// 翻译：更新ADC采样
 		if (_adc_report_sub.updated()) {
 			adc_report_s adc;
 
@@ -450,6 +456,7 @@ void RCInput::Run()
 						_analog_rc_rssi_volt = _analog_rc_rssi_volt * 0.995f + adc_volt * 0.005f;
 
 						/* only allow this to be used if we see a high RSSI once */
+						// 翻译：仅当检测到高 RSSI 时才允许使用
 						if (_analog_rc_rssi_volt > 2.5f) {
 							_analog_rc_rssi_stable = true;
 						}
@@ -464,6 +471,7 @@ void RCInput::Run()
 
 		// This block scans for a supported serial RC input and locks onto the first one found
 		// Scan for 500 msec, then switch protocol
+		// 翻译:此模块扫描受支持的串行 RC 输入，并锁定找到的第一个输入。扫描 500 毫秒，然后切换协议。
 		constexpr hrt_abstime rc_scan_max = 500_ms;
 
 		unsigned frame_drops = 0;
@@ -474,6 +482,7 @@ void RCInput::Run()
 		// read all available data from the serial RC input UART
 
 		// read all available data from the serial RC input UART
+		// 翻译：从串行 RC 输入 UART 读取所有可用数据
 		int newBytes = ::read(_rcs_fd, &_rcs_buf[0], RC_MAX_BUFFER_SIZE);
 
 		if (newBytes > 0) {
@@ -491,10 +500,12 @@ void RCInput::Run()
 			if (_rc_scan_begin == 0) {
 				_rc_scan_begin = cycle_timestamp;
 				// Configure serial port for SBUS
+				// 翻译：为SBUS配置串口端口
 				sbus_config(_rcs_fd, board_rc_singlewire(_device));
 				rc_io_invert(true);
 
 				// flush serial buffer and any existing buffered data
+				// 翻译：清空串行缓冲区和所有已缓存的数据
 				tcflush(_rcs_fd, TCIOFLUSH);
 				memset(_rcs_buf, 0, sizeof(_rcs_buf));
 

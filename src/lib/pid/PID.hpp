@@ -42,6 +42,7 @@ public:
 	virtual ~PID() = default;
 	void setOutputLimit(const float limit) { _limit_output = limit; }
 	void setIntegralLimit(const float limit) { _limit_integral = limit; }
+	// 设置增益
 	void setGains(const float P, const float I, const float D);
 	void setSetpoint(const float setpoint) { _setpoint = setpoint; }
 	float update(const float feedback, const float dt, const bool update_integral = true);

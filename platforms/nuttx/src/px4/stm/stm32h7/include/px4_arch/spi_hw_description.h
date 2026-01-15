@@ -81,6 +81,7 @@ constexpr bool validateSPIConfig(const px4_spi_bus_t spi_busses_conf[SPI_BUS_MAX
 		}
 
 		// Either the bus is enabled in NuttX and configured in spi_busses_conf, or disabled and not configured
+		// // 翻译：要么总线已在 NuttX 中启用并在 spi_busses_conf 中配置，要么已禁用且未配置。
 		constexpr_assert(found_bus == nuttx_enabled_spi_buses[i], "SPI bus config mismatch (CONFIG_STM32H7_SPIx)");
 	}
 

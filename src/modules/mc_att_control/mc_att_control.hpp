@@ -126,6 +126,7 @@ private:
 	SlewRate<float> _hover_thrust_slew_rate{.5f};
 
 	float _yaw_setpoint_stabilized{0.f};
+	// 初始化为 NAN 值，以避免在本地位置未发布时干扰航向锁定。
 	float _unaided_heading{NAN}; // initialized NAN to not distract heading lock when local position never published
 	float _man_tilt_max{0.f};			/**< maximum tilt allowed for manual flight [rad] */
 
@@ -139,6 +140,7 @@ private:
 	hrt_abstime _last_run{0};
 	hrt_abstime _last_attitude_setpoint{0};
 
+	// 用于确保车辆在预旋加速启动期间不会起飞
 	bool _spooled_up{false}; ///< used to make sure the vehicle cannot take off during the spoolup time
 	bool _landed{true};
 	bool _vehicle_type_rotary_wing{true};

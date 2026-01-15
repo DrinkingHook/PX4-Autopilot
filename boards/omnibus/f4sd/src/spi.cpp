@@ -50,4 +50,5 @@ constexpr px4_spi_bus_t px4_spi_buses[SPI_BUS_MAX_BUS_ITEMS] = {
 	}),
 };
 
+// 编译时就执行检查，且在运行时基本无开销
 static constexpr bool unused = validateSPIConfig(px4_spi_buses);

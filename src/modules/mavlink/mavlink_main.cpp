@@ -2915,6 +2915,7 @@ void Mavlink::configure_sik_radio()
 int Mavlink::start_helper(int argc, char *argv[])
 {
 	/* create the instance in task context */
+	// 翻译：在任务上下文中创建实例
 	Mavlink *instance = new Mavlink();
 
 	int res;
@@ -2926,6 +2927,7 @@ int Mavlink::start_helper(int argc, char *argv[])
 
 	} else {
 		/* this will actually only return once MAVLink exits, unless there's a startup error */
+		// 翻译：实际上，只有在 MAVLink 退出后才会返回此结果，除非出现启动错误。
 		res = instance->task_main(argc, argv);
 
 		if (res != PX4_OK) {
@@ -2960,6 +2962,7 @@ Mavlink::start(int argc, char *argv[])
 
 	// Wait for the instance count to go up one
 	// before returning to the shell
+	// 翻译：等待实例计数加一后再返回 shell。
 	int ic = Mavlink::instance_count();
 
 	if (ic == MAVLINK_COMM_NUM_BUFFERS) {
@@ -2970,13 +2973,9 @@ Mavlink::start(int argc, char *argv[])
 	// Instantiate thread
 
 	// This is where the control flow splits
-	// 翻译：这就是控制流分裂的地方
 	// between the starting task and the spawned
-	// 翻译：在启动任务和生成的
 	// task - start_helper() only returns
-	// 翻译：任务 - start_helper() 只返回
-	// when the started task exits.
-	// 翻译：当启动的任务退出时。
+	// 翻译：这里控制流在启动任务和生成的任务之间分叉——start_helper() 只返回一个值。
 	px4_task_spawn_cmd("mavlink_main",
 			   SCHED_DEFAULT,
 			   SCHED_PRIORITY_DEFAULT,
@@ -2994,9 +2993,11 @@ Mavlink::start(int argc, char *argv[])
 	// 翻译：这实际上是对同时启动的实例加锁。XXX 做了一个真正的锁。
 
 	// Sleep 500 us between each attempt
+	// 翻译：每次尝试之间休息 500 分钟
 	const unsigned sleeptime = 500;
 
 	// Wait 100 ms max for the startup.
+	// 翻译：启动时最多等待 100 毫秒。
 	const unsigned limit = 100 * 1000 / sleeptime;
 
 	unsigned count = 0;

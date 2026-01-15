@@ -48,6 +48,14 @@ ControlAllocation::ControlAllocation()
 	_actuator_max.setAll(1.f);
 }
 
+/**
+ * @brief 设置执行器的有效性矩阵
+ * @param[in] effectiveness 执行器的有效性矩阵
+ * @param[in] actuator_trim 执行器的偏置值
+ * @param[in] linearization_point 执行器的线性化点
+ * @param[in] num_actuators 执行器的数量
+ * @param[in] update_normalization_scale 是否更新归一化比例
+ */
 void
 ControlAllocation::setEffectivenessMatrix(
 	const matrix::Matrix<float, ControlAllocation::NUM_AXES, ControlAllocation::NUM_ACTUATORS> &effectiveness,
@@ -74,6 +82,10 @@ ControlAllocation::setActuatorSetpoint(
 	clipActuatorSetpoint(_actuator_sp);
 }
 
+/**
+ * @brief 限制执行器设置点的范围，确保其在最小值和最大值之间
+ * @param actuator 执行器设置点的引用
+ */
 void
 ControlAllocation::clipActuatorSetpoint(matrix::Vector<float, ControlAllocation::NUM_ACTUATORS> &actuator) const
 {

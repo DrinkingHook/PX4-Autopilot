@@ -42,6 +42,7 @@ int ADS1115::init()
 		return ret;
 	}
 
+	// 翻译：准备第一次测量
 	readChannel(Channel::A0);  // prepare for the first measure.
 
 	ScheduleOnInterval(SAMPLE_INTERVAL / 4, SAMPLE_INTERVAL / 4);
@@ -54,6 +55,9 @@ int ADS1115::probe()
 	// The ADS1115 has no ID register, so we read out the threshold registers
 	// and check their default values. We cannot use the config register, as
 	// this is changed by this driver. Note the default value is in BE.
+	// 翻译：ADS1115 没有 ID 寄存器，因此我们读取阈值寄存器
+	// 并检查它们的默认值。我们不能使用配置寄存器，因为
+	// 该寄存器已被驱动程序更改。请注意，默认值位于 BE 中。
 	static constexpr uint32_t DEFAULT{0xFF7F0080};
 	union {
 		struct {
@@ -93,6 +97,9 @@ int ADS1115::readChannel(ADS1115::Channel ch)
 	return writeReg(ADDRESSPOINTER_REG_CONFIG, buf, 2);    // must write whole register to take effect
 }
 
+/**
+ * @brief 检查ADS1115是否准备好进行测量。
+ */
 int ADS1115::isSampleReady()
 {
 	uint8_t buf[1] = {0x00};
@@ -102,6 +109,7 @@ int ADS1115::isSampleReady()
 	return (buf[0] & (uint8_t) 0x80) ? 1 : 0;
 }
 
+// 获取测量数据
 ADS1115::Channel ADS1115::getMeasurement(int16_t *value)
 {
 	uint8_t buf[2] = {0x00};

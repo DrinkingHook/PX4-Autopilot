@@ -69,6 +69,7 @@ public:
 		PublicationBase(static_cast<ORB_ID>(meta->o_id))
 	{}
 
+	// 完成话题的初始化/注册工作
 	bool advertise()
 	{
 		if (!advertised()) {

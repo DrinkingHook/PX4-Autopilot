@@ -59,6 +59,7 @@ public:
 	float getActuatorCorrection();
 
 private:
+	// 油门响应进度（已启用控制器）
 	static constexpr float SPOOLUP_PROGRESS_WITH_CONTROLLER_ENGAGED = .8f; // [0,1]
 	static constexpr float PID_OUTPUT_LIMIT = .5f; // [0,1]
 
