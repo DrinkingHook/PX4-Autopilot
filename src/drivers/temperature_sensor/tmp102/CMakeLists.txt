@@ -1,6 +1,6 @@
 ############################################################################
 #
-#   Copyright (c) 2021 PX4 Development Team. All rights reserved.
+#   Copyright (c) 2026 PX4 Development Team. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -30,11 +30,16 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ############################################################################
+
 px4_add_module(
-	MODULE drivers__power_monitor_pm_selector_auterion
-	MAIN pm_selector_auterion
+	MODULE drivers__temperature_sensor__tmp102
+	MAIN tmp102
+	COMPILE_FLAGS
 	SRCS
-		PowerMonitorSelectorAuterion.cpp
+		tmp102_main.cpp
+		tmp102.cpp
+	MODULE_CONFIG
+		module.yaml
 	DEPENDS
 		px4_work_queue
 	)

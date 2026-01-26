@@ -614,16 +614,9 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 		allow_user_takeover = UserTakeoverAllowed::AlwaysModeSwitchOnly;
 	}
 
-	// User takeover is activated on user intented mode update (w/o action change, so takeover is not immediately
-	// requested when entering failsafe) or rc stick movements
-	// 翻译：用户接管功能在用户有意更新模式（不更改操作，因此进入故障保护模式时不会立即请求接管）或遥控器摇杆移动时激活。
-	/**
-	 * @brief
-	 * @param want_user_takeover_mode_switch 用户切换模式 e.g. 检测到用户更改了模式并且模式相同
-	 * @param want_user_takeover 切换模式或者摇杆移动 e.g. want_user_takeover_mode_switch 为真或者检测到用户想操作遥控器
-	 * @param takeover_allowed 是否允许接管 e.g. 满足
-	 */
-	bool want_user_takeover_mode_switch = user_intended_mode_updated && _selected_action == selected_action;
+	// User takeover interrupting a failsafe is triggered by a change of the user-intended mode
+	// (only if a failsafe action is already active otherwise there can be immediate takeover when entering a failsafe) or by stick movement
+	bool want_user_takeover_mode_switch = user_intended_mode_updated && (_selected_action > Action::Warn);
 	bool want_user_takeover = want_user_takeover_mode_switch || rc_sticks_takeover_request;
 	bool takeover_allowed =
 		(allow_user_takeover == UserTakeoverAllowed::Always && (_user_takeover_active || want_user_takeover))

@@ -442,27 +442,54 @@ FailsafeBase::ActionOptions Failsafe::fromRemainingFlightTimeLowActParam(int par
 	return options;
 }
 
-/**
- * @brief 检查状态和模式
- *
- * @param time_us
- * @param state
- * @param status_flags
- */
+bool Failsafe::isFailsafeIgnored(uint8_t user_intended_mode, int32_t exception_mask_parameter)
+{
+	switch (user_intended_mode) {
+	case vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION:
+		return exception_mask_parameter & (int)LinkLossExceptionBits::Mission;
+
+	case vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER:
+	case vehicle_status_s::NAVIGATION_STATE_AUTO_TAKEOFF:
+	case vehicle_status_s::NAVIGATION_STATE_AUTO_VTOL_TAKEOFF:
+	case vehicle_status_s::NAVIGATION_STATE_AUTO_LAND:
+	case vehicle_status_s::NAVIGATION_STATE_AUTO_RTL:
+	case vehicle_status_s::NAVIGATION_STATE_DESCEND:
+	case vehicle_status_s::NAVIGATION_STATE_AUTO_FOLLOW_TARGET:
+	case vehicle_status_s::NAVIGATION_STATE_AUTO_PRECLAND:
+	case vehicle_status_s::NAVIGATION_STATE_ORBIT:
+		return exception_mask_parameter & (int)LinkLossExceptionBits::AutoModes;
+
+	case vehicle_status_s::NAVIGATION_STATE_OFFBOARD:
+		return exception_mask_parameter & (int)LinkLossExceptionBits::Offboard;
+
+	case vehicle_status_s::NAVIGATION_STATE_EXTERNAL1:
+	case vehicle_status_s::NAVIGATION_STATE_EXTERNAL2:
+	case vehicle_status_s::NAVIGATION_STATE_EXTERNAL3:
+	case vehicle_status_s::NAVIGATION_STATE_EXTERNAL4:
+	case vehicle_status_s::NAVIGATION_STATE_EXTERNAL5:
+	case vehicle_status_s::NAVIGATION_STATE_EXTERNAL6:
+	case vehicle_status_s::NAVIGATION_STATE_EXTERNAL7:
+	case vehicle_status_s::NAVIGATION_STATE_EXTERNAL8:
+		return exception_mask_parameter & (int)LinkLossExceptionBits::ExternalMode;
+
+	case vehicle_status_s::NAVIGATION_STATE_ALTITUDE_CRUISE:
+		return exception_mask_parameter & (int)LinkLossExceptionBits::AltitudeCruise;
+
+	default:
+		return false;
+	}
+}
+
 void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 				 const failsafe_flags_s &status_flags)
 {
 	updateArmingState(time_us, state.armed, status_flags);
 
-	const bool in_forward_flight = state.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING
-				       || state.vtol_in_transition_mode;
-
 	// Do not enter failsafe while doing a vtol takeoff after the vehicle has started a transition and before it reaches the loiter
 	// 翻译：在飞行器开始过渡后、到达徘徊点之前，进行垂直起降起飞时请勿进入故障保护
 	// altitude. The vtol takeoff navigaton mode will set mission_finished to true as soon as the loiter is established
-	// 翻译：高度。一旦建立悬停，垂直起降起飞导航模式将设置 mission_finished 为 true
-	const bool ignore_any_link_loss_vtol_takeoff_fixedwing = state.user_intended_mode ==
-			vehicle_status_s::NAVIGATION_STATE_AUTO_VTOL_TAKEOFF
+	const bool in_forward_flight = (state.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) || state.vtol_in_transition_mode;
+	const bool ignore_any_link_loss_vtol_takeoff_fixedwing = (state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_VTOL_TAKEOFF)
 			&& in_forward_flight && !state.mission_finished;
 
 	// Manual control (RC or joystick) loss
@@ -472,37 +499,8 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 		_manual_control_lost_at_arming = false;
 	}
 
-	/**
-	 * @brief &:与运算符. 若 _param_com_rcl_except.get() 和 ManualControlLossExceptionBits:: 有一个位的值相同那么结果就不为0
-	 *
-	 */
-	const bool rc_loss_ignored_mission = state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION
-					     && (_param_com_rcl_except.get() & (int)ManualControlLossExceptionBits::Mission);
-	const bool rc_loss_ignored_loiter = state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER
-					    && (_param_com_rcl_except.get() & (int)ManualControlLossExceptionBits::Hold);
-	const bool rc_loss_ignored_offboard = state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_OFFBOARD
-					      && (_param_com_rcl_except.get() & (int)ManualControlLossExceptionBits::Offboard);
-	const bool rc_loss_ignored_takeoff = (state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_TAKEOFF ||
-					      state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_VTOL_TAKEOFF)
-					     && (_param_com_rcl_except.get() & (int)ManualControlLossExceptionBits::Hold);
-	const bool rc_loss_ignored_altitude_cruise = (state.user_intended_mode ==
-			vehicle_status_s::NAVIGATION_STATE_ALTITUDE_CRUISE
-			&& (_param_com_rcl_except.get() & (int)ManualControlLossExceptionBits::AltitudeCruise));
-
-	const bool rc_loss_ignored_external_mode =
-		(state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_EXTERNAL1 ||
-		 state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_EXTERNAL2 ||
-		 state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_EXTERNAL3 ||
-		 state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_EXTERNAL4 ||
-		 state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_EXTERNAL5 ||
-		 state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_EXTERNAL6 ||
-		 state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_EXTERNAL7 ||
-		 state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_EXTERNAL8)
-		&& (_param_com_rcl_except.get() & (int)ManualControlLossExceptionBits::ExternalMode);
-
-	const bool rc_loss_ignored = rc_loss_ignored_mission || rc_loss_ignored_loiter || rc_loss_ignored_offboard ||
-				     rc_loss_ignored_takeoff || rc_loss_ignored_external_mode || ignore_any_link_loss_vtol_takeoff_fixedwing
-				     || _manual_control_lost_at_arming || rc_loss_ignored_altitude_cruise;
+	const bool rc_loss_ignored = isFailsafeIgnored(state.user_intended_mode, _param_com_rcl_except.get())
+				     || ignore_any_link_loss_vtol_takeoff_fixedwing || _manual_control_lost_at_arming;
 
 	/**
 	 * @brief 当rc的模式不为关闭手动控制且不忽略rc丢失，那么就运行故障检查。(当关闭了rc手动控制，且丢失rc信号时就不为故障)
@@ -515,27 +513,15 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 			       fromNavDllOrRclActParam(_param_nav_rcl_act.get()).causedBy(Cause::ManualControlLoss));
 	}
 
-	// GCS connection loss
-	// 翻译：地面站链接丢失
+	// Ground control station connection loss
 	const bool dll_loss_ignored_land = state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_LAND
 					   || state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_PRECLAND;
 
-	const bool dll_loss_ignored_mission = state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION
-					      && (_param_com_dll_except.get() & (int)DatalinkLossExceptionBits::Mission);
-	const bool dll_loss_ignored_loiter = state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER
-					     && (_param_com_dll_except.get() & (int)DatalinkLossExceptionBits::Hold);
-	const bool dll_loss_ignored_offboard = state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_OFFBOARD
-					       && (_param_com_dll_except.get() & (int)DatalinkLossExceptionBits::Offboard);
-	const bool dll_loss_ignored_takeoff = (state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_TAKEOFF ||
-					       state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_VTOL_TAKEOFF)
-					      && (_param_com_dll_except.get() & (int)DatalinkLossExceptionBits::Hold);
-
-	const bool dll_loss_ignored = dll_loss_ignored_mission || dll_loss_ignored_loiter || dll_loss_ignored_offboard ||
-				      dll_loss_ignored_takeoff || ignore_any_link_loss_vtol_takeoff_fixedwing || dll_loss_ignored_land;
+	const bool dll_loss_ignored = isFailsafeIgnored(state.user_intended_mode, _param_com_dll_except.get())
+				      || ignore_any_link_loss_vtol_takeoff_fixedwing || dll_loss_ignored_land;
 
 	if (_param_nav_dll_act.get() != int32_t(gcs_connection_loss_failsafe_mode::Disabled) && !dll_loss_ignored) {
-		CHECK_FAILSAFE(status_flags, gcs_connection_lost,
-			       fromNavDllOrRclActParam(_param_nav_dll_act.get()).causedBy(Cause::GCSConnectionLoss));
+		CHECK_FAILSAFE(status_flags, gcs_connection_lost, fromNavDllOrRclActParam(_param_nav_dll_act.get()).causedBy(Cause::GCSConnectionLoss));
 	}
 
 	// VTOL transition failure (quadchute)
@@ -554,8 +540,8 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 		// If manual control loss and GCS connection loss are disabled and we lose both command links and the mission finished,
 		// 翻译：如果禁用手动控制丢失和 GCS 连接丢失，并且我们丢失了两个命令链接并且任务完成，
 		// trigger RTL to avoid losing the vehicle
-		// 翻译：触发RTL避免丢失车辆
-		if ((_param_com_rc_in_mode.get() == int32_t(RcInMode::DisableManualControl) || rc_loss_ignored_mission)
+		if ((_param_com_rc_in_mode.get() == int32_t(RcInMode::DisableManualControl)
+		     || isFailsafeIgnored(state.user_intended_mode, _param_com_rcl_except.get()))
 		    && _param_nav_dll_act.get() == int32_t(gcs_connection_loss_failsafe_mode::Disabled)
 		    && state.mission_finished) {
 			_last_state_mission_control_lost = checkFailsafe(_caller_id_mission_control_lost, _last_state_mission_control_lost,

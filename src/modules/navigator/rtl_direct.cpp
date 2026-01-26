@@ -54,8 +54,6 @@ RtlDirect::RtlDirect(Navigator *navigator) :
 	MissionBlock(navigator, vehicle_status_s::NAVIGATION_STATE_AUTO_RTL),
 	ModuleParams(navigator)
 {
-	_destination.lat = static_cast<double>(NAN);
-	_destination.lon = static_cast<double>(NAN);
 	_land_approach.lat = static_cast<double>(NAN);
 	_land_approach.lon = static_cast<double>(NAN);
 	_land_approach.height_m = NAN;
@@ -135,8 +133,6 @@ void RtlDirect::on_inactive()
  */
 void RtlDirect::setRtlPosition(PositionYawSetpoint rtl_position, loiter_point_s loiter_pos)
 {
-	_home_pos_sub.update();
-
 	parameters_update();
 
 	// Only allow to set a new approach if the mode is not activated yet.
@@ -145,24 +141,6 @@ void RtlDirect::setRtlPosition(PositionYawSetpoint rtl_position, loiter_point_s 
 		_destination = rtl_position;
 		_force_heading = false;
 
-		// Input sanitation
-		// 翻译：输入检查
-		if (!PX4_ISFINITE(_destination.lat) || !PX4_ISFINITE(_destination.lon)) {
-			// We don't have a valid rtl position, use the home position instead.
-			// 翻译：如果未找到有效的RTL位置，则使用家庭位置。
-			_destination.lat = _home_pos_sub.get().lat;
-			_destination.lon = _home_pos_sub.get().lon;
-			_destination.alt = _home_pos_sub.get().alt;
-			_destination.yaw = _home_pos_sub.get().yaw;
-		}
-
-		if (!PX4_ISFINITE(_destination.alt)) {
-			// Not a valid rtl land altitude. Assume same altitude as home position.
-			// 翻译：如果未找到有效的RTL着陆高度，则使用家庭位置的高度。
-			_destination.alt = _home_pos_sub.get().alt;
-		}
-
-		// 校准降落点
 		_land_approach = sanitizeLandApproach(loiter_pos);
 
 		const float dist_to_destination{get_distance_to_next_waypoint(_land_approach.lat, _land_approach.lon, _destination.lat, _destination.lon)};
@@ -531,8 +509,7 @@ rtl_time_estimate_s RtlDirect::calc_rtl_time_estimate()
 		case RTLState::MOVE_TO_LAND:
 		case RTLState::TRANSITION_TO_MC:
 		case RTLState::MOVE_TO_LAND_HOVER: {
-				// Add cruise segment to home
-				// 翻译：添加巡航段到家。
+				// Add cruise segment to destination
 				float move_to_land_dist{0.f};
 				matrix::Vector2f direction{};
 

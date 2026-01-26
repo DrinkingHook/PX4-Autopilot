@@ -458,8 +458,8 @@ MavlinkReceiver::evaluate_target_ok(int command, int target_system, int target_c
 		break;
 
 	default:
-		target_ok = (target_system == mavlink_system.sysid) && ((target_component == mavlink_system.compid)
-				|| (target_component == MAV_COMP_ID_ALL));
+		target_ok = ((target_system == 0) || (target_system == mavlink_system.sysid))
+			    && ((target_component == mavlink_system.compid) || (target_component == MAV_COMP_ID_ALL));
 		break;
 	}
 
@@ -1123,6 +1123,8 @@ MavlinkReceiver::handle_message_set_position_target_local_ned(mavlink_message_t 
 		ocm.position = !matrix::Vector3f(setpoint.position).isAllNan();
 		ocm.velocity = !matrix::Vector3f(setpoint.velocity).isAllNan();
 		ocm.acceleration = !matrix::Vector3f(setpoint.acceleration).isAllNan();
+		ocm.attitude = PX4_ISFINITE(setpoint.yaw);
+		ocm.body_rate = PX4_ISFINITE(setpoint.yawspeed);
 
 		if (ocm.acceleration && (type_mask & POSITION_TARGET_TYPEMASK_FORCE_SET)) {
 			mavlink_log_critical(&_mavlink_log_pub, "SET_POSITION_TARGET_LOCAL_NED force not supported\t");
@@ -1245,6 +1247,8 @@ MavlinkReceiver::handle_message_set_position_target_global_int(mavlink_message_t
 		ocm.position = !matrix::Vector3f(setpoint.position).isAllNan();
 		ocm.velocity = !matrix::Vector3f(setpoint.velocity).isAllNan();
 		ocm.acceleration = !matrix::Vector3f(setpoint.acceleration).isAllNan();
+		ocm.attitude = PX4_ISFINITE(setpoint.yaw);
+		ocm.body_rate = PX4_ISFINITE(setpoint.yawspeed);
 
 		if (ocm.acceleration && (type_mask & POSITION_TARGET_TYPEMASK_FORCE_SET)) {
 			mavlink_log_critical(&_mavlink_log_pub, "SET_POSITION_TARGET_GLOBAL_INT force not supported\t");
@@ -1291,8 +1295,6 @@ MavlinkReceiver::handle_message_set_gps_global_origin(mavlink_message_t *msg)
 		vcmd.timestamp = hrt_absolute_time();
 		_cmd_pub.publish(vcmd);
 	}
-
-	handle_request_message_command(MAVLINK_MSG_ID_GPS_GLOBAL_ORIGIN);
 }
 
 #if defined(MAVLINK_MSG_ID_SET_VELOCITY_LIMITS) // For now only defined if development.xml is used
