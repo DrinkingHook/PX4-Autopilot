@@ -141,6 +141,13 @@ ActuatorEffectivenessRotors::addActuators(Configuration &configuration)
 	return true;
 }
 
+/**
+ * @brief 计算有效矩阵
+ * @param geometry 转子几何结构
+ * @param effectiveness 有效矩阵
+ * @param actuator_start_index 起始索引
+ * @return int 有效矩阵的行数
+ */
 int
 ActuatorEffectivenessRotors::computeEffectivenessMatrix(const Geometry &geometry,
 		EffectivenessMatrix &effectiveness, int actuator_start_index)
@@ -233,6 +240,12 @@ ActuatorEffectivenessRotors::computeEffectivenessMatrix(const Geometry &geometry
 	return num_actuators;
 }
 
+/**
+ * @brief 根据倾斜配置和当前倾斜控制设置电机轴。
+ * @param tilts 已配置的倾斜伺服电机
+ * @param tilt_control 当前倾斜控制值，范围为 [-1, 1]（可以为 NaN）
+ * @return 不可倾斜的电机（位集）
+ */
 uint32_t ActuatorEffectivenessRotors::updateAxisFromTilts(const ActuatorEffectivenessTilts &tilts,
 		float collective_tilt_control)
 {
@@ -259,6 +272,12 @@ uint32_t ActuatorEffectivenessRotors::updateAxisFromTilts(const ActuatorEffectiv
 	return nontilted_motors;
 }
 
+/**
+ * @brief 根据倾斜角度和方向计算倾斜轴。
+ * @param tilt_angle 倾斜角度，单位为弧度
+ * @param tilt_direction 倾斜方向，单位为弧度
+ * @return 倾斜轴向量
+ */
 Vector3f ActuatorEffectivenessRotors::tiltedAxis(float tilt_angle, float tilt_direction)
 {
 	Vector3f axis{0.f, 0.f, -1.f};

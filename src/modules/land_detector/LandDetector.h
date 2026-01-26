@@ -156,6 +156,7 @@ protected:
 
 	bool _armed{false};
 	bool _previous_armed_state{false};	///< stores the previous actuator_armed.armed state
+	// 可观测到扩散底部
 	bool _dist_bottom_is_observable{false};
 
 private:
@@ -165,6 +166,7 @@ private:
 
 	vehicle_land_detected_s _land_detected{};
 	hrt_abstime _takeoff_time{0};
+	// 翻译：飞行器总飞行时间（微秒）
 	hrt_abstime _total_flight_time{0};	///< total vehicle flight time in microseconds
 
 	hrt_abstime _time_last_move_detect_us{0};	// timestamp of last movement detection event in microseconds

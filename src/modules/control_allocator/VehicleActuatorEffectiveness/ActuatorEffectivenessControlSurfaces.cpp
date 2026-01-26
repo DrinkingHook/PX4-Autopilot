@@ -31,6 +31,9 @@
  *
  ****************************************************************************/
 
+ /**
+  * @brief 标准固定翼/传统舵面 公共接口函数
+  */
 #include <px4_platform_common/log.h>
 #include <px4_platform_common/events.h>
 

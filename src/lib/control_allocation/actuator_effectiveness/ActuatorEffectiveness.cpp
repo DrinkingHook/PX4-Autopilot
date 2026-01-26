@@ -35,6 +35,13 @@
 
 #include <px4_platform_common/log.h>
 
+/**
+ * @brief 添加一个执行器到配置中。
+ * @param type 执行器类型
+ * @param torque 扭矩向量
+ * @param thrust 推力向量
+ * @return 添加执行器的索引，如果失败则返回 -1
+ */
 int ActuatorEffectiveness::Configuration::addActuator(ActuatorType type, const matrix::Vector3f &torque,
 		const matrix::Vector3f &thrust)
 {
@@ -62,6 +69,12 @@ int ActuatorEffectiveness::Configuration::addActuator(ActuatorType type, const m
 	return num_actuators_matrix[selected_matrix]++;
 }
 
+/**
+ * @brief 添加多个执行器到配置中。
+ * @param type 执行器类型
+ * @param count 执行器数量
+ * @return 添加执行器的索引，如果失败则返回 -1
+ */
 void ActuatorEffectiveness::Configuration::actuatorsAdded(ActuatorType type, int count)
 {
 	int total_count = totalNumActuators();

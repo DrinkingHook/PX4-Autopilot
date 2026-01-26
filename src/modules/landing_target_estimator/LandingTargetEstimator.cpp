@@ -82,6 +82,7 @@ void LandingTargetEstimator::update()
 			float dt = (hrt_absolute_time() - _last_predict) / SEC2USEC;
 
 			// predict target position with the help of accel data
+			// 翻译：使用加速度数据预测目标位置
 			matrix::Vector3f a{_vehicle_acceleration.xyz};
 
 			if (_vehicleAttitude_valid && _vehicle_acceleration_valid) {
@@ -106,6 +107,7 @@ void LandingTargetEstimator::update()
 	}
 
 	// mark this sensor measurement as consumed
+	// 翻译：标记此传感器测量已使用
 	_new_irlockReport = false;
 
 
@@ -229,28 +231,33 @@ void LandingTargetEstimator::_update_topics()
 		sensor_ray(2) = 1.0f;
 
 		// rotate unit ray according to sensor orientation
+		// 翻译：根据传感器方向旋转单位射线
 		_S_att = get_rot_matrix(_params.sensor_yaw);
 		sensor_ray = _S_att * sensor_ray;
 
 		// rotate the unit ray into the navigation frame
+		// 翻译：将单位射线旋转到导航框架中
 		matrix::Quaternion<float> q_att(&_vehicleAttitude.q[0]);
 		_R_att = matrix::Dcm<float>(q_att);
 		sensor_ray = _R_att * sensor_ray;
 
 		if (fabsf(sensor_ray(2)) < 1e-6f) {
 			// z component of measurement unsafe, don't use this measurement
+			// 翻译：测量的z分量不安全，不要使用此测量
 			return;
 		}
 
 		_dist_z = _vehicleLocalPosition.dist_bottom - _params.offset_z;
 
 		// scale the ray s.t. the z component has length of _uncertainty_scale
+		// 翻译：将射线缩放，使z分量的长度为_uncertainty_scale
 		_target_position_report.timestamp = _irlockReport.timestamp;
 		_target_position_report.rel_pos_x = sensor_ray(0) / sensor_ray(2) * _dist_z;
 		_target_position_report.rel_pos_y = sensor_ray(1) / sensor_ray(2) * _dist_z;
 		_target_position_report.rel_pos_z = _dist_z;
 
 		// Adjust relative position according to sensor offset
+		// 翻译：根据传感器偏移调整相对位置
 		_target_position_report.rel_pos_x += _params.offset_x;
 		_target_position_report.rel_pos_y += _params.offset_y;
 

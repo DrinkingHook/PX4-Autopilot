@@ -108,6 +108,12 @@ public:
 	 * @param tilt_control current tilt control in [-1, 1] (can be NAN)
 	 * @return the motors as bitset which are not tiltable
 	 */
+    /**
+    * @brief 根据倾斜配置和当前倾斜控制设置电机轴。
+    * @param tilts 已配置的倾斜伺服电机
+    * @param tilt_control 当前倾斜控制值，范围为 [-1, 1]（可以为 NaN）
+    * @return 不可倾斜的电机（位集）
+    */
 	uint32_t updateAxisFromTilts(const ActuatorEffectivenessTilts &tilts, float tilt_control);
 
 	const Geometry &geometry() const { return _geometry; }

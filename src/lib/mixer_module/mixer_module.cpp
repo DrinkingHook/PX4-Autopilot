@@ -185,6 +185,7 @@ void MixingOutput::updateParams()
 			}
 
 			// we set _function_assignment[i] later to ensure _functions[i] is updated at the same time
+			// 翻译:我们稍后会设置 _function_assignment[i]，以确保 _functions[i] 同时更新。
 		}
 
 		if (_param_handles[i].disarmed != PARAM_INVALID && param_get(_param_handles[i].disarmed, &val) == 0) {
@@ -272,7 +273,7 @@ bool MixingOutput::updateSubscriptions(bool allow_wq_switch)
 			// 翻译：直接从参数中读取功能，由于 _function_assignment [i]将稍后更新
 			int32_t function;
 
-            		// _param_handles 等参数 在 initParamHandles 中初始化
+            // _param_handles 等参数 在 initParamHandles 中初始化
 			if (_param_handles[i].function != PARAM_INVALID && param_get(_param_handles[i].function, &function) == 0) {
 				if (function >= (int32_t)OutputFunction::Motor1 && function <= (int32_t)OutputFunction::MotorMax) {
 					switch_requested = true;
@@ -323,7 +324,7 @@ bool MixingOutput::updateSubscriptions(bool allow_wq_switch)
 				all_disabled = false;
 				int found_index = -1;
 
-                                /* p=0=min_func; p=1=max_func; p=2=Motor1~MotorMax ; p=3=Servo1~ServoMax
+                /* p=0=min_func; p=1=max_func; p=2=Motor1~MotorMax ; p=3=Servo1~ServoMax
 				 * 假设我的配置为Motor1, Motor2, Servo1
 				 * 当第一次运行时 i = 0,p = 2 时会创建 Motor1 的 provider 实例，并记录 provider_indexes[0] = 2
 				 * 当第二次运行时 i = 1,p = 2 时会复用
@@ -336,16 +337,16 @@ bool MixingOutput::updateSubscriptions(bool allow_wq_switch)
 					}
 				}
 
-                                /* 如果找到则复用已分配的 provider 实例
+                /* 如果找到则复用已分配的 provider 实例
 				 * 若没有找到则创建一个新的 provider 实例
-                                 */
+                 */
 				if (found_index >= 0) {
 					_functions[i] = _function_allocated[found_index];
 
 				} else {
 					_function_allocated[next_provider] = all_function_providers[p].constructor(context);
 
-                                        /* 判断是否构建成功
+                    /* 判断是否构建成功
 					 * 若成功则分配给当前通道，并记录 provider 索引
 					 */
 					if (_function_allocated[next_provider]) {
@@ -529,7 +530,7 @@ bool MixingOutput::update()
 			_actuator_test.overrideValues(outputs, _max_num_outputs);
 		}
 
-                // 输出限制-也是实际的输出
+        // 输出限制-也是实际的输出
 		limitAndUpdateOutputs(outputs, has_updates);
 	}
 
@@ -567,6 +568,7 @@ MixingOutput::limitAndUpdateOutputs(float outputs[MAX_ACTUATORS], bool has_updat
 	// 翻译：这样做可以使校准在不同的配置之间保持一致，因此PWM最小和最大效果具有一致的效果
 	// hence the defaults for these parameters also make most setups work out of the box
 	// 翻译：因此，这些参数的默认值也使大多数设置可以使用
+	// 系统处于 ESC（电调）校准模式中
 	if (_armed.in_esc_calibration_mode) {
 		static constexpr uint16_t PWM_CALIBRATION_LOW = 1000;
 		static constexpr uint16_t PWM_CALIBRATION_HIGH = 2000;
@@ -589,11 +591,16 @@ MixingOutput::limitAndUpdateOutputs(float outputs[MAX_ACTUATORS], bool has_updat
 		// 发布执行器输出
 		setAndPublishActuatorOutputs(_max_num_outputs, actuator_outputs);
 
-                // 性能记录
+        // 性能记录
 		updateLatencyPerfCounter(actuator_outputs);
 	}
 }
 
+/**
+ * @brief 输出限制计算（单次）
+ * @param i 执行器索引
+ * @param value 执行器值
+ */
 uint16_t MixingOutput::output_limit_calc_single(int i, float value) const
 {
 	// check for invalid / disabled channels
@@ -614,6 +621,7 @@ uint16_t MixingOutput::output_limit_calc_single(int i, float value) const
 	    && _center_value[i] <= 2200) {
 
 		/* bi-linear interpolation */
+		// 翻译：双线性插值
 		if (value < 0.0f) {
 			output = math::interpolate(value, -1.f, 0.0f,
 						   static_cast<float>(_min_value[i]), static_cast<float>(_center_value[i]));
@@ -626,6 +634,7 @@ uint16_t MixingOutput::output_limit_calc_single(int i, float value) const
 	}
 
 	// Everything except servos, or if center is not set
+	// 翻译：除舵机外，或未设置中心位置时，所有电机均适用。
 	else {
 		output = math::interpolate(value, -1.f, 1.f,
 					   static_cast<float>(_min_value[i]), static_cast<float>(_max_value[i]));
@@ -639,9 +648,11 @@ void
 MixingOutput::output_limit_calc(const bool armed, const int num_channels, const float output[MAX_ACTUATORS])
 {
 	// time to slowly ramp up the ESCs
+	// 翻译：是时候逐步增加 ESC 了。
 	static constexpr hrt_abstime RAMP_TIME_US = 500_ms;
 
 	/* first evaluate state changes */
+	// 翻译：首先评估状态变化。
 	switch (_output_state) {
 	case OutputLimitState::OFF:
 		if (armed) {
@@ -653,12 +664,13 @@ MixingOutput::output_limit_calc(const bool armed, const int num_channels, const 
 			}
 
 			// reset arming time, used for ramp timing
+			// 翻译：重置启动时间，用于斜坡计时。
 			_output_time_armed = hrt_absolute_time();
 		}
 
 		break;
 
-        // 爬升阶段 当超过设定的时间后切换输出状态为ON
+    // 爬升阶段 当超过设定的时间后切换输出状态为ON
 	case OutputLimitState::RAMP:
 		if (!armed) {
 			_output_state = OutputLimitState::OFF;
@@ -684,7 +696,7 @@ MixingOutput::output_limit_calc(const bool armed, const int num_channels, const 
 	 * regular arming time.
 	 */
 
-        /* 如果系统已预防，则极限状态暂时打开,
+    /* 如果系统已预防，则极限状态暂时打开,
 	* 因为一些输出是有效的，而无效输出已被设置为 NaN.
 	* 不过，这并不存储在状态机器中,
 	* 因为油门通道需要在常规准备时间内经过斜坡.
@@ -730,6 +742,11 @@ MixingOutput::output_limit_calc(const bool armed, const int num_channels, const 
 	}
 }
 
+/**
+ * @brief 设置并发布执行器输出
+ * @param num_outputs 执行器输出的数量
+ * @param actuator_outputs 执行器输出结构体
+ */
 void
 MixingOutput::setAndPublishActuatorOutputs(unsigned num_outputs, actuator_outputs_s &actuator_outputs)
 {
@@ -743,10 +760,15 @@ MixingOutput::setAndPublishActuatorOutputs(unsigned num_outputs, actuator_output
 	_outputs_pub.publish(actuator_outputs);
 }
 
+/**
+ * @brief 更新控制延迟性能计数器
+ * @param actuator_outputs 执行器输出结构体
+ */
 void
 MixingOutput::updateLatencyPerfCounter(const actuator_outputs_s &actuator_outputs)
 {
 	// Just check the first function. It means we only get the latency if motors are assigned first, which is the default
+	// 翻译：只需检查第一个函数即可。这意味着只有在电机被首先分配的情况下（即默认情况），我们才能获得延迟。
 	if (_function_allocated[0]) {
 		hrt_abstime timestamp_sample;
 

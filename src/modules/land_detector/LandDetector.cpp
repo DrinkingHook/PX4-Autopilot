@@ -121,9 +121,11 @@ void LandDetector::Run()
 
 	_update_topics();
 
+	// 如果当前到地面的距离是不可观测的
 	if (!_dist_bottom_is_observable) {
 		// we consider the distance to the ground observable if the system is using a range sensor
 		// 翻译：我们考虑地面距离可观察，如果系统使用范围传感器
+		// 系统有没有正在使用一个真正的范围传感器（range sensor）来提供地面距离测量？如果有那么到地面的距离是可观测的及（_dist_bottom_is_observable = true）
 		_dist_bottom_is_observable = _vehicle_local_position.dist_bottom_sensor_bitfield &
 					     vehicle_local_position_s::DIST_BOTTOM_SENSOR_RANGE;
 	}
@@ -139,10 +141,15 @@ void LandDetector::Run()
 
 	const hrt_abstime now_us = hrt_absolute_time();
 
+	// 自由落体滞后现象
 	_freefall_hysteresis.set_state_and_update(_get_freefall_state(), now_us);
+	// 地面接触滞后现象
 	_ground_contact_hysteresis.set_state_and_update(_get_ground_contact_state(), now_us);
+	// 可能着陆滞后现象
 	_maybe_landed_hysteresis.set_state_and_update(_get_maybe_landed_state(), now_us);
+	// 着陆滞后现象
 	_landed_hysteresis.set_state_and_update(_get_landed_state(), now_us);
+	// 地面效应滞后现象
 	_ground_effect_hysteresis.set_state_and_update(_get_ground_effect_state(), now_us);
 
 	const bool freefallDetected = _freefall_hysteresis.get_state();
@@ -156,7 +163,7 @@ void LandDetector::Run()
 	const bool at_rest = landDetected && _at_rest;
 
 	// publish at 1 Hz, very first time, or when the result has changed
-	// 翻译：如果不在地面附近，增加地面检测时间
+	// 翻译：以 1 Hz 的频率发布，首次发布时发布，或结果发生变化时发布
 	if ((hrt_elapsed_time(&_land_detected.timestamp) >= 1_s) ||
 	    (_land_detected.landed != landDetected) ||
 	    (_land_detected.freefall != freefallDetected) ||
@@ -165,9 +172,10 @@ void LandDetector::Run()
 	    (_land_detected.in_ground_effect != in_ground_effect) ||
 	    (_land_detected.at_rest != at_rest)) {
 
+		// 目前不处于已着陆状态，历史状态处于着陆状态，起飞时间为0 
 		if (!landDetected && _land_detected.landed && _takeoff_time == 0) { /* only set take off time once, until disarming */
 			// We did take off
-			// 翻译：增加地面检测时间
+			// 翻译：我们确实起飞了
 			_takeoff_time = now_us;
 		}
 

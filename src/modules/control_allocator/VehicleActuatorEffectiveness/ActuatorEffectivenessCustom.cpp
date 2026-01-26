@@ -31,6 +31,9 @@
  *
  ****************************************************************************/
 
+ /**
+  * @brief 用户自定义的、非标准/非常规 舵面布局或混合控制
+  */
 #include "ActuatorEffectivenessCustom.hpp"
 
 using namespace matrix;
