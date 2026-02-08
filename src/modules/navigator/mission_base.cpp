@@ -791,6 +791,7 @@ void
 MissionBase::check_mission_valid(bool forced)
 {
 	// Allow forcing it, since we currently not rechecking if parameters have changed.
+	// 翻译：允许强制它，因为我们目前没有重新检查参数是否已更改。
 	if (forced ||
 	    (_navigator->get_mission_result()->mission_id != _mission.mission_id) ||
 	    (_navigator->get_mission_result()->geofence_id != _mission.geofence_id) ||
@@ -809,6 +810,7 @@ MissionBase::check_mission_valid(bool forced)
 		set_mission_result();
 
 		// only warn if the check failed on merit
+		// 翻译：仅当检查失败时才发出警告
 		if ((!_navigator->get_mission_result()->valid) && _mission.count > 0U) {
 			PX4_WARN("mission check failed");
 		}
@@ -823,6 +825,7 @@ MissionBase::heading_sp_update()
 		_navigator->get_position_setpoint_triplet();
 
 	// Only update if current triplet is valid
+	// 翻译：仅当当前三元组有效时才更新
 	if (pos_sp_triplet->current.valid) {
 
 		double point_from_latlon[2] = { _global_pos_sub.get().lat,
@@ -834,9 +837,11 @@ MissionBase::heading_sp_update()
 		float yaw_offset = 0.0f;
 
 		// Depending on ROI-mode, update heading
+		// 翻译：根据ROI模式更新航向
 		switch (_navigator->get_vroi().mode) {
 		case vehicle_roi_s::ROI_LOCATION: {
 				// ROI is a fixed location. Vehicle needs to point towards that location
+				// 翻译：ROI 是一个固定位置。飞行器需要指向该位置
 				point_to_latlon[0] = _navigator->get_vroi().lat;
 				point_to_latlon[1] = _navigator->get_vroi().lon;
 				// No yaw offset required
@@ -846,6 +851,7 @@ MissionBase::heading_sp_update()
 
 		case vehicle_roi_s::ROI_WPNEXT: {
 				// ROI is current waypoint. Vehcile needs to point towards current waypoint
+				// 翻译：ROI 是当前航点。飞行器需要指向当前航点
 				point_to_latlon[0] = pos_sp_triplet->current.lat;
 				point_to_latlon[1] = pos_sp_triplet->current.lon;
 				// Add the gimbal's yaw offset
@@ -865,6 +871,8 @@ MissionBase::heading_sp_update()
 		// Get desired heading and update it.
 		// However, only update if distance to desired heading is
 		// larger than acceptance radius to prevent excessive yawing
+		// 翻译：获取期望航向并更新它。
+		// 但是，仅当与期望航向的距离大于接受半径时才更新，以防止过度偏航
 		float d_current = get_distance_to_next_waypoint(point_from_latlon[0],
 				  point_from_latlon[1], point_to_latlon[0], point_to_latlon[1]);
 
@@ -885,15 +893,20 @@ MissionBase::heading_sp_update()
 		}
 
 		// we set yaw directly so we can run this in parallel to the FOH update
+		// 翻译：我们直接设置偏航角，以便可以与飞行器航向更新并行运行
 		publish_navigator_mission_item();
 		_navigator->set_position_setpoint_triplet_updated();
 	}
 }
 
+/**
+ * @brief 中断着陆
+ */
 void
 MissionBase::do_abort_landing()
 {
 	// Abort FW landing, loiter above landing site in at least MIS_LND_ABRT_ALT
+	// 翻译：中断固定翼着陆，高于着陆点至少MIS_LND_ABRT_ALT
 	if (_mission_type == MissionType::MISSION_TYPE_NONE) {
 		return;
 	}
@@ -907,6 +920,7 @@ MissionBase::do_abort_landing()
 				       _global_pos_sub.get().alt);
 
 	// turn current landing waypoint into an indefinite loiter
+	// 翻译：将当前着陆航点转换为无限定的悬停
 	_mission_item.nav_cmd = NAV_CMD_LOITER_UNLIMITED;
 	_mission_item.altitude_is_relative = false;
 	_mission_item.altitude = alt_sp;
@@ -997,6 +1011,16 @@ bool MissionBase::isMissionValid() const
 	return ret_val;
 }
 
+/**
+ * @brief 获取非跳转项
+ *
+ * @param mission_index 任务索引
+ * @param mission 任务项
+ * @param execute_jump 是否执行跳转
+ * @param write_jumps 是否写入跳转
+ * @param mission_direction_backward 任务方向是否反向
+ * @return int 成功返回0，失败返回PX4_ERROR
+ */
 int MissionBase::getNonJumpItem(int32_t &mission_index, mission_item_s &mission, bool execute_jump,
 				bool write_jumps, bool mission_direction_backward)
 {

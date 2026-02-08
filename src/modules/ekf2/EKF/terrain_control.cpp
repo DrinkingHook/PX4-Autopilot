@@ -43,15 +43,21 @@
 void Ekf::initTerrain()
 {
 	// assume a ground clearance
+	// 翻译：假设一个地面高度
 	_state.terrain = -_gpos.altitude() + _params.ekf2_min_rng;
 
 	// use the ground clearance value as our uncertainty
+	// 翻译：使用地面高度作为我们的不确定性
 	P.uncorrelateCovarianceSetVariance<State::terrain.dof>(State::terrain.idx, sq(_params.ekf2_min_rng));
 }
 
+/**
+ * @brief 控制地形虚假融合
+ */
 void Ekf::controlTerrainFakeFusion()
 {
 	// If we are on ground, store the local position and time to use as a reference
+	// 翻译：如果我们在地面上，存储本地位置和时间以使用为参考
 	if (!_control_status.flags.in_air) {
 		_last_on_ground_posD = -_gpos.altitude();
 		_control_status.flags.rng_fault = false;
@@ -60,6 +66,7 @@ void Ekf::controlTerrainFakeFusion()
 		// Let the estimator run freely before arming for bench testing purposes, but reset on takeoff
 		// because when using optical flow measurements, it is safer to start with a small distance to ground
 		// as an overestimated distance leads to an overestimated velocity, causing a dangerous behavior.
+		// 翻译：在进行台架测试之前，允许估算器自由运行，但在起飞时重置，因为在使用光流测量时，从较小的地面距离开始更安全，高估的距离会导致高估的速度，从而造成危险行为。
 		initTerrain();
 	}
 

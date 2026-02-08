@@ -759,6 +759,7 @@ ControlAllocator::publish_actuator_controls()
 		++actuator_idx;
 	}
 
+	// 将剩余的未注册的motors_idx部分赋值为NAN，以防止错误数据
 	for (int i = motors_idx; i < actuator_motors_s::NUM_CONTROLS; i++) {
 		actuator_motors.control[i] = NAN;
 	}
@@ -777,6 +778,7 @@ ControlAllocator::publish_actuator_controls()
 			++actuator_idx;
 		}
 
+		// 将剩余的未注册的servos_idx部分赋值为NAN，以防止错误数据
 		for (int i = servos_idx; i < actuator_servos_s::NUM_CONTROLS; i++) {
 			actuator_servos.control[i] = NAN;
 		}

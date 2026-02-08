@@ -298,6 +298,16 @@ void Ekf::predictState(const imuSample &imu_delayed)
 	_accel_horiz_lpf.update(corrected_delta_vel_ef.xy() / imu_delayed.delta_vel_dt, imu_delayed.delta_vel_dt);
 }
 
+/**
+ * @brief 重置全局位置到外部观测
+ * @param latitude 外部观测的纬度
+ * @param longitude 外部观测的经度
+ * @param altitude 外部观测的海拔高度
+ * @param eph 外部观测的水平精度
+ * @param epv 外部观测的垂直精度
+ * @param timestamp_observation 外部观测的时间戳
+ * @return 是否成功重置全局位置
+ */
 bool Ekf::resetGlobalPosToExternalObservation(const double latitude, const double longitude, const float altitude,
 		const float eph,
 		const float epv, uint64_t timestamp_observation)
@@ -319,6 +329,7 @@ bool Ekf::resetGlobalPosToExternalObservation(const double latitude, const doubl
 	Vector3f pos_correction;
 
 	// apply a first order correction using velocity at the delayed time horizon and the delta time
+	// 翻译：使用延迟时间范围内的速度和时间差应用一阶校正
 	if ((timestamp_observation > 0) && isLocalHorizontalPositionValid()) {
 
 		timestamp_observation = math::min(_time_latest_us, timestamp_observation);

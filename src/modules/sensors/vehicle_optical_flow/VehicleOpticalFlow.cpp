@@ -112,6 +112,7 @@ void VehicleOpticalFlow::Run()
 	if (_sensor_flow_sub.update(&sensor_optical_flow)) {
 
 		// clear data accumulation if there's a gap in data
+		// 翻译：如果数据中存在间隙，则清除累积数据
 		const uint64_t integration_gap_threshold_us = sensor_optical_flow.integration_timespan_us * 2;
 
 		if ((sensor_optical_flow.timestamp_sample >= _flow_timestamp_sample_last + integration_gap_threshold_us)
@@ -126,12 +127,16 @@ void VehicleOpticalFlow::Run()
 
 		// delta angle
 		//  - from sensor_optical_flow if available, otherwise use synchronized sensor_gyro if available
+		// 翻译：角度变化量
+		// 	- 如果可用，则使用 sensor_optical_flow，否则使用同步 sensor_gyro（如果可用）。
 		if (sensor_optical_flow.delta_angle_available && Vector2f(sensor_optical_flow.delta_angle).isAllFinite()) {
 			// passthrough integrated gyro if available
+			// 翻译：如果可用，则使用直通集成陀螺仪
 			Vector3f delta_angle(sensor_optical_flow.delta_angle);
 
 			if (!PX4_ISFINITE(delta_angle(2))) {
 				// Some sensors only provide X and Y angular rates, rotate them but place back the NAN on the Z axis
+				// 翻译：如果只提供 X 和 Y 角度速率，则旋转它们，但将 NAN 放回 Z 轴上。
 				delta_angle(2) = 0.f;
 				_delta_angle += _flow_rotation * delta_angle;
 				_delta_angle(2) = NAN;
@@ -146,6 +151,7 @@ void VehicleOpticalFlow::Run()
 			_delta_angle_available = false;
 
 			// integrate synchronized gyro
+			// 翻译：集成同步陀螺仪
 			gyroSample gyro_sample;
 
 			while (_gyro_buffer.pop_oldest(timestamp_oldest, timestamp_newest, &gyro_sample)) {
@@ -174,6 +180,8 @@ void VehicleOpticalFlow::Run()
 
 		// distance
 		//  - from sensor_optical_flow if available, otherwise use downward distance_sensor if available
+		// 翻译：距离
+		// 	- 如果可用，则使用 sensor_optical_flow，否则使用向下距离传感器（如果可用）
 		if (sensor_optical_flow.distance_available && PX4_ISFINITE(sensor_optical_flow.distance_m)) {
 			if (!PX4_ISFINITE(_distance_sum)) {
 				_distance_sum = sensor_optical_flow.distance_m;
@@ -186,6 +194,7 @@ void VehicleOpticalFlow::Run()
 
 		} else {
 			// otherwise use buffered downward facing distance_sensor if available
+			// 翻译：否则使用缓冲区中的向下方向距离传感器（如果可用）
 			rangeSample range_sample;
 
 			if (_range_buffer.peak_first_older_than(sensor_optical_flow.timestamp_sample, &range_sample)) {
@@ -281,6 +290,7 @@ void VehicleOpticalFlow::Run()
 			_vehicle_optical_flow_pub.publish(vehicle_optical_flow);
 
 			// vehicle_optical_flow_vel if distance is available (for logging)
+			// 翻译：如果距离可用，则发布vehicle_optical_flow_vel（用于日志记录）
 			if (_distance_sum_count > 0 && PX4_ISFINITE(_distance_sum)) {
 				const float range = _distance_sum / _distance_sum_count;
 
@@ -344,6 +354,7 @@ void VehicleOpticalFlow::Run()
 	}
 
 	// reschedule backup
+	// 翻译：重新安排备份计划
 	ScheduleDelayed(10_ms);
 
 	perf_end(_cycle_perf);
@@ -470,6 +481,7 @@ void VehicleOpticalFlow::UpdateSensorGyro()
 void VehicleOpticalFlow::ClearAccumulatedData()
 {
 	// clear accumulated data
+	// 翻译：清理积累的数据
 	_flow_integral.zero();
 	_integration_timespan_us = 0;
 

@@ -116,10 +116,15 @@ private:
 	// Declarations used by a bank of N_MODELS_EKFGSF EKFs
 
 	struct {
+	                                                // 翻译：北向速度 (m/s)、东向速度 (m/s)、偏航角 (rad)s
 		matrix::Vector3f X{};                       // Vel North (m/s),  Vel East (m/s), yaw (rad)s
+		                                            // 翻译：协方差矩阵
 		matrix::SquareMatrix<float, 3> P{};         // covariance matrix
+		                                            // 翻译：归一化创新平方
 		float nis{};                                // normalized innovation squared
+		                                            // 翻译：创新协方差矩阵行列式的逆矩阵
 		float S_det_inverse{};                      // inverse of the innovation covariance matrix determinant
+		                                            // 翻译：北向、东向速度创新 (m/s)
 		matrix::Vector2f innov{};                   // Velocity N,E innovation (m/s)
 	} _ekf_gsf[N_MODELS_EKFGSF] {};
 

@@ -75,6 +75,7 @@ public:
 
 protected:
 	void UpdateDistanceSensor();
+	// 翻译：因为我们可能有多个方向不同的距离传感器实例
 	int _distance_sensor_selected{-1}; // because we can have several distance sensor instances with different orientations
 
 private:

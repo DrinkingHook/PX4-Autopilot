@@ -221,9 +221,11 @@ void Ekf::predictCovariance(const imuSample &imu_delayed)
 	if (_height_sensor_ref != HeightSensor::RANGE) {
 		// predict the state variance growth where the state is the vertical position of the terrain underneath the vehicle
 		// process noise due to errors in vehicle height estimate
+		// 翻译：预测状态方差的增长，其中状态是车辆下方地形的垂直位置，处理由车辆高度估计误差引起的噪声。
 		float terrain_process_noise = sq(imu_delayed.delta_vel_dt * _params.ekf2_terr_noise);
 
 		// process noise due to terrain gradient
+		// 翻译：地形梯度引起的过程噪声
 		terrain_process_noise += sq(imu_delayed.delta_vel_dt * _params.ekf2_terr_grad) * (sq(_state.vel(0)) + sq(_state.vel(
 						 1)));
 		P(State::terrain.idx, State::terrain.idx) += terrain_process_noise;
@@ -241,6 +243,9 @@ void Ekf::predictCovariance(const imuSample &imu_delayed)
 	constrainStateVariances();
 }
 
+/**
+ * @brief 约束状态方差
+ */
 void Ekf::constrainStateVariances()
 {
 	// NOTE: This limiting is a last resort and should not be relied on
@@ -294,6 +299,13 @@ void Ekf::constrainStateVar(const IdxDof &state, float min, float max)
 	}
 }
 
+/**
+ * @brief 限制状态变量的方差范围，同时限制方差之间的比例
+ * @param state 状态变量的索引和维度
+ * @param min 最小方差
+ * @param max 最大方差
+ * @param max_ratio 最大方差比例
+ */
 void Ekf::constrainStateVarLimitRatio(const IdxDof &state, float min, float max, float max_ratio)
 {
 	// the ratio of a max and min variance must not exceed max_ratio
@@ -317,19 +329,27 @@ void Ekf::resetQuatCov(const float yaw_noise)
 	float yaw_var = sq(0.01f);
 
 	// update the yaw angle variance using the variance of the measurement
+	// 翻译：使用测量值的方差更新航向角方差
 	if (PX4_ISFINITE(yaw_noise)) {
 		// using magnetic heading tuning parameter
+		// 翻译：使用磁航向调谐参数
 		yaw_var = sq(yaw_noise);
 	}
 
 	resetQuatCov(Vector3f(tilt_var, tilt_var, yaw_var));
 }
 
+/**
+ * @brief 重置四元数协方差
+ */
 void Ekf::resetQuatCov(const Vector3f &rot_var_ned)
 {
 	P.uncorrelateCovarianceSetVariance<State::quat_nominal.dof>(State::quat_nominal.idx, rot_var_ned);
 }
 
+/**
+ * @brief 重置陀螺仪偏置协方差
+ */
 void Ekf::resetGyroBiasCov()
 {
 	// Zero the corresponding covariances and set
@@ -337,11 +357,17 @@ void Ekf::resetGyroBiasCov()
 	P.uncorrelateCovarianceSetVariance<State::gyro_bias.dof>(State::gyro_bias.idx, sq(_params.ekf2_gbias_init));
 }
 
+/**
+ * @brief 重置陀螺仪偏置Z轴协方差
+ */
 void Ekf::resetGyroBiasZCov()
 {
 	P.uncorrelateCovarianceSetVariance<1>(State::gyro_bias.idx + 2, sq(_params.ekf2_gbias_init));
 }
 
+/**
+ * @brief 重置加速度计偏置协方差
+ */
 void Ekf::resetAccelBiasCov()
 {
 	// Zero the corresponding covariances and set
@@ -350,6 +376,9 @@ void Ekf::resetAccelBiasCov()
 }
 
 #if defined(CONFIG_EKF2_MAGNETOMETER)
+/**
+ * @brief 重置地磁场协方差
+ */
 void Ekf::resetMagEarthCov()
 {
 	ECL_INFO("reset mag earth covariance");
@@ -357,6 +386,9 @@ void Ekf::resetMagEarthCov()
 	P.uncorrelateCovarianceSetVariance<State::mag_I.dof>(State::mag_I.idx, sq(_params.ekf2_mag_noise));
 }
 
+/**
+ * @brief 重置地磁场偏置协方差
+ */
 void Ekf::resetMagBiasCov()
 {
 	ECL_INFO("reset mag bias covariance");

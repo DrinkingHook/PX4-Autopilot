@@ -79,15 +79,22 @@ bool GnssChecks::run(const gnssSample &gnss, uint64_t time_us)
 	return passed;
 }
 
+/**
+ * @brief 运行简化检查
+ * @param gnss GNSS数据样本
+ * @return 是否通过简化检查
+ */
 bool GnssChecks::runSimplifiedChecks(const gnssSample &gnss)
 {
 	_check_fail_status.flags.fix = (gnss.fix_type < 3);
 
 	// Check the reported horizontal and vertical position accuracy
+	// 翻译：检查报告的水平和垂直位置精度
 	_check_fail_status.flags.hacc = (gnss.hacc > 50.f);
 	_check_fail_status.flags.vacc = (gnss.vacc > 50.f);
 
 	// Check the reported speed accuracy
+	// 翻译：检查报告的速度精度
 	_check_fail_status.flags.sacc = (gnss.sacc > 10.f);
 
 	_check_fail_status.flags.spoofed = gnss.spoofed;
@@ -109,22 +116,32 @@ bool GnssChecks::runSimplifiedChecks(const gnssSample &gnss)
 	return passed;
 }
 
+/**
+ * @brief 运行初始固定检查
+ * @param gnss GNSS数据样本
+ * @return 是否通过初始固定检查
+ */
 bool GnssChecks::runInitialFixChecks(const gnssSample &gnss)
 {
 	// Check the fix type
+	// 翻译：检查GNSS的fix类型是否满足要求
 	_check_fail_status.flags.fix = (gnss.fix_type < _params.ekf2_req_fix);
 
 	// Check the number of satellites
+	// 翻译：检查GNSS的卫星数量是否满足要求
 	_check_fail_status.flags.nsats = (gnss.nsats < _params.ekf2_req_nsats);
 
 	// Check the position dilution of precision
+	// 翻译：检查精度稀释的位置
 	_check_fail_status.flags.pdop = (gnss.pdop > _params.ekf2_req_pdop);
 
 	// Check the reported horizontal and vertical position accuracy
+	// 翻译：检查水平和垂直位置精度
 	_check_fail_status.flags.hacc = (gnss.hacc > _params.ekf2_req_eph);
 	_check_fail_status.flags.vacc = (gnss.vacc > _params.ekf2_req_epv);
 
 	// Check the reported speed accuracy
+	// 翻译：检查报告的速度精度
 	_check_fail_status.flags.sacc = (gnss.sacc > _params.ekf2_req_sacc);
 
 	_check_fail_status.flags.spoofed = gnss.spoofed;
@@ -133,11 +150,13 @@ bool GnssChecks::runInitialFixChecks(const gnssSample &gnss)
 	runOnGroundGnssChecks(gnss);
 
 	// force horizontal speed failure if above the limit
+	// 翻译：如果超过限制，强制水平速度失败
 	if (gnss.vel.xy().longerThan(_params.ekf2_vel_lim)) {
 		_check_fail_status.flags.hspeed = true;
 	}
 
 	// force vertical speed failure if above the limit
+	// 翻译：如果超过限制，强制垂直速度失败
 	if (fabsf(gnss.vel(2)) > _params.ekf2_vel_lim) {
 		_check_fail_status.flags.vspeed = true;
 	}
@@ -145,6 +164,7 @@ bool GnssChecks::runInitialFixChecks(const gnssSample &gnss)
 	bool passed = true;
 
 	// if any user selected checks have failed, record the fail time
+	// 翻译：如果任何用户选择的检查失败，记录失败时间
 	if (
 		(_check_fail_status.flags.fix     && isCheckEnabled(GnssChecksMask::kFix)) ||
 		(_check_fail_status.flags.nsats   && isCheckEnabled(GnssChecksMask::kNsats)) ||
@@ -165,6 +185,10 @@ bool GnssChecks::runInitialFixChecks(const gnssSample &gnss)
 	return passed;
 }
 
+/**
+ * @brief 运行地面GNSS检查
+ * @param gnss GNSS样本
+ */
 void GnssChecks::runOnGroundGnssChecks(const gnssSample &gnss)
 {
 	if (_control_status.flags.in_air) {

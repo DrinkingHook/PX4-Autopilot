@@ -48,11 +48,13 @@ void Ekf::controlZeroInnovationHeadingUpdate()
 				|| _control_status.flags.ev_yaw || _control_status.flags.gnss_yaw;
 
 	// fuse zero innovation at a limited rate if the yaw variance is too large
+	// 翻译：如果偏航角偏差过大，则以有限的速率融合零创新
 	if (!yaw_aiding
 	    && isTimedOut(_time_last_heading_fuse, (uint64_t)200'000)) {
 
 		// Use an observation variance larger than usual but small enough
 		// to constrain the yaw variance just below the threshold
+		// 翻译：使用比通常值稍大但又足够小的观测方差，以将偏航角方差限制在阈值以下
 		const float obs_var = _control_status.flags.tilt_align ? 0.25f : 0.001f;
 
 		estimator_aid_source1d_s aid_src_status{};
@@ -62,11 +64,13 @@ void Ekf::controlZeroInnovationHeadingUpdate()
 
 		VectorState H_YAW;
 
+		// 计算偏航角的创新方差和观测矩阵
 		computeYawInnovVarAndH(obs_var, aid_src_status.innovation_variance, H_YAW);
 
 		if (!_control_status.flags.tilt_align
 		    || (aid_src_status.innovation_variance - obs_var) > sq(_params.ekf2_head_noise)) {
 			// The yaw variance is too large, fuse fake measurement
+			// 翻译：如果偏航角方差过大，则融合虚假测量
 			fuseYaw(aid_src_status, H_YAW);
 		}
 	}

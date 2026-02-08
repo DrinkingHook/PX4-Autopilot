@@ -101,15 +101,22 @@ enum class VelocityFrame : uint8_t {
 #if defined(CONFIG_EKF2_MAGNETOMETER)
 enum GeoDeclinationMask : uint8_t {
 	// Bit locations for ekf2_decl_type
+	// 翻译：设置为 true 可在 GPS 位置可用时使用地理库中的磁偏角，设置为 false 可始终使用 EKF2_MAG_DECL 值。
 	USE_GEO_DECL  = (1 << 0), ///< set to true to use the declination from the geo library when the GPS position becomes available, set to false to always use the EKF2_MAG_DECL value
+	// 翻译：设置为 true 可将 EKF2_MAG_DECL 参数设置为地理库返回的值
 	SAVE_GEO_DECL = (1 << 1) ///< set to true to set the EKF2_MAG_DECL parameter to the value returned by the geo library
 };
 
 enum MagFuseType : uint8_t {
 	// Integer definitions for ekf2_mag_type
+
+	// 翻译：航向融合或三维磁力计融合将自动选择。
 	AUTO    = 0,    ///< The selection of either heading or 3D magnetometer fusion will be automatic
+	// 翻译：始终使用简单的偏航角融合。这种方法精度较低，但受地磁场畸变的影响较小。俯仰角超出 -60 度至 +60 度范围时，不应使用此方法。
 	HEADING = 1,    ///< Simple yaw angle fusion will always be used. This is less accurate, but less affected by earth field distortions. It should not be used for pitch angles outside the range from -60 to +60 deg
+	// 翻译：任何情况下都不要使用磁力计。
 	NONE    = 5,    ///< Do not use magnetometer under any circumstance.
+	// 翻译：磁力计仅用于航向初始化。
 	INIT    = 6     ///< Use the mag for heading initialization only.
 };
 #endif // CONFIG_EKF2_MAGNETOMETER
@@ -149,7 +156,9 @@ enum class GnssCtrl : uint8_t {
 };
 
 enum class GnssMode : uint8_t {
+    	// 如果没有其他位置源，则在融合超时时重置
 	kAuto           = 0,   	///< Reset on fusion timeout if no other source of position is available
+	// 如果没有速度源，则在融合超时时重置
 	kDeadReckoning = 1   	///< Reset on fusion timeout if no source of velocity is availabl
 };
 
@@ -374,8 +383,11 @@ struct parameters {
 
 #endif // CONFIG_EKF2_GNSS
 
+	// 翻译：用于非辅助位置融合的观测噪声（米）
 	float ekf2_noaid_noise{10.0f};          ///< observation noise for non-aiding position fusion (m)
+	// 翻译：航向融合创新一致性门尺寸（标准差）
 	float ekf2_hdg_gate{2.6f};              ///< heading fusion innovation consistency gate size (STD)
+	// 翻译：用于简单航向融合的测量噪声（弧度）
 	float ekf2_head_noise{3.0e-1f};         ///< measurement noise used for simple heading fusion (rad)
 
 #if defined(CONFIG_EKF2_MAGNETOMETER)
@@ -517,6 +529,23 @@ struct parameters {
 
 };
 
+/**
+ * 
+ | 位号 | 标志位名称              | 中文含义                               | 说明（翻译后的注释）                                                               |
+ |------|--------------------------|------------------------------------|--------------------------------------------------------------------------------|
+ | 0    | bad_mag_x               | 磁力计 X 轴融合异常                    | true 表示磁力计 X 轴的融合过程中遇到了数值错误                                       |
+ | 1    | bad_mag_y               | 磁力计 Y 轴融合异常                    | true 表示磁力计 Y 轴的融合过程中遇到了数值错误                                       |
+ | 2    | bad_mag_z               | 磁力计 Z 轴融合异常                    | true 表示磁力计 Z 轴的融合过程中遇到了数值错误                                       |
+ | 3    | bad_hdg                 | 航向角融合异常                         | true 表示航向角（heading angle）的融合过程中遇到了数值错误                           |
+ | 4    | bad_mag_decl            | 磁偏角融合异常                         | true 表示磁偏角（magnetic declination）的融合过程中遇到了数值错误                    |
+ | 5    | bad_airspeed            | 空速融合异常                           | true 表示空速（airspeed）的融合过程中遇到了数值错误                                 |
+ | 6    | bad_sideslip            | 合成侧滑约束融合异常                    | true 表示合成侧滑约束（synthetic sideslip constraint）的融合过程中遇到了数值错误     |
+ | 7    | bad_optflow_X           | 光流 X 轴融合异常                      | true 表示光流 X 轴的融合过程中遇到了数值错误                                        |
+ | 8    | bad_optflow_Y           | 光流 Y 轴融合异常                      | true 表示光流 Y 轴的融合过程中遇到了数值错误                                        |
+ | 9    | __UNUSED                | （未使用）                            | 保留位，目前未使用                                                               |
+ | 10   | bad_acc_vertical        | 垂直加速度计数据异常                    | true 表示检测到垂直加速度计数据异常                                                |
+ | 11   | bad_acc_clipping        | 加速度计数据出现削波（clipping）         | true 表示增量速度数据中存在削波（不对称限幅/饱和）现象                               |
+ */
 union fault_status_u {
 	struct {
 		bool bad_mag_x         : 1; ///< 0 - true if the fusion of the magnetometer X-axis has encountered a numerical error
@@ -536,6 +565,59 @@ bool bad_sideslip      :
 	uint32_t value;
 };
 
+/**
+ | 位号 | 标志名称                        | 中文含义说明                                                                 |
+ |------|----------------------------------|-----------------------------------------------------------------------------|
+ | 0    | tilt_align                     | 滤波器倾斜（roll & pitch）校准已完成（tilt alignment is complete）                          |
+ | 1    | yaw_align                      | 滤波器偏航对准已完成（yaw alignment is complete）                           |
+ | 2    | gnss_pos                       | 打算融合 GNSS 位置测量（GNSS position measurement fusion is intended）      |
+ | 3    | opt_flow                       | 打算融合光流测量（optical flow measurements fusion is intended）            |
+ | 4    | mag_hdg                        | 打算进行简单的磁航向融合（simple magnetic yaw heading fusion is intended）   |
+ | 5    | mag_3D                         | 打算融合三轴磁力计测量（3-axis magnetometer measurement fusion is intended） |
+ | 6    | mag_dec                        | 打算融合合成磁偏角测量（synthetic magnetic declination measurements fusion is intended） |
+ | 7    | in_air                         | 飞行器处于空中（the vehicle is airborne）                                  |
+ | 8    | wind                           | 正在估计风速（wind velocity is being estimated）                            |
+ | 9    | baro_hgt                       | 正在融合气压计高度数据（baro data is being fused）                          |
+ | 10   | rng_hgt                        | 正在融合测距仪数据用于高度辅助（range finder data is being fused for height aiding） |
+ | 11   | gps_hgt                        | 正在融合 GPS 高度（GPS altitude is being fused）                            |
+ | 12   | ev_pos                         | 打算融合外部视觉的局部位置数据（local position data fusion from external vision is intended） |
+ | 13   | ev_yaw                         | 打算融合外部视觉的偏航数据（yaw data from external vision measurements fusion is intended） |
+ | 14   | ev_hgt                         | 正在融合外部视觉的高度数据（height data from external vision measurements is being fused） |
+ | 15   | fuse_beta                      | 正在融合合成侧滑角测量（synthetic sideslip measurements are being fused）   |
+ | 16   | mag_field_disturbed            | 磁场强度与预期不符（the mag field does not match the expected strength）    |
+ | 17   | fixed_wing                     | 飞行器当前作为固定翼模式运行（the vehicle is operating as a fixed wing vehicle） |
+ | 18   | mag_fault                      | 磁力计被声明为故障，不再使用（magnetometer has been declared faulty and is no longer being used） |
+ | 19   | fuse_aspd                      | 正在融合空速测量（airspeed measurements are being fused）                   |
+ | 20   | gnd_effect                     | 地面效应引起的静压升高保护已激活（protection from ground effect induced static pressure rise is active） |
+ | 21   | rng_stuck                      | 测距仪数据超过10秒未准备好且新值变化不足（rng data wasn't ready for more than 10s and new rng values haven't changed enough） |
+ | 22   | gnss_yaw                       | 打算融合 GNSS 的偏航（不是地面航向）数据（yaw (not ground course) data fusion from a GPS receiver is intended） |
+ | 23   | mag_aligned_in_flight          | 飞行中磁场对准已完成（in-flight mag field alignment has been completed）    |
+ | 24   | ev_vel                         | 打算融合外部视觉的局部速度数据（local frame velocity data fusion from external vision measurements is intended） |
+ | 25   | synthetic_mag_z                | 正在使用合成的磁力计 Z 轴测量值（using a synthesized measurement for the magnetometer Z component） |
+ | 26   | vehicle_at_rest                | 飞行器处于静止状态（the vehicle is at rest）                               |
+ | 27   | gnss_yaw_fault                 | GNSS 航向被声明为故障，不再使用（GNSS heading has been declared faulty and is no longer being used） |
+ | 28   | rng_fault                      | 测距仪被声明为故障，不再使用（range finder has been declared faulty and is no longer being used） |
+ | 29   | inertial_dead_reckoning        | 不再融合任何能约束水平速度漂移的测量（no longer fusing measurements that constrain horizontal velocity drift） |
+ | 30   | wind_dead_reckoning            | 导航依赖于风相对测量（navigation reliant on wind relative measurements）    |
+ | 31   | rng_kin_consistent             | 测距仪运动学一致性检查通过（range finder kinematic consistency check is passing） |
+ | 32   | fake_pos                       | 正在融合伪造的位置测量（fake position measurements are being fused）        |
+ | 33   | fake_hgt                       | 正在融合伪造的高度测量（fake height measurements are being fused）          |
+ | 34   | gravity_vector                 | 正在融合重力矢量测量（gravity vector measurements are being fused）         |
+ | 35   | mag                            | 打算融合三轴磁力计（仅磁状态）（3-axis magnetometer measurement fusion (mag states only) is intended） |
+ | 36   | ev_yaw_fault                   | 外部视觉航向被声明为故障，不再使用（EV heading has been declared faulty and is no longer being used） |
+ | 37   | mag_heading_consistent         | 从磁力计数据获得的航向被声明与滤波器一致（heading obtained from mag data is declared consistent with the filter） |
+ | 38   | aux_gpos                       | 打算融合辅助全球位置测量（auxiliary global position measurement fusion is intended） |
+ | 39   | rng_terrain                    | 正在融合测距仪数据用于地形（fusing range finder data for terrain）          |
+ | 40   | opt_flow_terrain               | 正在融合光流数据用于地形（fusing flow data for terrain）                    |
+ | 41   | valid_fake_pos                 | 正在融合有效的恒定位置（a valid constant position is being fused）          |
+ | 42   | constant_pos                   | 飞行器处于恒定位置（the vehicle is at a constant position）                |
+ | 43   | baro_fault                     | 气压计被声明为故障，不再使用（baro has been declared faulty and is no longer being used） |
+ | 44   | gnss_vel                       | 打算融合 GNSS 速度测量（GNSS velocity measurement fusion is intended）      |
+ | 45   | gnss_fault                     | GNSS 测量（经纬度、速度）被声明为故障，不再使用（GNSS measurements (lat, lon, vel) have been declared faulty and are no longer used） |
+ | 46   | yaw_manual                     | 偏航被手动重置（yaw has been reset manually）                               |
+ | 47   | gnss_hgt_fault                 | GNSS 高度测量被声明为故障，不再使用（GNSS measurements (alt) have been declared faulty and are no longer used） |
+ | 48   | in_transition_to_fw            | 飞行器正在向固定翼模式过渡（the vehicle is in transition to fw）            |
+ */
 // bitmask containing filter control status
 union filter_control_status_u {
 	struct {

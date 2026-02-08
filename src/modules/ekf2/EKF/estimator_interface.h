@@ -430,8 +430,11 @@ protected:
 	dragSample _drag_down_sampled{};	// down sampled drag specific force data (filter prediction rate -> observation rate)
 #endif // CONFIG_EKF2_DRAG_FUSION
 
+	// 水平航位推算时间超时
 	bool _horizontal_deadreckon_time_exceeded{true};
+	// 垂直位置航位推算时间超时
 	bool _vertical_position_deadreckon_time_exceeded{true};
+	// 垂直速度航位推算时间超时
 	bool _vertical_velocity_deadreckon_time_exceeded{true};
 
 	uint64_t _time_last_on_ground_us{0};	///< last time we were on the ground (uSec)
@@ -470,6 +473,7 @@ protected:
 	fault_status_u _fault_status{};
 
 	// allocate data buffers and initialize interface variables
+	// 翻译：分配数据缓冲区并初始化接口变量。
 	bool initialise_interface(uint64_t timestamp);
 
 #if defined(CONFIG_EKF2_MAGNETOMETER)
@@ -488,13 +492,16 @@ protected:
 	bool _external_wind_init{false};
 
 	// this is the current status of the filter control modes
+	// 翻译：这是滤波器控制模式的当前状态。
 	filter_control_status_u _control_status{};
 
 	// this is the previous status of the filter control modes - used to detect mode transitions
+	// 翻译：这是滤波器控制模式的上一个状态，用于检测模式转换。
 	filter_control_status_u _control_status_prev{};
 
 	// these are used to record single frame events for external monitoring and should NOT be used for
 	// state logic becasue they will be cleared externally after being read.
+	// 翻译：这些用于记录单帧事件以供外部监控使用，不应用于状态逻辑，因为它们将在被读取后被外部清除。
 	information_event_status_u _information_events{};
 
 	unsigned _min_obs_interval_us{0}; // minimum time interval between observations that will guarantee data is not lost (usec)

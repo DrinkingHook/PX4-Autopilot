@@ -43,8 +43,10 @@ void GpsBlending::update(uint64_t hrt_now_us)
 	_is_new_output_data_available = false;
 
 	// blend multiple receivers if available
+	// 翻译：如果可用，融合多个接收器
 	if (!blend_gps_data(hrt_now_us)) {
 		// Only use selected receiver data if it has been updated
+		// 翻译：如果已更新，则仅使用所选接收器的数据
 		uint8_t gps_select_index = 0;
 
 		// Find the single "best" GPS from the data we have
@@ -105,6 +107,7 @@ bool GpsBlending::blend_gps_data(uint64_t hrt_now_us)
 
 	// Calculate the time step for each receiver with some filtering to reduce the effects of jitter
 	// Find the largest and smallest time step.
+	// 翻译：计算每个接收器的时间步长，并进行一些滤波以减少抖动的影响。找到最大和最小的时间步长。
 	float dt_max = 0.0f;
 	float dt_min = GPS_TIMEOUT_S;
 	_np_gps_suitable_for_blending = 0;

@@ -232,6 +232,7 @@ PMW3901::probe()
 	readRegister(0x00, &data[0], 1); // chip id
 
 	// Test the SPI communication, checking chipId and inverse chipId
+	// 翻译：测试SPI通信，检查芯片ID和反向芯片ID
 	if (data[0] == 0x49) {
 		return OK;
 	}
@@ -309,6 +310,7 @@ PMW3901::RunImpl()
 	}
 
 	// returns if the collect time has not been reached
+	// 翻译：返回如果收集时间尚未达到
 	if (_flow_dt_sum_usec < _collect_time) {
 		return;
 	}

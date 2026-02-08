@@ -39,6 +39,10 @@
 #include "ekf.h"
 #include <mathlib/mathlib.h>
 
+/**
+ * @brief 控制GPS融合
+ * @param imu_delayed 延迟的IMU数据
+ */
 void Ekf::controlGpsFusion(const imuSample &imu_delayed)
 {
 	if (!_gps_buffer || (_params.ekf2_gps_ctrl == 0)) {
@@ -51,6 +55,7 @@ void Ekf::controlGpsFusion(const imuSample &imu_delayed)
 	}
 
 	// run EKF-GSF yaw estimator once per imu_delayed update
+	// 翻译：运行 EKF-GSF yaw estimator 每次 imu_delayed 更新一次
 	_yawEstimator.predict(imu_delayed.delta_ang, imu_delayed.delta_ang_dt,
 			      imu_delayed.delta_vel, imu_delayed.delta_vel_dt,
 			      (_control_status.flags.in_air && !_control_status.flags.vehicle_at_rest));
@@ -58,6 +63,7 @@ void Ekf::controlGpsFusion(const imuSample &imu_delayed)
 	_gps_intermittent = !isNewestSampleRecent(_time_last_gps_buffer_push, 2 * GNSS_MAX_INTERVAL);
 
 	// check for arrival of new sensor data at the fusion time horizon
+	// 翻译：检查在融合时间范围内的新传感器数据到达
 	_gps_data_ready = _gps_buffer->pop_first_older_than(imu_delayed.time_us, &_gps_sample_delayed);
 
 	if (_gps_data_ready) {
@@ -68,11 +74,13 @@ void Ekf::controlGpsFusion(const imuSample &imu_delayed)
 		if (_gnss_checks.run(gnss_sample, _time_delayed_us)) {
 			if (_gnss_checks.initialChecksPassed() && !initial_checks_passed_prev) {
 				// First time checks are passing, latching.
+				// 翻译：第一次检查通过，锁定
 				_information_events.flags.gps_checks_passed = true;
 			}
 
 		} else {
 			// Skip this sample
+			// 翻译：跳过这个样本
 			_gps_data_ready = false;
 
 			const bool using_gnss = _control_status.flags.gnss_vel || _control_status.flags.gnss_pos;
@@ -100,6 +108,7 @@ void Ekf::controlGpsFusion(const imuSample &imu_delayed)
 		controlGnssYawFusion(gnss_sample);
 #endif // CONFIG_EKF2_GNSS_YAW
 
+        // 控制GNSS航向估计器
 		controlGnssYawEstimator(_aid_src_gnss_vel);
 
 		bool do_vel_pos_reset = false;
@@ -119,11 +128,18 @@ void Ekf::controlGpsFusion(const imuSample &imu_delayed)
 			}
 		}
 
+		// GNSS速度估计
 		controlGnssVelFusion(_aid_src_gnss_vel, do_vel_pos_reset);
+		// GNSS位置估计
 		controlGnssPosFusion(_aid_src_gnss_pos, do_vel_pos_reset);
 	}
 }
 
+/**
+ * @brief 控制GNSS速度融合
+ * @param aid_src GNSS速度辅助源
+ * @param force_reset 是否强制重置
+ */
 void Ekf::controlGnssVelFusion(estimator_aid_source3d_s &aid_src, const bool force_reset)
 {
 	const bool continuing_conditions_passing = (_params.ekf2_gps_ctrl & static_cast<int32_t>(GnssCtrl::VEL))
@@ -160,6 +176,7 @@ void Ekf::controlGnssVelFusion(estimator_aid_source3d_s &aid_src, const bool for
 			const bool do_reset = force_reset || !_control_status_prev.flags.yaw_align;
 
 			// Start fusing the data without reset if possible to avoid disturbing the filter
+			// 翻译：尽可能在不重置的情况下开始融合数据，以避免干扰滤波器
 			if (!do_reset && ((aid_src.test_ratio[0] + aid_src.test_ratio[1]) < sq(0.5f))) {
 				fused = fuseVelocity(aid_src);
 			}
@@ -180,6 +197,11 @@ void Ekf::controlGnssVelFusion(estimator_aid_source3d_s &aid_src, const bool for
 	}
 }
 
+/**
+ * @brief 控制GNSS位置估计器
+ * @param aid_src GNSS位置辅助源
+ * @param force_reset 是否强制重置
+ */
 void Ekf::controlGnssPosFusion(estimator_aid_source2d_s &aid_src, const bool force_reset)
 {
 	const bool gnss_pos_enabled = (_params.ekf2_gps_ctrl & static_cast<int32_t>(GnssCtrl::HPOS));
@@ -219,6 +241,7 @@ void Ekf::controlGnssPosFusion(estimator_aid_source2d_s &aid_src, const bool for
 			const bool do_reset = force_reset || !_control_status_prev.flags.yaw_align;
 
 			// Start fusing the data without reset if possible to avoid disturbing the filter
+			// 翻译：开始融合数据，如果可能的话，不重置，以避免干扰滤波器
 			if (_local_origin_lat_lon.isInitialized()
 			    && !do_reset
 			    && ((aid_src.test_ratio[0] + aid_src.test_ratio[1]) < sq(0.5f))) {
@@ -246,6 +269,9 @@ void Ekf::controlGnssPosFusion(estimator_aid_source2d_s &aid_src, const bool for
 	}
 }
 
+/**
+ * @brief 是否允许GNSS速度重置
+ */
 bool Ekf::isGnssVelResetAllowed() const
 {
 	if (_control_status.flags.gnss_fault) {
@@ -274,6 +300,9 @@ bool Ekf::isGnssVelResetAllowed() const
 	return allowed;
 }
 
+/**
+ * @brief 是否允许GNSS位置重置
+ */
 bool Ekf::isGnssPosResetAllowed() const
 {
 	if (_control_status.flags.gnss_fault) {
@@ -301,9 +330,16 @@ bool Ekf::isGnssPosResetAllowed() const
 	return allowed;
 }
 
+/**
+ * @brief 更新GNSS速度辅助源
+ * @param imu_sample IMU数据样本
+ * @param gnss_sample GNSS数据样本
+ * @param aid_src GNSS速度辅助源
+ */
 void Ekf::updateGnssVel(const imuSample &imu_sample, const gnssSample &gnss_sample, estimator_aid_source3d_s &aid_src)
 {
 	// correct velocity for offset relative to IMU
+	// 翻译：纠正速度相对于IMU的偏移
 	const Vector3f pos_offset_body = _params.gps_pos_body - _params.imu_pos_body;
 
 	const Vector3f angular_velocity = imu_sample.delta_ang / imu_sample.delta_ang_dt - _state.gyro_bias;
@@ -326,6 +362,7 @@ void Ekf::updateGnssVel(const imuSample &imu_sample, const gnssSample &gnss_samp
 
 	// vz special case if there is bad vertical acceleration data, then don't reject measurement if GNSS reports velocity accuracy is acceptable,
 	// but limit innovation to prevent spikes that could destabilise the filter
+	// 翻译：如果存在坏的垂直加速度数据，那么如果GNSS报告速度精度可接受，则不要拒绝测量，但限制创新以防止创新导致滤波器不稳定
 	bool bad_acc_vz_rejected = _fault_status.flags.bad_acc_vertical
 				   && (aid_src.test_ratio[2] > 1.f)                                   // vz rejected
 				   && (aid_src.test_ratio[0] < 1.f) && (aid_src.test_ratio[1] < 1.f); // vx & vy accepted
@@ -339,9 +376,15 @@ void Ekf::updateGnssVel(const imuSample &imu_sample, const gnssSample &gnss_samp
 	}
 }
 
+/**
+ * @brief 更新GNSS位置辅助源
+ * @param gnss_sample GNSS测量数据
+ * @param aid_src GNSS位置辅助源
+ */
 void Ekf::updateGnssPos(const gnssSample &gnss_sample, estimator_aid_source2d_s &aid_src)
 {
 	// correct position and height for offset relative to IMU
+	// 翻译：纠正位置和高度相对于IMU的偏移
 	const Vector3f pos_offset_body = _params.gps_pos_body - _params.imu_pos_body;
 	const Vector3f pos_offset_earth = Vector3f(_R_to_earth * pos_offset_body);
 	const LatLonAlt measurement(gnss_sample.lat, gnss_sample.lon, gnss_sample.alt);
@@ -349,11 +392,13 @@ void Ekf::updateGnssPos(const gnssSample &gnss_sample, estimator_aid_source2d_s 
 	const Vector2f innovation = (_gpos - measurement_corrected).xy();
 
 	// relax the upper observation noise limit which prevents bad GPS perturbing the position estimate
+	// 翻译：放松上观测噪声限制，防止坏GPS干扰位置估计
 	float pos_noise = math::max(gnss_sample.hacc, _params.ekf2_gps_p_noise);
 
 	if (!isOtherSourceOfHorizontalAidingThan(_control_status.flags.gnss_pos)) {
 		// if we are not using another source of aiding, then we are reliant on the GNSS
 		// observations to constrain attitude errors and must limit the observation noise value.
+		// 翻译：如果我们在使用其他水平辅助源，那么我们依赖GNSS观测来约束姿态误差，必须限制观测噪声值。
 		if (pos_noise > _params.ekf2_noaid_noise) {
 			pos_noise = _params.ekf2_noaid_noise;
 		}
@@ -372,9 +417,14 @@ void Ekf::updateGnssPos(const gnssSample &gnss_sample, estimator_aid_source2d_s 
 			      math::max(_params.ekf2_gps_p_gate, 1.f));            // innovation gate
 }
 
+/**
+ * @brief 控制GNSS航向估计器
+ * @param aid_src_vel GNSS航速辅助源
+ */
 void Ekf::controlGnssYawEstimator(estimator_aid_source3d_s &aid_src_vel)
 {
 	// update yaw estimator velocity (basic sanity check on GNSS velocity data)
+	// 翻译：更新GNSS航向估计器的航速（基本检查GNSS航速数据的合理性）
 	const float vel_var = aid_src_vel.observation_variance[0];
 	const Vector2f vel_xy(aid_src_vel.observation);
 
@@ -385,17 +435,22 @@ void Ekf::controlGnssYawEstimator(estimator_aid_source3d_s &aid_src_vel)
 		_yawEstimator.fuseVelocity(vel_xy, vel_var, _control_status.flags.in_air);
 
 		// Try to align yaw using estimate if available
+		// 翻译：如有估算值，尝试使用估算值校准偏航角
 		if (((_params.ekf2_gps_ctrl & static_cast<int32_t>(GnssCtrl::VEL))
 		     || (_params.ekf2_gps_ctrl & static_cast<int32_t>(GnssCtrl::HPOS)))
 		    && !_control_status.flags.yaw_align
 		    && _control_status.flags.tilt_align) {
 			if (resetYawToEKFGSF()) {
+			    // 使用 IMU 进行 GPS 偏航角校准
 				ECL_INFO("GPS yaw aligned using IMU");
 			}
 		}
 	}
 }
 
+/**
+ * @brief 尝试紧急重置偏航角
+ */
 bool Ekf::tryYawEmergencyReset()
 {
 	bool success = false;
@@ -405,12 +460,16 @@ bool Ekf::tryYawEmergencyReset()
 	 * This enables recovery from a bad yaw estimate. A reset is not performed if the fault condition was
 	 * present before flight to prevent triggering due to GPS glitches or other sensor errors.
 	 */
+	// 翻译：如果水平速度创新检查持续失败，且偏航紧急估计值与偏航估计值之间的差异较大，则会快速重置偏航紧急估计值。
+	// 这有助于从错误的偏航估计值中恢复。如果故障情况在飞行前已存在，则不会执行重置操作，以防止因 GPS 故障或其他传感器错误而触发重置。
 	if (resetYawToEKFGSF()) {
+	    	// GPS 偏航角紧急重置
 		ECL_WARN("GPS emergency yaw reset");
 
 		if (_control_status.flags.mag_hdg || _control_status.flags.mag_3D) {
 			// stop using the magnetometer in the main EKF otherwise its fusion could drag the yaw around
 			// and cause another navigation failure
+			// 翻译：停止在主扩展卡尔曼滤波器中使用磁力计，否则其融合过程可能会影响偏航角，导致再次导航失败
 			_control_status.flags.mag_fault = true;
 		}
 
@@ -496,14 +555,19 @@ void Ekf::stopGnssPosFusion()
 	}
 }
 
+/**
+ * @brief 紧急重置偏航（yaw）时是否已经有可用的备用估计数据
+ */
 bool Ekf::isYawEmergencyEstimateAvailable() const
 {
 	// don't allow reet using the EKF-GSF estimate until the filter has started fusing velocity
 	// data and the yaw estimate has converged
+	// 翻译：在滤波器开始融合速度数据且偏航估计收敛之前，不允许使用 EKF-GSF 估计进行重置
 	if (!_yawEstimator.isActive()) {
 		return false;
 	}
 
+	// 翻译：获取当前GSF估计的偏航角方差
 	const float yaw_var = _yawEstimator.getYawVar();
 
 	return (yaw_var > 0.f)
@@ -523,6 +587,9 @@ bool Ekf::isYawFailure() const
 	return fabsf(yaw_error) > math::radians(25.f);
 }
 
+/**
+ * @brief 尝试紧急重置偏航角
+ */
 bool Ekf::resetYawToEKFGSF()
 {
 	if (!isYawEmergencyEstimateAvailable()) {

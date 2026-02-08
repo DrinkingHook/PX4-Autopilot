@@ -852,6 +852,16 @@ MissionBlock::set_vtol_transition_item(struct mission_item_s *item, const uint8_
 	item->autocontinue = true;
 }
 
+/**
+ * @brief 获取任务项的绝对高度。
+ *
+ * 如果任务项的海拔是相对的，则返回海拔加上参考高度。
+ * 否则，直接返回任务项的海拔。
+ *
+ * @param mission_item 要获取绝对高度的任务项。
+ * @param home_alt 参考高度。
+ * @return 绝对高度。
+ */
 float
 MissionBlock::get_absolute_altitude_for_item(const mission_item_s &mission_item) const
 {

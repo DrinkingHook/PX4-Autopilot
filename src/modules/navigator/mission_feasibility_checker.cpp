@@ -59,10 +59,12 @@ MissionFeasibilityChecker::checkMissionFeasible(const mission_s &mission)
 	_navigator->get_mission_result()->warning = false;
 
 	// first check if we have a valid position
+	// 翻译：首先检查我们是否有有效的位置
 	const bool home_valid = _navigator->home_global_position_valid();
 	const bool home_alt_valid = _navigator->home_alt_valid();
 
 	// trivial case: A mission with length zero cannot be valid
+	// 翻译：简单情况：一个长度为零的航点任务不能是有效的
 	if ((int)mission.count <= 0) {
 		return false;
 	}
@@ -104,6 +106,15 @@ MissionFeasibilityChecker::checkMissionFeasible(const mission_s &mission)
 	return !failed;
 }
 
+/**
+ * @brief 检查航点任务是否符合地理围栏要求。
+ *
+ * @param mission 航点任务
+ * @param home_alt 首飞位置的海拔高度
+ * @param home_valid 首飞位置是否有效
+ * @return true 符合地理围栏要求
+ * @return false 不符合地理围栏要求
+ */
 bool
 MissionFeasibilityChecker::checkMissionAgainstGeofence(const mission_s &mission, float home_alt, bool home_valid)
 {
@@ -115,6 +126,7 @@ MissionFeasibilityChecker::checkMissionAgainstGeofence(const mission_s &mission,
 	}
 
 	/* Check if all mission items are inside the geofence (if we have a valid geofence) */
+	// 翻译：检查所有任务项目是否都在地理围栏内（如果地理围栏有效）
 	if (_navigator->get_geofence().valid()) {
 		for (size_t i = 0; i < mission.count; i++) {
 			struct mission_item_s missionitem = {};
@@ -136,6 +148,7 @@ MissionFeasibilityChecker::checkMissionAgainstGeofence(const mission_s &mission,
 			}
 
 			// Geofence function checks against home altitude amsl
+			// 翻译：地理围栏功能会检查返航点海拔高度（平均海平面以上）
 			missionitem.altitude = missionitem.altitude_is_relative ? missionitem.altitude + home_alt : missionitem.altitude;
 
 			if (MissionBlock::item_contains_position(missionitem) && !_navigator->get_geofence().checkPointAgainstAllGeofences(

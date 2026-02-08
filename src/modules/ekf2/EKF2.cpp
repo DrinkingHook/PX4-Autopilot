@@ -474,6 +474,7 @@ void EKF2::Run()
 		// 翻译：从存储中更新参数
 		updateParams();
 
+		// 验证参数
 		VerifyParams();
 
 		// force advertise topics immediately for logging (EKF2_LOG_VERBOSE, per aid source control)
@@ -488,7 +489,9 @@ void EKF2::Run()
 						    _param_ekf2_imu_pos_y.get(),
 						    _param_ekf2_imu_pos_z.get());
 		_ekf.output_predictor().set_imu_offset(imu_pos_body);
+		// 输出预测器位置时间常数
 		_ekf.output_predictor().set_pos_correction_tc(_param_ekf2_tau_pos.get());
+		// 输出预测器速度时间常数
 		_ekf.output_predictor().set_vel_correction_tc(_param_ekf2_tau_vel.get());
 
 #if defined(CONFIG_EKF2_AIRSPEED)
@@ -535,6 +538,7 @@ void EKF2::Run()
 			command_ack.target_system = vehicle_command.source_system;
 			command_ack.target_component = vehicle_command.source_component;
 
+			// 设置EKF全局坐标原点
 			if (vehicle_command.command == vehicle_command_s::VEHICLE_CMD_SET_GPS_GLOBAL_ORIGIN) {
 				double latitude = vehicle_command.param5;
 				double longitude = vehicle_command.param6;
@@ -560,6 +564,7 @@ void EKF2::Run()
 				command_ack.timestamp = hrt_absolute_time();
 				_vehicle_command_ack_pub.publish(command_ack);
 
+			// 车辆命令外部位置估计
 			} else if (vehicle_command.command == vehicle_command_s::VEHICLE_CMD_EXTERNAL_POSITION_ESTIMATE) {
 
 				if (PX4_ISFINITE(vehicle_command.param2)
@@ -594,6 +599,7 @@ void EKF2::Run()
 				_vehicle_command_ack_pub.publish(command_ack);
 			}
 
+			// 车辆指令外部风速估算
 			if (vehicle_command.command == vehicle_command_s::VEHICLE_CMD_EXTERNAL_WIND_ESTIMATE) {
 #if defined(CONFIG_EKF2_WIND)
 				// wind direction is given as azimuth where wind blows FROM
@@ -611,6 +617,7 @@ void EKF2::Run()
 				_vehicle_command_ack_pub.publish(command_ack);
 			}
 
+			// 车辆指令外部姿态估计（其实是专用于处理外部航向重置）
 			if (vehicle_command.command == vehicle_command_s::VEHICLE_CMD_EXTERNAL_ATTITUDE_ESTIMATE) {
 				if (PX4_ISFINITE(vehicle_command.param3)) {
 					const float heading = wrap_pi(math::radians(vehicle_command.param3));
@@ -781,6 +788,7 @@ void EKF2::Run()
 		_ekf.setIMUData(imu_sample_new);
 
 		// integrate time to monitor time slippage
+		// 翻译：将时间整合到时间滑动监控中。
 		if (_start_time_us > 0) {
 			_integrated_time_us += imu_dt;
 			_last_time_slip_us = (imu_sample_new.time_us - _start_time_us) - _integrated_time_us;
@@ -2928,6 +2936,7 @@ int EKF2::task_spawn(int argc, char *argv[])
 	int32_t sens_imu_mode = 1;
 	param_get(param_find("SENS_IMU_MODE"), &sens_imu_mode);
 
+	// 当 sens_imu_mode 为1时，系统自动选择一个主IMU的数据供EKF使用。若为0则把所有可用的 IMU 数据都发布出去，通常配合多实例融合
 	// 传感器模块不进行自动选择，运行多个EKF实例
 	if (sens_imu_mode == 0) {
 		// ekf selector requires SENS_IMU_MODE = 0
@@ -2981,6 +2990,7 @@ int EKF2::task_spawn(int argc, char *argv[])
 #endif // CONFIG_EKF2_MAGNETOMETER
 	}
 
+	// 多实例模式且不处于回放模式
 	if (multi_mode && !replay_mode) {
 		// Start EKF2Selector if it's not already running
 		// 翻译：如果 EKF2Selector 尚未运行，则启动它

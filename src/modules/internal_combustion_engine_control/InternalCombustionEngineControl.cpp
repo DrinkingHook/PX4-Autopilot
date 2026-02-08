@@ -213,6 +213,7 @@ void InternalCombustionEngineControl::Run()
 			} else if (!isEngineRunning(now) && _param_ice_running_fault_detection.get()) {
 				// without RPM feedback we assume the engine is running after the
 				// starting procedure but only switch state if fault detection is enabled
+				// 翻译：如果没有转速反馈，我们假设发动机在启动程序完成后处于运行状态，但只有在启用故障检测功能后才会切换状态。
 				_state = State::Starting;
 				_state_start_time = now;
 				_starting_retry_cycle = 0;
@@ -245,6 +246,7 @@ void InternalCombustionEngineControl::Run()
 	_last_time_run = now;
 
 	// slew rate limit throttle control if it's finite, otherwise just pass it through (0 throttle = NAN = disarmed)
+	// 翻译：如果节流控制是有限的，就限制节流控制的斜率，否则就通过它（0节流 = NAN = 未启动）
 	if (PX4_ISFINITE(_throttle_control)) {
 		_throttle_control  = _throttle_control_slew_rate.update(_throttle_control, control_interval);
 
@@ -313,10 +315,14 @@ void InternalCombustionEngineControl::controlEngineFault()
 
 void InternalCombustionEngineControl::controlEngineStartup(const hrt_abstime now)
 {
+    // 点火延迟
 	float ignition_delay = 0.f;
+	// 阻塞风门持续时间
 	float choke_duration = 0.f;
+	// 启动电机持续时间
 	const float starter_duration = _param_ice_strt_dur.get();
 
+	// 第一次点火尝试时参数读取
 	if (_starting_retry_cycle == 0) {
 		ignition_delay = math::max(_param_ice_ign_delay.get(), 0.f);
 
@@ -326,11 +332,15 @@ void InternalCombustionEngineControl::controlEngineStartup(const hrt_abstime now
 	}
 
 	_ignition_on = true;
+	// 启动时的油门
 	_throttle_control = _param_ice_strt_thr.get();
+	// 风门控制(在机器启动时满足 < 判断，所以_choke_control为1 及阻塞风门开启以启动发动机 )
 	_choke_control = now < _state_start_time + (choke_duration + ignition_delay) * 1_s ? 1.f : 0.f;
+	// 启动发动机控制
 	_starter_engine_control = now > _state_start_time + (ignition_delay * 1_s) ? 1.f : 0.f;
 	const hrt_abstime cycle_timeout_duration = (ignition_delay + choke_duration + starter_duration) * 1_s;
 
+	// 发动机一次完整启动流程完成
 	if (now > _state_start_time + cycle_timeout_duration) {
 		// start resting timer if engine is not running
 		_starting_rest_time = now;

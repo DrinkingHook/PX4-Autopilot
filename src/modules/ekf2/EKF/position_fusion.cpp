@@ -33,6 +33,14 @@
 
 #include "ekf.h"
 
+/**
+ * @brief 更新垂直位置辅助状态
+ * @param aid_src 垂直位置辅助状态
+ * @param time_us 时间戳
+ * @param observation 观测值
+ * @param observation_variance 观测值方差
+ * @param innovation_gate 创新门限
+ */
 void Ekf::updateVerticalPositionAidStatus(estimator_aid_source1d_s &aid_src, const uint64_t &time_us,
 		const float observation, const float observation_variance, const float innovation_gate) const
 {
@@ -46,6 +54,7 @@ void Ekf::updateVerticalPositionAidStatus(estimator_aid_source1d_s &aid_src, con
 
 	// z special case if there is bad vertical acceleration data, then don't reject measurement,
 	// but limit innovation to prevent spikes that could destabilise the filter
+	// 翻译：z 轴特殊情况：如果垂直加速度数据质量差，则不要拒绝测量结果，但要限制创新，以防止出现可能导致滤波器不稳定的尖峰。
 	if (_fault_status.flags.bad_acc_vertical && aid_src.innovation_rejected) {
 		const float innov_limit = innovation_gate * sqrtf(aid_src.innovation_variance);
 		aid_src.innovation = math::constrain(aid_src.innovation, -innov_limit, innov_limit);
@@ -219,6 +228,10 @@ void Ekf::resetAltitudeTo(const float new_altitude, float new_vert_pos_var)
 	_time_last_hgt_fuse = _time_delayed_us;
 }
 
+/**
+ * @brief 更新垂直位置重置状态：更新垂直位置重置状态，包括高度和高度率的重置。
+ * @param delta_z 高度变化量
+ */
 void Ekf::updateVerticalPositionResetStatus(const float delta_z)
 {
 	if (_state_reset_status.reset_count.posD == _state_reset_count_prev.posD) {

@@ -120,11 +120,13 @@ private:
 	*/
 	void calc_gps_blend_output(sensor_gps_s &gps_blended_state, float blend_weights[GPS_MAX_RECEIVERS_BLEND]) const;
 
+	// 翻译：物理 GPS 的内部状态数据
 	sensor_gps_s _gps_state[GPS_MAX_RECEIVERS_BLEND] {}; ///< internal state data for the physical GPS
 	sensor_gps_s _gps_blended_state {};
 	bool _gps_updated[GPS_MAX_RECEIVERS_BLEND] {};
 	int _selected_gps{0};
 	int _np_gps_suitable_for_blending{0};
+	// 翻译：如果为 -1，则没有主实例，并使用最佳接收器 // TODO：使用 device_id
 	int _primary_instance{0}; ///< if -1, there is no primary isntance and the best receiver is used // TODO: use device_id
 	bool _primary_instance_available{false};
 

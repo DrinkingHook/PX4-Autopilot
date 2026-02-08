@@ -105,9 +105,13 @@ private:
 	} _user_request{UserOnOffRequest::Off};
 
 	enum class ICESource {
+	    // 点火信号跟随飞机的解锁（Arming）状态
 		ArmingState,
+		// 点火信号直接跟随 遥控器 AUX1 通道 的值
 		Aux1,
+		// 点火信号直接跟随 遥控器 AUX2 通道 的值
 		Aux2,
+		// 点火信号跟随 VTOL 状态机（垂直起降状态）
 		VtolStatus,
 	};
 
@@ -130,7 +134,9 @@ private:
 	void publishControl(const hrt_abstime now);
 
 	// Starting state specifics
+	// 翻译：启动状态详情
 	static constexpr float DELAY_BEFORE_RESTARTING{1.f};
+	// 启动重试周期
 	int _starting_retry_cycle{0};
 	hrt_abstime _starting_rest_time{0};
 	SubState _starting_sub_state{SubState::Run};

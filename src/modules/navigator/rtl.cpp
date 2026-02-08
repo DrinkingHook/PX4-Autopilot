@@ -335,6 +335,7 @@ void RTL::setRtlTypeAndDestination()
 	RtlType new_rtl_type{RtlType::RTL_DIRECT};
 
 	// init destination with Home (used also with Type 2 and 4 as backup)
+	// 翻译：初始化目的地为Home（也用于类型2和4作为备份）
 	DestinationType destination_type = DestinationType::DESTINATION_TYPE_HOME;
 	PositionYawSetpoint destination;
 	destination.lat = _home_pos_sub.get().lat;
@@ -356,6 +357,7 @@ void RTL::setRtlTypeAndDestination()
 
 		} else {
 			// no valid mission, go direct to home
+			// 翻译：没有有效的任务，直接到家
 			new_rtl_type = RtlType::RTL_DIRECT;
 		}
 
@@ -373,6 +375,7 @@ void RTL::setRtlTypeAndDestination()
 
 	} else {
 		// check the closest allowed destination.
+		// 翻译：检查最接近的允许目的地。
 		findRtlDestination(destination_type, destination, safe_point_index);
 
 		if (destination_type == DestinationType::DESTINATION_TYPE_MISSION_LAND) {
@@ -484,12 +487,16 @@ void RTL::findRtlDestination(DestinationType &destination_type, PositionYawSetpo
 	float min_dist = FLT_MAX;
 
 	if (_param_rtl_type.get() != 5) {
+		// 判断目标点是否满足固定翼的滑翔降落场地
 		_home_has_land_approach = hasVtolLandApproach(destination);
 
+		// 优先考虑安全点而非家园
 		const bool prioritize_safe_points_over_home = ((_param_rtl_type.get() == 1) && !vtol_in_rw_mode);
+		// 缺少返航所需的进近路线
 		const bool required_approach_missing_for_home = (vtol_in_fw_mode && (_param_rtl_appr_force.get() == 1) && !_home_has_land_approach);
 
 		// Set minimum distance to maximum value when RTL_TYPE is set to 1 and we are not in RW mode or we force approach landing for vtol in fw and it is not defined for home.
+		// 翻译：当RTL_TYPE设置为1且我们不在RW模式或强制VTOL在FW模式下着陆时，将最小距离设置为最大值。
 		const bool deprioritize_home = prioritize_safe_points_over_home || required_approach_missing_for_home;
 
 		if (!deprioritize_home) {
@@ -519,6 +526,7 @@ void RTL::findRtlDestination(DestinationType &destination_type, PositionYawSetpo
 
 				} else {
 					// Mission landing is not allowed, but home has no approaches. Still use mission landing.
+					// 翻译：任务着陆不允许，但返航点没有进近程序。仍然使用任务着陆。
 					min_dist = FLT_MAX;
 				}
 
@@ -609,17 +617,21 @@ float RTL::computeReturnAltitude(const PositionYawSetpoint &rtl_position, Destin
 {
 	if (destination_type == DestinationType::DESTINATION_TYPE_LAST_LINK_POSITION) {
 		// when returning to last known link position, do not modify altitude
+		// 翻译：当返回到上一个链接位置时，不要修改高度
 		return rtl_position.alt;
 	}
 
 	if (_param_rtl_cone_ang.get() > 0 && _vehicle_status_sub.get().vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
 		// horizontal distance to destination
+		// 翻译：到目的地的水平距离
 		const float destination_dist =
 			get_distance_to_next_waypoint(_global_pos_sub.get().lat, _global_pos_sub.get().lon, rtl_position.lat, rtl_position.lon);
 
 		// minium rtl altitude to use when outside of horizontal acceptance radius of target position.
 		// We choose the minimum height to be two times the distance from the land position in order to
 		// avoid the vehicle touching the ground while still moving horizontally.
+		// 翻译：当超出目标位置的水平接受半径时，使用的最小rtl高度。
+		// 我们选择最小高度为从着陆位置的距离的两倍，以避免车辆在水平移动时接触地面。
 		const float return_altitude_min_outside_acceptance_rad_amsl = rtl_position.alt + 2.0f * _param_nav_acc_rad.get();
 
 		const float max_return_altitude = rtl_position.alt + _param_rtl_return_alt.get();
@@ -633,9 +645,11 @@ float RTL::computeReturnAltitude(const PositionYawSetpoint &rtl_position, Destin
 			if (destination_dist <= _param_rtl_min_dist.get()) {
 
 				// constrain cone half angle to meaningful values. All other cases are already handled above.
+				// 翻译：将锥形半角限制在有意义的值范围内。所有其他情况已经在上面处理过了。
 				const float cone_half_angle_rad = radians(constrain(cone_half_angle_deg, 1.0f, 89.0f));
 
 				// minimum altitude we need in order to be within the user defined cone
+				// 翻译：我们需要的最小高度，以便在用户定义的锥形内。
 				const float cone_intersection_altitude_amsl = destination_dist / tanf(cone_half_angle_rad) + rtl_position.alt;
 
 				return_altitude_amsl = min(cone_intersection_altitude_amsl, return_altitude_amsl);
@@ -648,6 +662,7 @@ float RTL::computeReturnAltitude(const PositionYawSetpoint &rtl_position, Destin
 
 	} else {
 		// standard behaviour: return altitude above rtl destination
+		// 翻译：标准行为：在rtl目的地上方返回高度
 		return max(_global_pos_sub.get().alt, rtl_position.alt + _param_rtl_return_alt.get());
 	}
 }
@@ -671,6 +686,7 @@ void RTL::initRtlMissionType(RtlType new_rtl_type, float rtl_alt)
 		}
 
 		// RTL type is either direct or mission land have to set it later.
+		// 翻译：RTL类型是直接或任务着陆，必须稍后设置它。
 		break;
 
 	case RtlType::RTL_MISSION_FAST:

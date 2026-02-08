@@ -50,6 +50,16 @@
 
 #include <mathlib/mathlib.h>
 
+/**
+ * @brief 磁力计融合
+ * @param mag 磁力计测量值
+ * @param R_MAG 磁力计测量噪声协方差矩阵
+ * @param H 状态向量的观测雅可比矩阵
+ * @param aid_src 磁力计辅助源结构体
+ * @param update_all_states 是否更新所有状态
+ * @param update_tilt 是否更新倾斜状态
+ * @return 是否成功融合磁力计数据
+ */
 bool Ekf::fuseMag(const Vector3f &mag, const float R_MAG, VectorState &H, estimator_aid_source3d_s &aid_src,
 		  bool update_all_states, bool update_tilt)
 {
@@ -144,6 +154,14 @@ bool Ekf::fuseMag(const Vector3f &mag, const float R_MAG, VectorState &H, estima
 	return true;
 }
 
+/**
+ * @brief 融合磁偏角测量值
+ * @param decl_measurement_rad 磁偏角测量值
+ * @param R 测量噪声协方差矩阵
+ * @param update_all_states 是否更新所有状态
+ * @param update_tilt 是否更新倾斜状态
+ * @return 是否成功融合磁偏角测量值
+ */
 bool Ekf::fuseDeclination(float decl_measurement_rad, float R, bool update_all_states, bool update_tilt)
 {
 	VectorState H;
@@ -194,13 +212,21 @@ bool Ekf::fuseDeclination(float decl_measurement_rad, float R, bool update_all_s
 	return true;
 }
 
+/**
+ * @brief 计算合成磁力计 Z 轴测量值
+ * @param mag_meas 磁力计测量值
+ * @param mag_earth_predicted 地球磁场预测值
+ * @return 合成磁力计 Z 轴测量值
+ */
 float Ekf::calculate_synthetic_mag_z_measurement(const Vector3f &mag_meas, const Vector3f &mag_earth_predicted)
 {
 	// theoretical magnitude of the magnetometer Z component value given X and Y sensor measurement and our knowledge
 	// of the earth magnetic field vector at the current location
+	// 翻译：计算磁力计 Z 轴测量值的理论值，给定 X 和 Y 传感器测量值和我们对当前位置地球磁场矢量的了解
 	const float mag_z_abs = sqrtf(math::max(sq(mag_earth_predicted.length()) - sq(mag_meas(0)) - sq(mag_meas(1)), 0.0f));
 
 	// calculate sign of synthetic magnetomter Z component based on the sign of the predicted magnetometer Z component
+	// 翻译：根据预测的磁力计 Z 轴分量的符号计算合成磁力计 Z 轴测量值的符号
 	const float mag_z_body_pred = mag_earth_predicted.dot(_R_to_earth.col(2));
 
 	return (mag_z_body_pred < 0) ? -mag_z_abs : mag_z_abs;

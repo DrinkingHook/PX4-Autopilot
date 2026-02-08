@@ -104,6 +104,7 @@ public:
 
 	// get the estimated terrain vertical position relative to the NED origin
 	float getTerrainVertPos() const { return _state.terrain + getEkfGlobalOriginAltitude(); };
+	// 全称：get Height Above Ground Level 及获取离地高度
 	float getHagl() const { return _state.terrain + _gpos.altitude(); }
 
 	// get the terrain variance
@@ -229,6 +230,7 @@ public:
 		return PX4_ISFINITE(_local_origin_alt) && isLocalVerticalPositionValid();
 	}
 
+	// 本地水平位置是否有效？
 	bool isLocalHorizontalPositionValid() const
 	{
 		return !_horizontal_deadreckon_time_exceeded;
@@ -417,6 +419,11 @@ public:
 	bool resetGlobalPosToExternalObservation(double latitude, double longitude, float altitude, float eph, float epv,
 			uint64_t timestamp_observation);
 
+	/**
+	 * @brief 重置外部观测方向
+	 * @param heading 外部观测方向
+	 * @param heading_accuracy 外部观测方向精度
+	 */
 	void resetHeadingToExternalObservation(float heading, float heading_accuracy)
 	{
 		if (_control_status.flags.yaw_align) {
@@ -485,6 +492,7 @@ private:
 	StateResets _state_reset_status{};	///< reset event monitoring structure containing velocity, position, height and yaw reset information
 	StateResetCounts _state_reset_count_prev{};
 
+	                            // 翻译：在延迟时间范围内运行的扩展卡尔曼滤波器 (EKF) 的状态结构
 	StateSample _state{};		///< state struct of the ekf running at the delayed time horizon
 
 	LatLonAlt _gpos{0.0, 0.0, 0.f};
@@ -538,10 +546,12 @@ private:
 	estimator_aid_source2d_s _aid_src_optical_flow {};
 
 	// optical flow processing
+	// 翻译：光流传感器速率陀螺仪输出的偏差误差（弧度/秒）
 	Vector3f _flow_gyro_bias{};	///< bias errors in optical flow sensor rate gyro outputs (rad/sec)
 	Vector3f _ref_body_rate{};
 
 	Vector2f _flow_vel_body{};                      ///< velocity from corrected flow measurement (body frame)(m/s)
+	// 根据校正后的流速测量值（体坐标系）（米/秒）计算滤波后的速度
 	AlphaFilter<Vector2f> _flow_vel_body_lpf{_dt_ekf_avg, _kSensorLpfTimeConstant}; ///< filtered velocity from corrected flow measurement (body frame)(m/s)
 	uint32_t _flow_counter{0};                      ///< number of flow samples read for initialization
 
@@ -1009,6 +1019,12 @@ private:
 		return (sensor_timestamp != 0) && (sensor_timestamp + acceptance_interval > _time_delayed_us);
 	}
 
+	/**
+	 * @brief 判断最新样本是否在指定时间内
+	 * @param sensor_timestamp 最新样本的时间戳
+	 * @param acceptance_interval 允许的时间间隔
+	 * @return 如果最新样本在指定时间内，则返回true，否则返回false
+	 */
 	bool isNewestSampleRecent(uint64_t sensor_timestamp, uint64_t acceptance_interval) const
 	{
 		return (sensor_timestamp != 0) && (sensor_timestamp + acceptance_interval > _time_latest_us);
@@ -1046,6 +1062,7 @@ private:
 				   float innovation_gate = 1.f) const;
 
 	// state was reset to aid source, keep observation and update all other fields appropriately (zero innovation, etc)
+	// 翻译：状态已重置，以辅助光源观测，保持观测状态并适当更新所有其他场（例如，零创新等）
 	template <typename T>
 	void resetAidSourceStatusZeroInnovation(T &status) const
 	{

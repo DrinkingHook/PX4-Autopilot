@@ -81,7 +81,7 @@ public:
 	 * @return actual value that complies with the slew rate
 	 */
 	/**
-	 * 更新转换率
+	 * @brief 更新转换率
 	 * @param new_value 所需的新值
 	 * @param deltatime 自上次更新以来的时间（以秒为单位）
 	 * @return 符合转换率的实际值

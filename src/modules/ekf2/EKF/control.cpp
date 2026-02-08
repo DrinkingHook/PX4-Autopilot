@@ -75,9 +75,8 @@ void Ekf::controlFusionModes(const imuSample &imu_delayed)
 		// whilst we are aligning the tilt, monitor the variances
 		// Once the tilt variances have reduced to equivalent of 3 deg uncertainty
 		// and declare the tilt alignment complete
-		// 翻译：在进行倾斜对准时，监控方差
-		// 翻译：一旦倾斜方差减小到相当于 3 度的不确定性
-		// 翻译：并宣布倾斜对准完成
+		// 翻译：在调整倾斜角度的过程中，监测偏差。
+		//      一旦倾斜偏差减小到相当于 3 度不确定度，即可宣布倾斜角度调整完成。
 		if (getTiltVariance() < sq(math::radians(3.f))) {
 			_control_status.flags.tilt_align = true;
 

@@ -47,6 +47,7 @@
 
 void Ekf::controlGnssYawFusion(const gnssSample &gnss_sample)
 {
+    // 如果GNSS未开启 Dual antenna heading（双天线航向） 则退出融合。因为其没有有效的YAW数据
 	if (!(_params.ekf2_gps_ctrl & static_cast<int32_t>(GnssCtrl::YAW))
 	    || _control_status.flags.gnss_yaw_fault) {
 
@@ -70,6 +71,7 @@ void Ekf::controlGnssYawFusion(const gnssSample &gnss_sample)
 				&& !is_gnss_yaw_data_intermittent
 				&& !_gps_intermittent;
 
+		// 打算融合GNSS的偏航
 		if (_control_status.flags.gnss_yaw) {
 			if (continuing_conditions_passing) {
 
@@ -82,6 +84,7 @@ void Ekf::controlGnssYawFusion(const gnssSample &gnss_sample)
 
 					// Before takeoff, we do not want to continue to rely on the current heading
 					// if we had to stop the fusion
+					// 翻译：起飞前，如果融合过程停止，我们不希望继续依赖当前航向。
 					if (!_control_status.flags.in_air) {
 						ECL_INFO("clearing yaw alignment");
 						_control_status.flags.yaw_align = false;
@@ -90,10 +93,12 @@ void Ekf::controlGnssYawFusion(const gnssSample &gnss_sample)
 
 			} else {
 				// Stop GNSS yaw fusion but do not declare it faulty
+				// 翻译：停止 GNSS 偏航融合，但不将其判定为故障。
 				stopGnssYawFusion();
 			}
 
 		} else {
+			// 满足开始条件则进行一些融合前的准备工作
 			if (starting_conditions_passing) {
 				// Try to activate GNSS yaw fusion
 
@@ -112,6 +117,7 @@ void Ekf::controlGnssYawFusion(const gnssSample &gnss_sample)
 
 				} else if (!_aid_src_gnss_yaw.innovation_rejected) {
 					// Do not force a reset but wait for the consistency check to pass
+					// 翻译：不要强制重置而是等待一致性检查通过
 					_control_status.flags.gnss_yaw = true;
 					fuseGnssYaw(gnss_sample.yaw_offset);
 				}
@@ -133,6 +139,7 @@ void Ekf::controlGnssYawFusion(const gnssSample &gnss_sample)
 void Ekf::updateGnssYaw(const gnssSample &gnss_sample)
 {
 	// calculate the observed yaw angle of antenna array, converting a from body to antenna yaw measurement
+	// 翻译：计算天线阵列观测到的偏航角，将从身体到天线偏航测量的a转换为偏航角
 	const float measured_hdg = wrap_pi(gnss_sample.yaw + gnss_sample.yaw_offset);
 
 	const float yaw_acc = PX4_ISFINITE(gnss_sample.yaw_acc) ? gnss_sample.yaw_acc : 0.f;
@@ -172,15 +179,20 @@ void Ekf::fuseGnssYaw(float antenna_yaw_offset)
 
 	// Note: we recompute innov and innov_var because it doesn't cost much more than just computing H
 	// making a separate function just for H uses more flash space without reducing CPU load significantly
+	// 翻译：注意：我们重新计算创新和创新方差，因为这与仅计算 H 相比成本相差不大。
+	// 	为 H 创建一个单独的函数会占用更多闪存空间，而不会显著降低 CPU 负载。
 	sym::ComputeGnssYawPredInnovVarAndH(_state.vector(), P, antenna_yaw_offset, aid_src.observation_variance, FLT_EPSILON,
 					    &heading_pred, &heading_innov_var, &H);
 
 	// check if the innovation variance calculation is badly conditioned
+	// 翻译：检查创新方差计算是否条件不佳
 	if (aid_src.innovation_variance < aid_src.observation_variance) {
 		// the innovation variance contribution from the state covariances is negative which means the covariance matrix is badly conditioned
+		// 翻译：状态协方差对创新方差的贡献为负，这意味着协方差矩阵条件数较差
 		_fault_status.flags.bad_hdg = true;
 
 		// we reinitialise the covariance matrix and abort this fusion step
+		// 翻译：我们重新初始化协方差矩阵并中止此融合步骤
 		initialiseCovariance();
 		ECL_ERR("GNSS yaw numerical error - covariance reset");
 		stopGnssYawFusion();
