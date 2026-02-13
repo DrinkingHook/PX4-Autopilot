@@ -354,6 +354,7 @@ void Sensors::diff_pres_poll()
 void Sensors::adc_poll()
 {
 	/* only read if not in HIL mode */
+	// 仅在非HIL模式下读取
 	if (_hil_enabled) {
 		return;
 	}
@@ -373,6 +374,7 @@ void Sensors::adc_poll()
 				if (ADC_AIRSPEED_VOLTAGE_CHANNEL == adc.channel_id[i]) {
 
 					/* calculate airspeed, raw is the difference from */
+					// 翻译：计算空速，原始值为与当前值的差值
 					const float voltage = (float)(adc.raw_data[i]) * adc.v_ref / adc.resolution * ADC_DP_V_DIV;
 
 					/**
@@ -382,6 +384,10 @@ void Sensors::adc_poll()
 					 *
 					 * Notice: This won't work on devices which have PGA controlled
 					 * vref. Those devices require no divider at all.
+					 */
+					/**
+					 * 翻译：分压器会拉低信号，仅对来自已连接传感器的有效电压起作用。如果已连接传感器，则假定传感器电压存在非零偏移。
+					 * 注意：此方法不适用于采用 PGA 控制的参考电压 (Vref) 的设备。这些设备根本不需要分压器。
 					 */
 					if (voltage > 0.4f) {
 						const float diff_pres_pa_raw = voltage * _parameters.diff_pres_analog_scale;
@@ -450,7 +456,7 @@ void Sensors::InitializeVehicleIMU()
 				// if the sensors module is responsible for voting (SENS_IMU_MODE 1) then run every VehicleIMU in the same WQ
 				//   otherwise each VehicleIMU runs in a corresponding INSx WQ
 				// 翻译：如果传感器模块负责投票（SENS_IMU_MODE 1），则在同一个WQ中运行每个VehicleIMU
-				//   否则，每个VehicleIMU在相应的INSx WQ中运行
+				//      否则，每个VehicleIMU在相应的INSx WQ中运行
 				const bool multi_mode = (_param_sens_imu_mode.get() == 0);
 				const px4::wq_config_t &wq_config = multi_mode ? px4::ins_instance_to_wq(i) : px4::wq_configurations::INS0;
 
@@ -583,6 +589,8 @@ void Sensors::Run()
 		const int n_accel = orb_group_count(ORB_ID(sensor_accel));
 		const int n_gyro  = orb_group_count(ORB_ID(sensor_gyro));
 
+		// 整体简化写法 accel和gyro 是最基础传感器，必然需要轮训检测，况且若有任何一个传感器数量有变化都要执行 parameters_update，
+		// 所以此写法只是将两个步骤写在一起
 		if ((n_accel != _n_accel) || (n_gyro != _n_gyro) || updated) {
 			_n_accel = n_accel;
 			_n_gyro = n_gyro;

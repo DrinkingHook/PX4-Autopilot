@@ -78,6 +78,7 @@ void RtlDirect::on_activation()
 	_rtl_state = getActivationState();
 
 	// reset cruising speed and throttle to default for RTL
+	// 翻译：重置巡航速度和默认的RTL
 	_navigator->reset_cruising_speed();
 	_navigator->set_cruising_throttle();
 
@@ -104,14 +105,15 @@ void RtlDirect::on_active()
 
 	if (_rtl_state != RTLState::IDLE && _rtl_state != RTLState::LAND) {
 		//check for terrain collision and update altitude if needed
-		// 翻译：检查地形碰撞并更新高度，如果需要的话。
 		// note: it may trigger multiple times during a RTL, as every time the altitude set is reset
-		// 翻译注释：在RTL过程中，每次高度设置重置时，可能会触发多次。
+		// 翻译：检查地形碰撞并更新高度，如果需要的话。
+		//      note: 在RTL过程中，每次高度设置重置时，可能会触发多次。
 		updateAltToAvoidTerrainCollisionAndRepublishTriplet(_mission_item);
 	}
 
 	if (_rtl_state == RTLState::LAND && _mission_item.land_precision > 0) {
 		// Need to update the position and type on the current setpoint triplet.
+		// 翻译：需要更新当前设置点三元组的位置和类型。
 		_navigator->get_precland()->on_active();
 
 	} else if (_navigator->get_precland()->is_activated()) {
@@ -249,12 +251,14 @@ void RtlDirect::set_rtl_item()
 
 			// For FW flight:set to LOITER_TIME (with 0s loiter time), such that the loiter (orbit) status
 			// can be displayed on groundstation and the WP is accepted once within loiter radius
+			// 翻译：对于FW飞行：设置为LOITER_TIME（滞空时间为0秒），以便在地面站显示滞空（轨道）状态，并且一旦进入滞空半径，WP就会被接受。
 			if (_vehicle_status_sub.get().vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) {
 				pos_yaw_sp.yaw = NAN;
 				setLoiterHoldMissionItem(_mission_item, pos_yaw_sp, 0.f, _land_approach.loiter_radius_m);
 
 			} else {
 				// already set final yaw if close to destination and weather vane is disabled
+				// 翻译：如果接近目的地且风向标已禁用，则已设置最终偏航角。
 				pos_yaw_sp.yaw = (is_close_to_destination && !_param_wv_en.get()) ? _destination.yaw : NAN;
 				setMoveToPositionMissionItem(_mission_item, pos_yaw_sp);
 			}
@@ -322,11 +326,13 @@ void RtlDirect::set_rtl_item()
 			setMoveToPositionMissionItem(_mission_item, pos_yaw_sp);
 
 			// Prepare for transition
+			// 翻译：准备过渡
 			_mission_item.vtol_back_transition = true;
 			_mission_item.force_heading = false;
 
 			// set previous item location to loiter location such that vehicle tracks line between loiter
 			// location and land location after exiting the loiter circle
+			// 翻译：将先前物品位置设置为盘旋位置，以便载具在离开盘旋圈后沿盘旋位置和着陆位置之间的连线行驶。
 			pos_sp_triplet->previous.lat = _land_approach.lat;
 			pos_sp_triplet->previous.lon = _land_approach.lon;
 			pos_sp_triplet->previous.alt = get_absolute_altitude_for_item(_mission_item);
@@ -382,11 +388,13 @@ void RtlDirect::set_rtl_item()
 	reset_mission_item_reached();
 
 	// Execute command if set. This is required for commands like VTOL transition.
+	// 翻译：执行命令，如果设置。这需要命令像VTOL转换。
 	if (!MissionBlock::item_contains_position(_mission_item)) {
 		issue_command(_mission_item);
 
 	} else {
 		// Convert mission item to current position setpoint and make it valid.
+		// 翻译：将任务项转换为当前位置设定点并使其有效。
 		if (mission_item_to_position_setpoint(_mission_item, &pos_sp_triplet->current)) {
 			pos_sp_triplet->current.alt_acceptance_radius = altitude_acceptance_radius;
 			_navigator->set_position_setpoint_triplet_updated();
@@ -421,7 +429,7 @@ RtlDirect::RTLState RtlDirect::getActivationState()
 }
 
 /**
- * @brief 计算RTL时间估计：
+ * @brief 计算RTL时间估计
  */
 rtl_time_estimate_s RtlDirect::calc_rtl_time_estimate()
 {
@@ -440,9 +448,9 @@ rtl_time_estimate_s RtlDirect::calc_rtl_time_estimate()
 	}
 
 	// Calculate RTL time estimate only when there is a valid destination
-	// 翻译：计算RTL时间估计时，只有当目的地有效时才进行计算。
 	// TODO: Also check if vehicle position is valid
-	// 翻译：TODO：当车辆位置有效时，也进行检查。
+	// 翻译：计算RTL时间估计时，只有当目的地有效时才进行计算
+	//      TODO：当车辆位置有效时，也进行检查
 	if (PX4_ISFINITE(_destination.lat) && PX4_ISFINITE(_destination.lon) && PX4_ISFINITE(_destination.alt)) {
 
 		loiter_point_s land_approach = sanitizeLandApproach(_land_approach);
@@ -510,6 +518,7 @@ rtl_time_estimate_s RtlDirect::calc_rtl_time_estimate()
 		case RTLState::TRANSITION_TO_MC:
 		case RTLState::MOVE_TO_LAND_HOVER: {
 				// Add cruise segment to destination
+				// 翻译：将邮轮航段添加到目的地
 				float move_to_land_dist{0.f};
 				matrix::Vector2f direction{};
 
@@ -534,7 +543,7 @@ rtl_time_estimate_s RtlDirect::calc_rtl_time_estimate()
 				float initial_altitude;
 
 				// Add land segment (second landing phase) which comes after LOITER
-				// 翻译注释：添加着陆段（第二个着陆阶段），在LOITER之后。
+				// 翻译：添加着陆段（第二个着陆阶段），在LOITER之后。
 				if (start_state_for_estimate == RTLState::LAND) {
 					// If we are in this phase, use the current vehicle altitude  instead
 					// of the altitude paramteter to get a continous time estimate
@@ -575,7 +584,7 @@ void RtlDirect::parameters_update()
 
 		// If any parameter updated, call updateParams() to check if
 		// this class attributes need updating (and do so).
-		// 翻译注释：如果任何参数更新，调用updateParams()检查是否需要更新此类属性（并执行更新）。
+		// 翻译：如果任何参数更新，调用updateParams()检查是否需要更新此类属性（并执行更新）。
 		updateParams();
 	}
 }

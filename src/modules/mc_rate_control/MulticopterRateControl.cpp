@@ -231,7 +231,7 @@ MulticopterRateControl::Run()
 				}
 
 				// TODO: send the unallocated value directly for better anti-windup
-				// 翻译：直接发送未分配的值以获得更好的抗风化
+				// 翻译：TODO：直接发送未分配的值以获得更好的抗风化
 				_rate_control.setSaturationStatus(saturation_positive, saturation_negative);
 			}
 

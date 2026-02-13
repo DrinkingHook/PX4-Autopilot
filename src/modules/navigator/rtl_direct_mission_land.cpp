@@ -314,7 +314,7 @@ rtl_time_estimate_s RtlDirectMissionLand::calc_rtl_time_estimate()
 
 					if (!success) {
 						// Could not load the mission item, mark time estimate as invalid.
-						// 翻译注释：无法加载航点，将时间估计标记为无效。
+						// 翻译：无法加载航点，将时间估计标记为无效。
 						_rtl_time_estimator.reset();
 						break;
 					}
@@ -380,7 +380,7 @@ rtl_time_estimate_s RtlDirectMissionLand::calc_rtl_time_estimate()
 									       hor_position_at_calculation_point(1), next_position_mission_item.lat, next_position_mission_item.lon);
 
 							// For fixed wing, add diagonal line
-							// 翻译注释：对于固定翼，添加对角线
+							// 翻译：对于固定翼，添加对角线
 							if ((_vehicle_status_sub.get().vehicle_type != vehicle_status_s::VEHICLE_TYPE_FIXED_WING)
 							    && (!_vehicle_status_sub.get().is_vtol)) {
 
@@ -389,6 +389,7 @@ rtl_time_estimate_s RtlDirectMissionLand::calc_rtl_time_estimate()
 
 							} else {
 								// For VTOL, Rotary, go there horizontally first, then land
+								// 翻译：对于垂直起降飞行器和旋翼机，先水平飞行，然后再降落。
 								_rtl_time_estimator.addDistance(hor_dist, direction, 0.f);
 
 								if (_vehicle_status_sub.get().is_vtol) {
@@ -404,7 +405,7 @@ rtl_time_estimate_s RtlDirectMissionLand::calc_rtl_time_estimate()
 
 					default: {
 							// Default assume can go to the location directly
-							// 翻译注释：默认假设可以直接到达该位置
+							// 翻译：默认假设可以直接到达该位置
 							matrix::Vector2f direction{};
 							get_vector_to_next_waypoint(hor_position_at_calculation_point(0), hor_position_at_calculation_point(1),
 										    next_position_mission_item.lat, next_position_mission_item.lon, &direction(0), &direction(1));

@@ -87,7 +87,7 @@ void RtlTimeEstimator::update()
 
 		// If any parameter updated, call updateParams() to check if
 		// this class attributes need updating (and do so).
-		// 翻译注释：如果任何参数更新，调用updateParams()检查是否需要更新此类属性（并执行更新）。
+		// 翻译：如果任何参数更新，调用updateParams()检查是否需要更新此类属性（并执行更新）。
 		updateParams();
 	}
 }
@@ -147,8 +147,10 @@ void RtlTimeEstimator::addWait(float time_s)
  */
 float RtlTimeEstimator::getCruiseGroundSpeed(const matrix::Vector2f &direction_norm)
 {
+	// 根据不同机型获取巡航速度
 	float cruise_speed = getCruiseSpeed();
 
+	// 固定翼机型特殊处理
 	if (_vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) {
 		matrix::Vector2f wind = get_wind();
 
@@ -156,7 +158,7 @@ float RtlTimeEstimator::getCruiseGroundSpeed(const matrix::Vector2f &direction_n
 		const float wind_across_dir = matrix::Vector2f(wind - direction_norm * wind_along_dir).norm();
 
 		// Note: use fminf so that we don't _rely_ on tailwind towards direction to make RTL more efficient
-		// 翻译：使用fminf，以便我们不要依赖于方向上的逆风来使RTL更有效率
+		// 翻译：Note: 使用fminf，以便我们不要依赖于方向上的逆风来使RTL更有效率
 		const float ground_speed = sqrtf(cruise_speed * cruise_speed - wind_across_dir * wind_across_dir) + fminf(
 						   0.f, wind_along_dir);
 

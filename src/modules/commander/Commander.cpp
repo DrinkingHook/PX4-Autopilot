@@ -1947,33 +1947,33 @@ void Commander::run()
                 // 更新着陆检测状态
 		landDetectorUpdate();
 
-                // 更新安全开关状态
+        	// 更新安全开关状态
 		safetyButtonUpdate();
 
-                // 多轴抛飞状态更新
+        	// 多轴抛飞状态更新
 		_multicopter_throw_launch.update(isArmed());
 
-                // vtol状态更新
+        	// vtol状态更新
 		vtolStatusUpdate();
 
 		_mission_in_progress = (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION)
 				       && !_mission_result_sub.get().finished;
 
-                // 起飞点更新：当设置了自动刷新home位置参数，同时处于未解锁或已着陆并且不处于自动导航任务时刷新home位置
+        	// 起飞点更新：当设置了自动刷新home位置参数，同时处于未解锁或已着陆并且不处于自动导航任务时刷新home位置
 		_home_position.update(_param_com_home_en.get(), !isArmed() && _vehicle_land_detected.landed && !_mission_in_progress);
 
-                // 处理自动解除武装
+        	// 处理自动解除武装
 		handleAutoDisarm();
 
 		battery_status_check();
 
-                // 检查任务更新
+        	// 检查任务更新
 		checkForMissionUpdate();
 
                 // 手动控制检查
 		manualControlCheck();
 
-                // 板外控制检查
+        	// 板外控制检查
 		offboardControlCheck();
 
 		// data link checks which update the status
@@ -1987,7 +1987,7 @@ void Commander::run()
 			_status_changed = true;
 		}
 
-                // 模式管理更新
+        	// 模式管理更新
 		modeManagementUpdate();
 
 		const hrt_abstime now = hrt_absolute_time();
@@ -2096,7 +2096,7 @@ void Commander::run()
 		// 检查任务线程
 		checkWorkerThread();
 
-                // 更新调音
+        	// 更新调音
 		updateTunes();
 		// 控制状态灯
 		control_status_leds(_status_changed, _battery_warning);
@@ -2298,9 +2298,9 @@ void Commander::landDetectorUpdate()
 
 					} else if (_param_com_home_in_air.get()) {
 						// home位在空中的情况如：
-							// 1.飞控控制重启 
-							// 2.飞行器在空中时，安全开关被按下
-							// 3.抛飞
+						// 1.飞控控制重启 
+						// 2.飞行器在空中时，安全开关被按下
+						// 3.抛飞
 						_home_position.setInAirHomePosition();
 					}
 				}
@@ -2319,7 +2319,7 @@ void Commander::safetyButtonUpdate()
 
 	if (safety_changed) {
 		// Notify the user if the status of the safety button changes
-		// 翻译注释：如果安全按钮的状态发生变化，则通知用户。
+		// 翻译：如果安全按钮的状态发生变化，则通知用户。
 		// 安全开关有效未禁用
 		if (!_safety.isSafetyDisabled()) {
 			// 安全开关关闭及解除保险状态
@@ -2500,9 +2500,9 @@ bool Commander::handleModeIntentionAndFailsafe()
 	state.vehicle_type = _vehicle_status.vehicle_type;
 
 	// There might have been a mode change request without changing the user intended mode.
-	// 翻译：可能存在模式更改请求，但并未更改用户预期的模式。
 	// If a failsafe is active we must pass the request along as it might lead to a user-takeover.
-	// 翻译：如果失败安全处于活动状态，我们必须将请求传递，因为它可能会导致用户捕获。
+	// 翻译：可能存在模式更改请求，但并未更改用户预期的模式。
+	//      如果失败安全处于活动状态，我们必须将请求传递，因为它可能会导致用户捕获。
 	bool mode_change_requested = _user_mode_intention.getHadModeChangeAndClear();
 
 	/**

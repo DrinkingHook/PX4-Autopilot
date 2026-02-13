@@ -61,12 +61,14 @@ Takeoff::on_activation()
 void
 Takeoff::on_active()
 {
+    	// 固定翼盘旋
 	if (_navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) {
 
 		switch (_fw_takeoff_state) {
 		case fw_takeoff_state::CLIMBOUT: {
 				if (_navigator->get_global_position()->alt >= _loiter_altitude_msl) {
 
+					// 设置为盘旋
 					setLoiterItemCommonFields(&_mission_item);
 
 					_mission_item.nav_cmd = NAV_CMD_LOITER_TIME_LIMIT;
@@ -76,6 +78,8 @@ Takeoff::on_active()
 					// we need the vehicle to loiter indefinitely but also we want this mission item to be reached as soon
 					// as the loiter is established. therefore, set a small loiter time so that the mission item will be reached quickly,
 					// however it will just continue loitering as there is no next mission item
+					// 翻译：我们需要飞行器无限期地盘旋，但同时也希望飞行器在盘旋开始后尽快到达此任务项。
+					//      因此，设置一个较短的盘旋时间，以便快速到达任务项，但由于没有下一个任务项，飞行器将继续盘旋。
 					_mission_item.time_inside = 1.f;
 					_mission_item.loiter_radius = _navigator->get_default_loiter_rad();
 					_mission_item.acceptance_radius  = _navigator->get_acceptance_radius();

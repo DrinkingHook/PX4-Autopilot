@@ -56,8 +56,8 @@ int ADS1115::probe()
 	// and check their default values. We cannot use the config register, as
 	// this is changed by this driver. Note the default value is in BE.
 	// 翻译：ADS1115 没有 ID 寄存器，因此我们读取阈值寄存器
-	// 并检查它们的默认值。我们不能使用配置寄存器，因为
-	// 该寄存器已被驱动程序更改。请注意，默认值位于 BE 中。
+	//      并检查它们的默认值。我们不能使用配置寄存器，因为
+	//      该寄存器已被驱动程序更改。请注意，默认值位于 BE 中。
 	static constexpr uint32_t DEFAULT{0xFF7F0080};
 	union {
 		struct {

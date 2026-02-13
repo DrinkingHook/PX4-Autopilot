@@ -461,7 +461,7 @@ bool Ekf::tryYawEmergencyReset()
 	 * present before flight to prevent triggering due to GPS glitches or other sensor errors.
 	 */
 	// 翻译：如果水平速度创新检查持续失败，且偏航紧急估计值与偏航估计值之间的差异较大，则会快速重置偏航紧急估计值。
-	// 这有助于从错误的偏航估计值中恢复。如果故障情况在飞行前已存在，则不会执行重置操作，以防止因 GPS 故障或其他传感器错误而触发重置。
+	//      这有助于从错误的偏航估计值中恢复。如果故障情况在飞行前已存在，则不会执行重置操作，以防止因 GPS 故障或其他传感器错误而触发重置。
 	if (resetYawToEKFGSF()) {
 	    	// GPS 偏航角紧急重置
 		ECL_WARN("GPS emergency yaw reset");

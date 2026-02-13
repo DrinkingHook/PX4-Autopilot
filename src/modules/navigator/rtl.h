@@ -80,7 +80,7 @@ public:
 		RTL_MISSION_FAST_REVERSE = rtl_status_s::RTL_STATUS_TYPE_FOLLOW_MISSION_REVERSE,
 	};
 
-        // 未激活状态
+    // 未激活状态
 	void on_inactive() override;
 	// 处于激活状态中
 	void on_activation() override;

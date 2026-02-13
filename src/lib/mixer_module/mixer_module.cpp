@@ -480,7 +480,7 @@ bool MixingOutput::update()
 		/* Update the armed status and check that we're not locked down.
 		 * We also need to arm throttle for the ESC calibration. */
 		// 翻译：更新武装状态并且检查我们是不是没有被锁定
-		// 我们还需要为电调校准启用油门
+		//      我们还需要为电调校准启用油门
 		_throttle_armed = (_armed.armed && !_armed.lockdown) || _armed.in_esc_calibration_mode;
 	}
 
@@ -563,12 +563,11 @@ MixingOutput::limitAndUpdateOutputs(float outputs[MAX_ACTUATORS], bool has_updat
 	}
 
 	// We must calibrate the PWM and Oneshot ESCs to a consistent range of 1000-2000us (gets mapped to 125-250us for Oneshot)
-	// 翻译：我们必须校准PWM和Oneshot ESC，达到1000-2000US的一致范围（映射到Oneshot的125-250US）
 	// Doing so makes calibrations consistent among different configurations and hence PWM minimum and maximum have a consistent effect
-	// 翻译：这样做可以使校准在不同的配置之间保持一致，因此PWM最小和最大效果具有一致的效果
 	// hence the defaults for these parameters also make most setups work out of the box
-	// 翻译：因此，这些参数的默认值也使大多数设置可以使用
-	// 系统处于 ESC（电调）校准模式中
+	// 翻译：我们必须将PWM和Oneshot电调校准到1000-2000微秒的统一范围（Oneshot对应125-250微秒）。
+	//      这样做可以确保不同配置下的校准结果一致，从而使PWM的最小值和最大值产生一致的效果。
+	//      因此，这些参数的默认值也能保证大多数设置开箱即用。
 	if (_armed.in_esc_calibration_mode) {
 		static constexpr uint16_t PWM_CALIBRATION_LOW = 1000;
 		static constexpr uint16_t PWM_CALIBRATION_HIGH = 2000;
@@ -698,11 +697,10 @@ MixingOutput::output_limit_calc(const bool armed, const int num_channels, const 
 	 * regular arming time.
 	 */
 
-    /* 如果系统已预防，则极限状态暂时打开,
-	* 因为一些输出是有效的，而无效输出已被设置为 NaN.
-	* 不过，这并不存储在状态机器中,
-	* 因为油门通道需要在常规准备时间内经过斜坡.
-	*/
+    /* 
+     * 翻译：如果系统已预先准备就绪，则限位状态会暂时开启，因为某些输出有效，而无效输出已被设置为 NaN。
+     *      但这不会存储在状态机中，因为油门通道需要在正常的准备时间经过斜坡过程。
+	 */
 	auto local_limit_state = _output_state;
 
 	if (isPrearmed()) {

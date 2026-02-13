@@ -756,6 +756,9 @@ MissionBlock::setLoiterItemFromCurrentPositionWithBraking(struct mission_item_s 
 	item->yaw = NAN;
 }
 
+/**
+ * @brief 设置飞行器无限期盘旋任务项的通用字段。
+ */
 void
 MissionBlock::setLoiterItemCommonFields(struct mission_item_s *item)
 {

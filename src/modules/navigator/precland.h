@@ -50,17 +50,26 @@
 #include "mission_block.h"
 
 enum class PrecLandState {
+	       // 翻译：开始状态
 	Start, // Starting state
+	                    // 翻译：在保持高度的同时，定位到着陆目标上方
 	HorizontalApproach, // Positioning over landing target while maintaining altitude
+	                    // 翻译：下降过程中始终保持在着陆目标上方
 	DescendAboveTarget, // Stay over landing target while descending
+		       // 翻译：即使没有着陆目标，也要进行最终着陆进近
 	FinalApproach, // Final landing approach, even without landing target
+		// 翻译：寻找着陆目标
 	Search, // Search for landing target
+		  // 翻译：备用着陆方法
 	Fallback, // Fallback landing method
+	     // 翻译：完成着陆
 	Done // Done landing
 };
 
 enum class PrecLandMode {
+		           // 翻译：仅当着陆目标在初始阶段可见时才进行精确着陆
 	Opportunistic = 1, // only do precision landing if landing target visible at the beginning
+		     // 翻译：如果初始阶段不可见着陆目标，则尝试寻找着陆目标
 	Required = 2 // try to find landing target if not visible at the beginning
 };
 

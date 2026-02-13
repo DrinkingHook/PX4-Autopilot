@@ -65,7 +65,6 @@ RTL::RTL(Navigator *navigator) :
 /**
  * @brief 更新数据缓存
  * 在地面站做好路径规划后，会将导航数据存储至SD卡中，数据量较为庞大
- *
  */
 void RTL::updateDatamanCache()
 {
@@ -426,6 +425,12 @@ void RTL::setRtlTypeAndDestination()
 	_rtl_status_pub.publish(rtl_status);
 }
 
+/**
+ * @brief 找到最近的安全点
+ * @param min_dist 最小距离
+ * @param safe_point_index 安全点索引
+ * @return PositionYawSetpoint 安全点位置和朝向
+ */
 PositionYawSetpoint RTL::findClosestSafePoint(float min_dist, uint8_t &safe_point_index)
 {
 	const bool vtol_in_fw_mode = _vehicle_status_sub.get().is_vtol
@@ -449,6 +454,7 @@ PositionYawSetpoint RTL::findClosestSafePoint(float min_dist, uint8_t &safe_poin
 			}
 
 			// Ignore safepoints which are too close to the homepoint (only if home is an option to return to)
+			// 翻译：忽略距离返航点过近的安全点（仅当返航点是可返回的选项时）
 			const bool far_from_home = get_distance_to_next_waypoint(_home_pos_sub.get().lat, _home_pos_sub.get().lon,
 						   mission_safe_point.lat, mission_safe_point.lon) > MAX_DIST_FROM_HOME_FOR_LAND_APPROACHES;
 
@@ -586,12 +592,17 @@ void RTL::setLandPosAsDestination(PositionYawSetpoint &rtl_position, mission_ite
 	rtl_position.lon = land_mission_item.lon;
 }
 
+/**
+ * @brief 设置安全点作为目的地
+ * @param rtl_position 返回位置
+ * @param mission_safe_point 安全点任务项
+ */
 void RTL::setSafepointAsDestination(PositionYawSetpoint &rtl_position, const mission_item_s &mission_safe_point) const
 {
 	// There is a safe point closer than home/mission landing
-	// 翻译：有一个比家/任务着陆点更近的安全点
 	// TODO: handle all possible mission_safe_point.frame cases
-	// 翻译：TODO：处理所有可能的 mission_safe_point.frame 情况
+	// 翻译：有一个比家/任务着陆点更近的安全点
+	// 	TODO：处理所有可能的 mission_safe_point.frame 情况
 	switch (mission_safe_point.frame) {
 	case 0: // MAV_FRAME_GLOBAL
 		rtl_position.lat = mission_safe_point.lat;
@@ -613,6 +624,13 @@ void RTL::setSafepointAsDestination(PositionYawSetpoint &rtl_position, const mis
 	}
 }
 
+/**
+ * @brief 计算返回高度：
+ * @param rtl_position 返回位置
+ * @param destination_type 目的地类型
+ * @param cone_half_angle_deg 锥形半角角度
+ * @return 返回高度
+ */
 float RTL::computeReturnAltitude(const PositionYawSetpoint &rtl_position, DestinationType destination_type, float cone_half_angle_deg) const
 {
 	if (destination_type == DestinationType::DESTINATION_TYPE_LAST_LINK_POSITION) {

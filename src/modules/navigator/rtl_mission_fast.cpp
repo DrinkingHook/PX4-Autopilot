@@ -65,6 +65,7 @@ void RtlMissionFast::on_activation()
 	_home_pos_sub.update();
 
 	// set mission item to closest item if not already in mission
+	// 翻译注释：如果当前任务索引小于0，则将任务设置为最近的项目
 	if (_mission_index_prior_rtl < INT32_C(0)) {
 		_is_current_planned_mission_item_valid = setMissionToClosestItem(_global_pos_sub.get().lat, _global_pos_sub.get().lon,
 				_global_pos_sub.get().alt, _home_pos_sub.get().alt, _vehicle_status_sub.get()) == PX4_OK;
@@ -80,12 +81,14 @@ void RtlMissionFast::on_activation()
 
 		} else {
 			// No more position items left. Set it to the land item if it exists
+			// 翻译：没有剩余的位置项。如果存在着陆项，则将其设置为着陆项。
 			if (_mission.land_index > 0) {
 				setMissionIndex(_mission.land_index);
 				_is_current_planned_mission_item_valid = isMissionValid();
 
 			} else {
 				// Nothing we can do, set the validity to false to trigger end of mission reaction
+				// 翻译：我们无能为力，将有效性设置为 false 以触发任务结束反应。
 				_is_current_planned_mission_item_valid = false;
 			}
 		}

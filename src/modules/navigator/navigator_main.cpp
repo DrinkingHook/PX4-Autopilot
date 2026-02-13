@@ -244,8 +244,8 @@ void Navigator::run()
 		// 翻译：处理车辆命令
 		int vehicle_command_updates = 0;
 
-                // while循环处理车辆命令
-                // 同时限制每周期的 vehicle_command 订阅更新，这是一种预防措施，以避免在试图跟上来自更高优先级任务的高速率发布时陷入循环的可能性
+	        // while循环处理车辆命令
+	        // 同时限制每周期的 vehicle_command 订阅更新，这是一种预防措施，以避免在试图跟上来自更高优先级任务的高速率发布时陷入循环的可能性
 		while (_wait_for_vehicle_status_timestamp == 0 && _vehicle_command_sub.updated()
 		       && (vehicle_command_updates < vehicle_command_s::ORB_QUEUE_LENGTH)) {
 			vehicle_command_updates++;
@@ -255,11 +255,11 @@ void Navigator::run()
 			vehicle_command_s cmd{};
 			_vehicle_command_sub.copy(&cmd);
 
-                        /** 
-                         * @brief 打印命令数量丢失情况
-                         * 	  发布者每发布一次 generation 自增一次，在_vehicle_command_sub.copy(&cmd)更新为最新的数据后判断是否丢失数据
-                         *
-                         */
+		         /** 
+		          * @brief 打印命令数量丢失情况
+		          * 	  发布者每发布一次 generation 自增一次，在_vehicle_command_sub.copy(&cmd)更新为最新的数据后判断是否丢失数据
+		          *
+		          */
 			if (_vehicle_command_sub.get_last_generation() != last_generation + 1) {
 				PX4_ERR("vehicle_command lost, generation %d -> %d", last_generation, _vehicle_command_sub.get_last_generation());
 			}
@@ -273,11 +273,11 @@ void Navigator::run()
 				publish_vehicle_command_ack(cmd, vehicle_command_ack_s::VEHICLE_CMD_RESULT_ACCEPTED);
 
 			/**
-                        * @brief 重新定位的几种情况:
-                        * 	     1.任务暂停时临时悬停的定位点 
-                        * 	     2.单一定位点goto 
-                        * 	     3.机载电脑发送goto命令
-                        */
+		         * @brief 重新定位的几种情况:
+		         * 	     1.任务暂停时临时悬停的定位点 
+		         * 	     2.单一定位点goto 
+		         * 	     3.机载电脑发送goto命令
+		         */
 			} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_DO_REPOSITION
 				   && _vstatus.arming_state == vehicle_status_s::ARMING_STATE_ARMED) {
 				// only update the reposition setpoint if armed, as it otherwise won't get executed until the vehicle switches to loiter,
@@ -295,8 +295,8 @@ void Navigator::run()
                                  * lat：经度
                                  * lon：纬度
 				 * alt：高度
-                                 * @brief 获取cmd参数为地理围栏检测做准备,如果参数异常则使用 global_position 替代
-                                 */
+		                 * @brief 获取cmd参数为地理围栏检测做准备,如果参数异常则使用 global_position 替代
+		                 */
 				if (PX4_ISFINITE(cmd.param5) && PX4_ISFINITE(cmd.param6)) {
 					position_setpoint.lat = cmd.param5;
 					position_setpoint.lon = cmd.param6;
@@ -308,7 +308,7 @@ void Navigator::run()
 
 				position_setpoint.alt = PX4_ISFINITE(cmd.param7) ? cmd.param7 : get_global_position()->alt;
 
-                                // 地理围栏允许位置判断
+                		// 地理围栏允许位置判断
 				if (geofence_allows_position(position_setpoint)) {
 					/**
 					 * @brief triplet 名为三元组 表示为纬度 Lat, 经度 Lon, 高度 Alt
@@ -344,7 +344,7 @@ void Navigator::run()
 						rep->current.cruising_speed = cmd.param1;
 					}
 
-                                        // rep当前巡航油门
+                    			// rep当前巡航油门
 					rep->current.cruising_throttle = get_cruising_throttle();
 					// rep当前接受半径
 					rep->current.acceptance_radius = get_acceptance_radius();
@@ -406,7 +406,7 @@ void Navigator::run()
 						}
 					}
 
-                                        // 当经纬度命令值无效,但是高度值有效的情况下启用，因为对于固定翼来说需要盘旋上升高度
+                    			// 当经纬度命令值无效,但是高度值有效的情况下启用，因为对于固定翼来说需要盘旋上升高度
 					if (only_alt_change_requested) {
 						if (PX4_ISFINITE(curr->current.loiter_radius) && curr->current.loiter_radius > FLT_EPSILON) {
 							rep->current.loiter_radius = curr->current.loiter_radius;
@@ -460,9 +460,9 @@ void Navigator::run()
 			} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_DO_CHANGE_ALTITUDE
 				   && _vstatus.arming_state == vehicle_status_s::ARMING_STATE_ARMED) {
 				// only update the setpoint if armed, as it otherwise won't get executed until the vehicle switches to loiter,
-				// 翻译：只有在布防时才会更新设定点，否则在车辆切换到闲逛状态之前不会执行、
 				// which can lead to dangerous and unexpected behaviors (see loiter.cpp, there is an if(armed) in there too)
-				// 翻译：这可能会导致危险和意外的行为（请参阅 loiter.cpp，其中也有 if(武装)）。
+				// 翻译：只有在布防时才会更新设定点，否则在车辆切换到闲逛状态之前不会执行、
+				//      这可能会导致危险和意外的行为（请参阅 loiter.cpp，其中也有 if(武装)）。
 
 				// A VEHICLE_CMD_DO_CHANGE_ALTITUDE has the exact same effect as a VEHICLE_CMD_DO_REPOSITION with only the altitude
 				// field populated, this logic is copied from above.
@@ -549,7 +549,7 @@ void Navigator::run()
 
 				// DO_CHANGE_ALTITUDE is acknowledged by commander
 
-                        // 开始在参数定义的圆的圆周上绕行.
+            		// 开始在参数定义的圆的圆周上绕行.
 			} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_DO_ORBIT &&
 				   get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) {
 
@@ -657,7 +657,7 @@ void Navigator::run()
 
 #endif // CONFIG_FIGURE_OF_EIGHT
 
-                        // 起飞命令
+            		// 起飞命令
 			} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_NAV_TAKEOFF) {
 				position_setpoint_triplet_s *rep = get_takeoff_triplet();
 
@@ -683,9 +683,9 @@ void Navigator::run()
 				}
 
 				// Don't set a yaw setpoint for takeoff, as Navigator doesn't handle the yaw reset.
-				// 翻译：不要为起飞设置偏航设定值，因为导航器不会处理偏航重置。
 				// The yaw setpoint generation is handled by FlightTaskAuto.
-				// 翻译：偏航设定点的生成由 FlightTaskAuto 处理。
+				// 翻译：不要为起飞设置偏航设定值，因为导航器不会处理偏航重置
+				//      偏航设定点的生成由 FlightTaskAuto 处理
 				rep->current.yaw = NAN;
 
 				if (PX4_ISFINITE(cmd.param5) && PX4_ISFINITE(cmd.param6)) {
@@ -694,7 +694,7 @@ void Navigator::run()
 
 				} else {
 					// If one of them is non-finite set the current global position as target
-					// 翻译：如果其中一个不是有限的，将当前全局位置作为目标。
+					// 翻译：如果其中一个不是有限的，将当前全局位置作为目标
 					rep->current.lat = get_global_position()->lat;
 					rep->current.lon = get_global_position()->lon;
 
@@ -708,7 +708,7 @@ void Navigator::run()
 				rep->next.valid = false;
 
 				// Fixed-wing: vehicle will takeoff towards these coordinates and establish on a loiter there
-				// 翻译：在转换后，车辆将在该位置建立一个环形着陆圈。
+				// 翻译：在转换后，车辆将在该位置建立一个环形着陆圈
 				_takeoff.setLoiterPosition(matrix::Vector2d(cmd.param5, cmd.param6));
 				_takeoff.setLoiterAltitudeAmsl(cmd.param7);
 
@@ -733,12 +733,12 @@ void Navigator::run()
 				_vtol_takeoff.setLoiterHeight(cmd.param1);
 #endif //CONFIG_MODE_NAVIGATOR_VTOL_TAKEOFF
 
-                        // 标记任务着陆模式开始的任务项目，或使用任务着陆模式着陆的命令。
+            		// 标记任务着陆模式开始的任务项目，或使用任务着陆模式着陆的命令。
 			} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_DO_LAND_START) {
 
 				// find NAV_CMD_DO_LAND_START in the mission and
 				// use MAV_CMD_MISSION_START to start the mission from the next item containing a position setpoint
-				// 翻译注释：在任务中找到 NAV_CMD_DO_LAND_START，并使用 MAV_CMD_MISSION_START 从下一个包含位置设定点的项目开始任务。
+				// 翻译：在任务中找到 NAV_CMD_DO_LAND_START，并使用 MAV_CMD_MISSION_START 从下一个包含位置设定点的项目开始任务。
 				uint8_t result{vehicle_command_ack_s::VEHICLE_CMD_RESULT_ACCEPTED};
 
 				if (_mission.get_land_start_available()) {
@@ -838,11 +838,13 @@ void Navigator::run()
 
 				if (fabsf(cmd.param1 - 1.f) > FLT_EPSILON) {
 					// only support enabling autotune (consistent with autotune module)
+					// 翻译：仅支持启用自动调谐（与自动调谐模块一致）
 					events::send(events::ID("navigator_autotune_unsupported_input"), {events::Log::Warning, events::LogInternal::Warning},
 						     "Provided autotune command is not supported. To enable autotune in mission, set param1 to 1");
 
 				} else if (fabsf(cmd.param2) > FLT_EPSILON) {
 					// warn user about axis selection
+					// 翻译：警告用户关于轴选择
 					events::send(events::ID("navigator_autotune_unsupported_ax"), {events::Log::Warning, events::LogInternal::Info},
 						     "Autotune axis selection not supported through Mission. Use FW_AT_AXES to set axes for fixed-wing vehicles");
 				}
@@ -850,7 +852,7 @@ void Navigator::run()
 		}
 
 
-                // adsb模块支持--类似空管
+// adsb模块支持--类似空管
 #if CONFIG_NAVIGATOR_ADSB
 		/* Check for traffic */
 		check_traffic();
@@ -864,7 +866,7 @@ void Navigator::run()
 		// 翻译：根据指挥官设置的导航状态执行任务
 		NavigatorMode *navigation_mode_new{nullptr};
 
-		// 任务状态在commander.cpp中的checkForMissionUpdate()更新
+		// 任务状态在commander.cpp中的 checkForMissionUpdate() 更新
 		switch (_vstatus.nav_state) {
 		case vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION:
 			_pos_sp_triplet_published_invalid_once = false;
@@ -880,7 +882,7 @@ void Navigator::run()
 
 		case vehicle_status_s::NAVIGATION_STATE_AUTO_RTL:
 
-			// 这里主要针对于固定翼机型，因为isLanding()用于判断的是固定翼机型
+			// 这里主要针对于固定翼机型，因为 isLanding() 用于判断的是固定翼机型
 			// If we are already in mission landing, do not switch.
 			// 翻译：如果我们已经在任务着陆阶段,请不要切换.
 			if (_navigation_mode == &_mission && _mission.isLanding()) {
@@ -953,8 +955,8 @@ void Navigator::run()
 			// FIXME: a better solution would be to add reset where they are needed and remove
 			//        this general reset here.
 
-                        // 翻译：
-                        // 在以下两种情况下，我们不会重置三元组：
+	                // 翻译：
+	                // 在以下两种情况下，我们不会重置三元组：
 			// 1) 如果我们刚刚完成自动起飞，现在要进行盘旋。否则，我们将失去起飞高度，最终低于我们想要飞到的位置。
 			// 2) 我们切换到盘旋，并且当前位置设定点已经有一个有效的盘旋点。在这种情况下，我们可以假设飞行器已经建立了盘旋点，我们不需要设置新的盘旋位置。
 			// FIXME：更好的解决方案是在需要的地方添加重置，并删除此处的通用重置。
@@ -1012,23 +1014,23 @@ void Navigator::run()
 			reset_triplets();
 		}
 
-                // 发布位置设定点三元组
+        	// 发布位置设定点三元组
 		if (_pos_sp_triplet_updated) {
 			publish_position_setpoint_triplet();
 		}
 
-                // 发布任务结果（Mission Result）消息
+        	// 发布任务结果（Mission Result）消息
 		if (_mission_result_updated) {
 			publish_mission_result();
 		}
 
-                // 临时禁用云台的自动跟踪或姿态控制（如 ROI 跟踪）
+        	// 临时禁用云台的自动跟踪或姿态控制（如 ROI 跟踪）
 		neutralize_gimbal_if_control_activated();
 
-                // 发布导航器状态（Navigator Status）消息
+        	// 发布导航器状态（Navigator Status）消息
 		publish_navigator_status();
 
-                // 发布距离传感器模式请求,自动任务或rtl模式下的降落阶段
+        	// 发布距离传感器模式请求,自动任务或rtl模式下的降落阶段
 		publish_distance_sensor_mode_request();
 
 		_geofence.run();
@@ -1176,17 +1178,17 @@ void Navigator::geofence_breach_check()
 						loiter_latitude = loiter_center_lat_lon(0);
 						loiter_longitude = loiter_center_lat_lon(1);
 
-						// 添加注释：生成多旋翼滞留高度
+						// 生成多旋翼滞留高度
 						loiter_altitude_amsl = _gf_breach_avoidance.generateLoiterAltitudeForMulticopter(gf_violation_type);
 
 					} else {
 
-						// 添加注释：生成固定翼滞留点
+						// 生成固定翼滞留点
 						loiter_center_lat_lon = _gf_breach_avoidance.generateLoiterPointForFixedWing(gf_violation_type, &_geofence);
 						loiter_latitude = loiter_center_lat_lon(0);
 						loiter_longitude = loiter_center_lat_lon(1);
 
-						// 添加注释：生成固定翼滞留高度
+						// 生成固定翼滞留高度
 						loiter_altitude_amsl = _gf_breach_avoidance.generateLoiterAltitudeForFixedWing(gf_violation_type);
 					}
 				}
@@ -1348,7 +1350,7 @@ float Navigator::get_acceptance_radius()
 	const position_controller_status_s &pos_ctrl_status = _position_controller_status_sub.get();
 
 	// for fixed-wing and rover, return the max of NAV_ACC_RAD and the controller acceptance radius (e.g. navigation switch distance)
-	// 翻译注释：对于固定翼和陆地车辆，返回 NAV_ACC_RAD 和控制器接受半径（例如导航切换距离）的最大值
+	// 翻译：对于固定翼和陆地车辆，返回 NAV_ACC_RAD 和控制器接受半径（例如导航切换距离）的最大值
 	if (_vstatus.vehicle_type != vehicle_status_s::VEHICLE_TYPE_ROTARY_WING
 	    && PX4_ISFINITE(pos_ctrl_status.acceptance_radius) && pos_ctrl_status.timestamp != 0) {
 

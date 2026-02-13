@@ -162,11 +162,11 @@ ControlAllocator::update_allocation_method(bool force)
 			_control_allocation[i] = nullptr;
 		}
 
-                /**
-                 * @brief 获取有效矩阵数量
+	        /**
+	         * @brief 获取有效矩阵数量
 		 * 几个VTOL机型都是两个，其它的机型默认1个
-                 *
-                 */
+	         *
+	         */
 		_num_control_allocation = _actuator_effectiveness->numMatrices();
 
 		AllocationMethod desired_methods[ActuatorEffectiveness::MAX_NUM_MATRICES];
@@ -343,9 +343,9 @@ ControlAllocator::Run()
 
 		if (_handled_motor_failure_bitmask == 0) {
 			// We don't update the geometry after an actuator failure, as it could lead to unexpected results
-			// 翻译：执行器发生故障后，我们不会更新几何图形，因为这可能会导致意想不到的结果
 			// (e.g. a user could add/remove motors, such that the bitmask isn't correct anymore)
-			// 翻译：（例如，用户可以添加/删除电机，从而使位掩码不再正确）。
+			// 翻译：执行器发生故障后，我们不会更新几何图形，因为这可能会导致意想不到的结果
+			//      （e.g.用户可以添加/删除电机，从而使位掩码不再正确）
 			updateParams();
 			parameters_updated();
 		}
@@ -488,9 +488,9 @@ ControlAllocator::Run()
 	publish_actuator_controls();
 
 	// Publish status at limited rate, as it's somewhat expensive and we use it for slower dynamics
-	// 翻译：以有限的速度发布状态，因为它有点昂贵，我们用它来处理较慢的动态变化
 	// (i.e. anti-integrator windup)
-	// 翻译：（即反集成器卷绕）
+	// 翻译：以有限的速度发布状态，因为它有点昂贵，我们用它来处理较慢的动态变化
+	//      （i.e. 反积分器饱和）
 	// 用于诊断和记录
 	if (now - _last_status_pub >= 5_ms) {
 		publish_control_allocator_status(0);
@@ -619,11 +619,11 @@ ControlAllocator::update_effectiveness_matrix_if_needed(EffectivenessUpdateReaso
 			_control_allocation[i]->setSlewRateLimit(slew_rate[i]);
 
 			// Set all the elements of a row to 0 if that row has weak authority.
-			// 翻译：如果某一行的权限较弱，则将该行的所有元素设置为 0。
 			// That ensures that the algorithm doesn't try to control axes with only marginal control authority,
-			// 翻译：这样就能确保算法不会尝试控制仅具有边缘控制权限的轴、
 			// which in turn would degrade the control of the main axes that actually should and can be controlled.
-			// 翻译：这反过来又会降低对实际应该控制和可以控制的主轴的控制。
+			// 翻译：如果某一行的权限较弱，则将该行的所有元素设置为 0
+			// 	这样就能确保算法不会尝试控制仅具有边缘控制权限的轴
+			//      这反过来又会降低对实际应该控制和可以控制的主轴的控制
 
 			ActuatorEffectiveness::EffectivenessMatrix &matrix = config.effectiveness_matrices[i];
 
