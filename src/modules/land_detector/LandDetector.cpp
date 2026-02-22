@@ -45,6 +45,8 @@ using namespace time_literals;
 namespace land_detector
 {
 
+ModuleBase::Descriptor LandDetector::desc{task_spawn, custom_command, print_usage};
+
 LandDetector::LandDetector() :
 	ModuleParams(nullptr),
 	ScheduledWorkItem(MODULE_NAME, px4::wq_configurations::nav_and_controllers)
@@ -120,24 +122,6 @@ void LandDetector::Run()
 	_vehicle_status_sub.update(&_vehicle_status);
 
 	_update_topics();
-
-	// 如果当前到地面的距离是不可观测的
-	if (!_dist_bottom_is_observable) {
-		// we consider the distance to the ground observable if the system is using a range sensor
-		// 翻译：我们考虑地面距离可观察，如果系统使用范围传感器
-		// 系统有没有正在使用一个真正的范围传感器（range sensor）来提供地面距离测量？如果有那么到地面的距离是可观测的及（_dist_bottom_is_observable = true）
-		_dist_bottom_is_observable = _vehicle_local_position.dist_bottom_sensor_bitfield &
-					     vehicle_local_position_s::DIST_BOTTOM_SENSOR_RANGE;
-	}
-
-	// Increase land detection time if not close to ground
-	// 翻译：如果不在地面附近，增加地面检测时间
-	if (_dist_bottom_is_observable && !_vehicle_local_position.dist_bottom_valid) {
-		_set_hysteresis_factor(3);
-
-	} else {
-		_set_hysteresis_factor(1);
-	}
 
 	const hrt_abstime now_us = hrt_absolute_time();
 
@@ -219,7 +203,7 @@ void LandDetector::Run()
 
 	if (should_exit()) {
 		ScheduleClear();
-		exit_and_cleanup();
+		exit_and_cleanup(desc);
 	}
 }
 

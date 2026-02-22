@@ -53,6 +53,8 @@
 
 using namespace matrix;
 
+ModuleBase::Descriptor MulticopterAttitudeControl::desc{task_spawn, custom_command, print_usage};
+
 MulticopterAttitudeControl::MulticopterAttitudeControl(bool vtol) :
 	ModuleParams(nullptr),
 	WorkItem(MODULE_NAME, px4::wq_configurations::nav_and_controllers),
@@ -99,6 +101,7 @@ MulticopterAttitudeControl::parameters_updated()
 	// angular rate limits
 	// 翻译：角速率限制
 	using math::radians;
+
 	_attitude_control.setRateLimit(Vector3f(radians(_param_mc_rollrate_max.get()), radians(_param_mc_pitchrate_max.get()),
 						radians(_param_mc_yawrate_max.get())));
 
@@ -249,7 +252,7 @@ MulticopterAttitudeControl::Run()
 {
 	if (should_exit()) {
 		_vehicle_attitude_sub.unregisterCallback();
-		exit_and_cleanup();
+		exit_and_cleanup(desc);
 		return;
 	}
 
@@ -464,8 +467,8 @@ int MulticopterAttitudeControl::task_spawn(int argc, char *argv[])
 	MulticopterAttitudeControl *instance = new MulticopterAttitudeControl(vtol);
 
 	if (instance) {
-		_object.store(instance);
-		_task_id = task_id_is_work_queue;
+		desc.object.store(instance);
+		desc.task_id = task_id_is_work_queue;
 
 		if (instance->init()) {
 			return PX4_OK;
@@ -476,8 +479,8 @@ int MulticopterAttitudeControl::task_spawn(int argc, char *argv[])
 	}
 
 	delete instance;
-	_object.store(nullptr);
-	_task_id = -1;
+	desc.object.store(nullptr);
+	desc.task_id = -1;
 
 	return PX4_ERROR;
 }
@@ -524,5 +527,5 @@ https://www.research-collection.ethz.ch/bitstream/handle/20.500.11850/154099/eth
  */
 extern "C" __EXPORT int mc_att_control_main(int argc, char *argv[])
 {
-	return MulticopterAttitudeControl::main(argc, argv);
+	return ModuleBase::main(MulticopterAttitudeControl::desc, argc, argv);
 }

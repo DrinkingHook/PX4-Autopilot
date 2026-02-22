@@ -68,9 +68,8 @@ bool FlightTaskAuto::activate(const trajectory_setpoint_s &last_setpoint)
 		// 翻译：如果设定点的速度是位置的，则设置为当前的速度
 		if (!PX4_ISFINITE(vel_prev(i))) { vel_prev(i) = _velocity(i); }
 
-		// No acceleration estimate available, set to zero if the setpoint is NAN
-		// 翻译：没有可用的加速度估计值，如果设定值为 NaN，则设置为零。
-		if (!PX4_ISFINITE(accel_prev(i))) { accel_prev(i) = 0.f; }
+		// If accel setpoint unknown, set to the current accel
+		if (!PX4_ISFINITE(accel_prev(i))) { accel_prev(i) = _acceleration(i); }
 	}
 
 	// 位置平滑器状态重置(使用现传入的参数)
@@ -111,12 +110,10 @@ bool FlightTaskAuto::updateInitialize()
 	_sub_home_position.update();
 	// 车辆状态更新
 	_sub_vehicle_status.update();
-	// 更新目标设定点集合(来自 navigator 模块.其他文件都是sub订阅）
-	_sub_triplet_setpoint.update();
+	_position_setpoint_triplet_sub.update();
 
 	// require valid reference and valid target
-	// 需要有效的全球参考和有效的目标
-	ret = ret && _evaluateGlobalReference() && _evaluateTriplets();
+	ret = ret && _evaluateGlobalReference() && _evaluatePositionSetpointTriplet();
 	// require valid position
 	// 需要有效的位置和速度
 	ret = ret && _position.isAllFinite() && _velocity.isAllFinite();
@@ -183,15 +180,14 @@ bool FlightTaskAuto::update()
 	case WaypointType::position:
 	default:
 		// Simple waypoint navigation: go to xyz target, with standard limitations
-		// 翻译：简单的航点导航：前往 xyz 目标，具有标准限制。
-		_position_setpoint = _target;
+		_position_setpoint = _triplet_current;
 		_velocity_setpoint.setNaN();
 		break;
 	}
 
 	// 检查紧急制动
 	_checkEmergencyBraking();
-	Vector3f waypoints[] = {_prev_wp, _position_setpoint, _next_wp};
+	Vector3f waypoints[] = {_triplet_previous, _position_setpoint, _triplet_next};
 
 	if (isTargetModified()) {
 		// In case the target has been modified, we take this as the next waypoints
@@ -284,13 +280,12 @@ void FlightTaskAuto::_prepareLandSetpoints()
 	if (_type_previous != WaypointType::land) {
 		// initialize yaw and xy-position
 		_land_heading = _yaw_setpoint;
-		_stick_acceleration_xy.resetPosition(Vector2f(_target(0), _target(1)));
-		_initial_land_position = Vector3f(_target(0), _target(1), NAN);
+		_stick_acceleration_xy.resetPosition(Vector2f(_triplet_current));
+		_initial_land_position = Vector3f(_triplet_current(0), _triplet_current(1), NAN);
 	}
 
 	// Update xy-position in case of landing position changes (etc. precision landing)
-	// 翻译：着陆位置发生变化时（例如，精确着陆），更新 xy 坐标
-	_land_position = Vector3f(_target(0), _target(1), NAN);
+	_land_position = Vector3f(_triplet_current(0), _triplet_current(1), NAN);
 
 	// User input assisted landing
 	// 翻译：用户辅助降落
@@ -397,57 +392,28 @@ void FlightTaskAuto::_smoothYaw()
 	}
 }
 
-// 评估三元组
-bool FlightTaskAuto::_evaluateTriplets()
+bool FlightTaskAuto::_evaluatePositionSetpointTriplet()
 {
-	// TODO: fix the issues mentioned below
-	// We add here some conditions that are only required because:
-	// 1. navigator continuously sends triplet during mission due to yaw setpoint. This
-	// should be removed in the navigator and only updates if the current setpoint actually has changed.
-	//
-	// 2. navigator should be responsible to send always three valid setpoints. If there is only one setpoint,
-	// then previous will be set to current vehicle position and next will be set equal to setpoint.
-	//
-	// 3. navigator originally only supports gps guided maneuvers. However, it now also supports some flow-specific features
-	// such as land and takeoff. The navigator should use for auto takeoff/land with flow the position in xy at the moment the
-	// takeoff/land was initiated. Until then we do this kind of logic here.
+	const position_setpoint_triplet_s &position_setpoint_triplet = _position_setpoint_triplet_sub.get();
 
 	// Check if triplet is valid. There must be at least a valid altitude.
-
-        // TODO：修复以下提到的问题
-	// 我们在此添加一些仅因以下原因而必需的条件：
-	// 1. 导航器在任务期间由于偏航设定点而持续发送三元组。此
-	// 应在导航器中移除，并且仅在当前设定点实际发生变化时才更新。
-	//
-	// 2. 导航器应始终发送三个有效的设定点。如果只有一个设定点，
-	// 则上一个将设置为当前车辆位置，下一个将设置为等于设定点。
-	//
-	// 3. 导航器最初仅支持 GPS 引导的机动。但是，它现在也支持一些特定于流程的功能
-	// 例如着陆和起飞。导航器应使用在启动起飞/着陆时 xy 方向上的位置进行自动起飞/着陆。
-	// 起飞/着陆开始的时刻。在此之前，我们在此执行此类逻辑。
-
-        // 检查三元组是否有效。必须至少有一个有效的高度。
-
-        // 获取到的数据无效或者有误
-	if (!_sub_triplet_setpoint.get().current.valid || !PX4_ISFINITE(_sub_triplet_setpoint.get().current.alt)) {
+	if (!position_setpoint_triplet.current.valid || !PX4_ISFINITE(position_setpoint_triplet.current.alt)) {
 		// Best we can do is to just set all waypoints to current state
-		_prev_prev_wp = _triplet_prev_wp = _triplet_target = _triplet_next_wp = _position;
+		_triplet_previous = _triplet_current = _triplet_next = _position;
 		_type = WaypointType::loiter;
 		_yaw_setpoint = _yaw;
 		_yawspeed_setpoint = NAN;
-		_target_acceptance_radius = _sub_triplet_setpoint.get().current.acceptance_radius;
-		_updateInternalWaypoints();
+		_target_acceptance_radius = position_setpoint_triplet.current.acceptance_radius;
 		return true;
 	}
 
-	_type = (WaypointType)_sub_triplet_setpoint.get().current.type;
+	_type = (WaypointType)position_setpoint_triplet.current.type;
 
 	// Prioritize cruise speed from the triplet when it's valid and more recent than the previously commanded cruise speed
-	// 翻译：当三元组中的巡航速度有效且比之前指令的巡航速度更新时，优先使用该巡航速度。
-	const float cruise_speed_from_triplet = _sub_triplet_setpoint.get().current.cruising_speed;
+	const float cruise_speed_from_triplet = position_setpoint_triplet.current.cruising_speed;
 
 	if (PX4_ISFINITE(cruise_speed_from_triplet)
-	    && (_sub_triplet_setpoint.get().current.timestamp > _time_last_cruise_speed_override)) {
+	    && (position_setpoint_triplet.current.timestamp > _time_last_cruise_speed_override)) {
 		_mc_cruise_speed = cruise_speed_from_triplet;
 	}
 
@@ -465,9 +431,8 @@ bool FlightTaskAuto::_evaluateTriplets()
 	// 翻译：临时目标变量，用于保存最新导航器当前三元组的本地投影。
 	Vector3f tmp_target;
 
-	// 如果 _sub_triplet_setpoint 的当前的lat和lon都无效，则使用当前位置
-	if (!PX4_ISFINITE(_sub_triplet_setpoint.get().current.lat)
-	    || !PX4_ISFINITE(_sub_triplet_setpoint.get().current.lon)) {
+	if (!PX4_ISFINITE(position_setpoint_triplet.current.lat)
+	    || !PX4_ISFINITE(position_setpoint_triplet.current.lon)) {
 		// No position provided in xy. Lock position
 		if (!_lock_position_xy.isAllFinite()) {
 			tmp_target(0) = _lock_position_xy(0) = _position(0);
@@ -484,88 +449,68 @@ bool FlightTaskAuto::_evaluateTriplets()
 		_lock_position_xy.setAll(NAN);
 
 		// Convert from global to local frame.
-		// 翻译：将全局坐标系转换为本地坐标系
-		_reference_position.project(_sub_triplet_setpoint.get().current.lat, _sub_triplet_setpoint.get().current.lon,
+		_reference_position.project(position_setpoint_triplet.current.lat, position_setpoint_triplet.current.lon,
 					    tmp_target(0), tmp_target(1));
 	}
 
-	// _sub_triplet_setpoint.get().current.alt 表示绝对海平面高度(AMSL). _reference_altitude 表示离地高度.
-	tmp_target(2) = -(_sub_triplet_setpoint.get().current.alt - _reference_altitude);
+	tmp_target(2) = -(position_setpoint_triplet.current.alt - _reference_altitude);
 
 	// Check if anything has changed. We do that by comparing the temporary target
-	// to the internal _triplet_target.
+	// to the internal _triplet_current.
 	// TODO This is a hack and it would be much better if the navigator only sends out a waypoints once they have changed.
 
-	// 翻译：检查是否有任何更改。我们通过将临时目标与内部的 _triplet_target 进行比较来实现这一点。
-	// 	待办事项：这是一种权宜之计，如果导航器仅在航点更改后才发送航点，则会更好。
-	bool triplet_update = true;
-	const bool prev_next_validity_changed = (_prev_was_valid != _sub_triplet_setpoint.get().previous.valid)
-						|| (_next_was_valid != _sub_triplet_setpoint.get().next.valid);
+	const bool prev_next_validity_changed = (_prev_was_valid != position_setpoint_triplet.previous.valid)
+						|| (_next_was_valid != position_setpoint_triplet.next.valid);
 
-	if (_triplet_target.isAllFinite()
-	    && fabsf(_triplet_target(0) - tmp_target(0)) < 0.001f
-	    && fabsf(_triplet_target(1) - tmp_target(1)) < 0.001f
-	    && fabsf(_triplet_target(2) - tmp_target(2)) < 0.001f
+	if (_triplet_current.isAllFinite()
+	    && fabsf(_triplet_current(0) - tmp_target(0)) < 0.001f
+	    && fabsf(_triplet_current(1) - tmp_target(1)) < 0.001f
+	    && fabsf(_triplet_current(2) - tmp_target(2)) < 0.001f
 	    && !prev_next_validity_changed) {
 		// Nothing has changed: just keep old waypoints.
-		triplet_update = false;
 
 	} else {
-		_triplet_target = tmp_target;
-		_target_acceptance_radius = _sub_triplet_setpoint.get().current.acceptance_radius;
+		_triplet_current = tmp_target;
+		_target_acceptance_radius = position_setpoint_triplet.current.acceptance_radius;
 
-		if (!Vector2f(_triplet_target).isAllFinite()) {
+		if (!Vector2f(_triplet_current).isAllFinite()) {
 			// Horizontal target is not finite.
-			// 翻译：水平目标不是有限的
-			_triplet_target(0) = _position(0);
-			_triplet_target(1) = _position(1);
+			_triplet_current(0) = _position(0);
+			_triplet_current(1) = _position(1);
 		}
 
-		if (!PX4_ISFINITE(_triplet_target(2))) {
-			_triplet_target(2) = _position(2);
+		if (!PX4_ISFINITE(_triplet_current(2))) {
+			_triplet_current(2) = _position(2);
 		}
 
-		// If _triplet_target has updated, update also _triplet_prev_wp and _triplet_next_wp.
-		_prev_prev_wp = _triplet_prev_wp;
-
-		if (_isFinite(_sub_triplet_setpoint.get().previous) && _sub_triplet_setpoint.get().previous.valid) {
-			_reference_position.project(_sub_triplet_setpoint.get().previous.lat,
-						    _sub_triplet_setpoint.get().previous.lon, _triplet_prev_wp(0), _triplet_prev_wp(1));
-			_triplet_prev_wp(2) = -(_sub_triplet_setpoint.get().previous.alt - _reference_altitude);
+		if (_isFinite(position_setpoint_triplet.previous) && position_setpoint_triplet.previous.valid) {
+			_reference_position.project(position_setpoint_triplet.previous.lat,
+						    position_setpoint_triplet.previous.lon, _triplet_previous(0), _triplet_previous(1));
+			_triplet_previous(2) = -(position_setpoint_triplet.previous.alt - _reference_altitude);
 
 		} else {
-			_triplet_prev_wp = _triplet_target;
+			_triplet_previous = _triplet_current;
 		}
 
-		_prev_was_valid = _sub_triplet_setpoint.get().previous.valid;
+		_prev_was_valid = position_setpoint_triplet.previous.valid;
 
 		if (_type == WaypointType::loiter) {
-			_triplet_next_wp = _triplet_target;
+			_triplet_next = _triplet_current;
 
-		} else if (_isFinite(_sub_triplet_setpoint.get().next) && _sub_triplet_setpoint.get().next.valid) {
-			_reference_position.project(_sub_triplet_setpoint.get().next.lat,
-						    _sub_triplet_setpoint.get().next.lon, _triplet_next_wp(0), _triplet_next_wp(1));
-			_triplet_next_wp(2) = -(_sub_triplet_setpoint.get().next.alt - _reference_altitude);
+		} else if (_isFinite(position_setpoint_triplet.next) && position_setpoint_triplet.next.valid) {
+			_reference_position.project(position_setpoint_triplet.next.lat,
+						    position_setpoint_triplet.next.lon, _triplet_next(0), _triplet_next(1));
+			_triplet_next(2) = -(position_setpoint_triplet.next.alt - _reference_altitude);
 
 		} else {
-			_triplet_next_wp = _triplet_target;
+			_triplet_next = _triplet_current;
 		}
 
-		_next_was_valid = _sub_triplet_setpoint.get().next.valid;
+		_next_was_valid = position_setpoint_triplet.next.valid;
 	}
 
 	// activation/deactivation of weather vane is based on parameter WV_EN and setting of navigator (allow_weather_vane)
-	// 翻译：风向标的激活/停用基于参数 WV_EN 和导航器的设置 (allow_weather_vane)。
-	_weathervane.setNavigatorForceDisabled(PX4_ISFINITE(_sub_triplet_setpoint.get().current.yaw));
-
-	// Calculate the current vehicle state and check if it has updated.
-	// 翻译：计算当前车辆状态并检测是否已经更新
-	State previous_state = _current_state;
-	_current_state = _getCurrentState();
-
-	if (triplet_update || (_current_state != previous_state) || _current_state == State::offtrack) {
-		_updateInternalWaypoints();
-	}
+	_weathervane.setNavigatorForceDisabled(PX4_ISFINITE(position_setpoint_triplet.current.yaw));
 
 	// set heading
 	_weathervane.update();
@@ -589,8 +534,8 @@ bool FlightTaskAuto::_evaluateTriplets()
 			_yaw_setpoint = NAN;
 			_yawspeed_setpoint = 0.f;
 
-		} else if (PX4_ISFINITE(_sub_triplet_setpoint.get().current.yaw)) {
-			_yaw_setpoint = _sub_triplet_setpoint.get().current.yaw;
+		} else if (PX4_ISFINITE(position_setpoint_triplet.current.yaw)) {
+			_yaw_setpoint = position_setpoint_triplet.current.yaw;
 			_yawspeed_setpoint = NAN;
 
 		} else {
@@ -610,7 +555,7 @@ void FlightTaskAuto::_set_heading_from_mode()
 
 	case yaw_mode::towards_waypoint: // Heading points towards the current waypoint.
 	case yaw_mode::towards_waypoint_yaw_first: // Same as 0 but yaw first and then go
-		v = Vector2f(_target) - Vector2f(_position);
+		v = Vector2f(_triplet_current) - Vector2f(_position);
 		break;
 
 	case yaw_mode::towards_home: // Heading points towards home.
@@ -702,115 +647,6 @@ bool FlightTaskAuto::_evaluateGlobalReference()
 	return PX4_ISFINITE(_reference_altitude) && PX4_ISFINITE(ref_lat) && PX4_ISFINITE(ref_lon);
 }
 
-State FlightTaskAuto::_getCurrentState()
-{
-	// Calculate the vehicle current state based on the Navigator triplets and the current position.
-	// 翻译：基于 Navigator triplets 和当前的位置计算车辆当前的位置状态
-	const Vector3f u_prev_to_target = (_triplet_target - _triplet_prev_wp).unit_or_zero();
-	const Vector3f prev_to_pos = _position - _triplet_prev_wp;
-	const Vector3f pos_to_target = _triplet_target - _position;
-
-	// Calculate the closest point to the vehicle position on the line prev_wp - target
-	// 翻译：计算 prev_wp - target 线上距离车辆位置最近的点。
-	/*
-	 *	 * P (_position)
-	 *                   /  (飞机当前位置)
-	 *                  / |
-	 *                 /  | 
-	 *  (prev_to_pos) /   | (垂直距离/偏航误差)
-	 *               /    |
-	 *              /     |
-	 *             A------C------------------------------> B
-	 *   (_triplet_prev_wp)   (_closest_pt)          (_triplet_target)
-	 *        (起点)          (最近投影点)              (终点)
-	 *									
-	 *             |======|
-	 *                ↑
-	 *        _closest_pt(即 A 到 C 的向量长度)
-	 * 参数解释：
-	 *	_triplet_prev_wp：点 A,航线的起点。
-	 *	_triplet_target：点 B,航线的终点。
-	 *	_position：点 P,飞机实际位置（可能飞歪了）。
-	 *	u_prev_to_target：上一航点”到“目标航点”，(单位方向向量，长度为1，指向右)。
-	 *	prev_to_pos：向量 AP,从 A 连接到 P 的斜线向量。
-	 *	_closest_pt：点 C,我们想要求的点。它是 P 点在航线 AB 上的垂直投影。
-	 * 数学知识：
-	 *	如果 向量A * 向量B > 0: 两个向量的方向大致相同(夹角<90°)
-	 *	如果 向量A * 向量B < 0: 两个向量的方向大致相反(夹角>90°)   
-	 * 计算公式：
-	 *	A⋅B=∣A∣×∣B∣×cos(θ) 
-	 */
-	_closest_pt = _triplet_prev_wp + u_prev_to_target * (prev_to_pos * u_prev_to_target);
-
-	State return_state = State::none;
-
-	// 如果“上一航点”到“目标航点”的距离几乎为 0：起点和终点重合了，这根本不是一条线，而是一个点.无法做寻线导航
-	if (!u_prev_to_target.longerThan(FLT_EPSILON)) {
-		// Previous and target are the same point, so we better don't try to do any special line following
-		return_state = State::none;
-
-	// 上一航点到目标航点向量 * 当前位置到目标航点向量： 
-	} else if (u_prev_to_target * pos_to_target < 0.0f) {
-		// Target is behind
-		// 翻译：目标在身后
-		return_state = State::target_behind;
-
-	// 上一航点到目标航点向量 * 上一航点到当前位置向量：
-	} else if (u_prev_to_target * prev_to_pos < 0.0f && prev_to_pos.longerThan(_target_acceptance_radius)) {
-		// Previous is in front
-		return_state = State::previous_infront;
-
-	} else if (_type != WaypointType::land && (_position - _closest_pt).longerThan(_target_acceptance_radius)) {
-		// Vehicle too far from the track
-		return_state = State::offtrack;
-	}
-
-	return return_state;
-}
-
-void FlightTaskAuto::_updateInternalWaypoints()
-{
-	// The internal Waypoints might differ from _triplet_prev_wp, _triplet_target and _triplet_next_wp.
-	// The cases where it differs:
-	// 1. The vehicle already passed the target -> go straight to target
-	// 2. Previous waypoint is in front of the vehicle -> go straight to previous waypoint
-	// 3. The vehicle is far from track -> go straight to closest point on track
-	// 翻译：内部航点可能与 _triplet_prev_wp、_triplet_target 和 _triplet_next_wp 不同。
-	// 	以下情况有所不同：
-	// 	1. 车辆已越过目标点 -> 直接前往目标点
-	// 	2. 前一个航点在车辆前方 -> 直接前往前一个航点
-	// 	3. 车辆距离赛道较远 -> 直接前往赛道上最近的点
-	switch (_current_state) {
-	case State::target_behind:
-		_target = _triplet_target;
-		_prev_wp = _position;
-		_next_wp = _triplet_next_wp;
-		break;
-
-	case State::previous_infront:
-		_next_wp = _triplet_target;
-		_target = _triplet_prev_wp;
-		_prev_wp = _position;
-		break;
-
-	case State::offtrack:
-		_next_wp = _triplet_target;
-		_target = _closest_pt;
-		_prev_wp = _position;
-		break;
-
-	case State::none:
-		_target = _triplet_target;
-		_prev_wp = _triplet_prev_wp;
-		_next_wp = _triplet_next_wp;
-		break;
-
-	default:
-		break;
-
-	}
-}
-
 bool FlightTaskAuto::_compute_heading_from_2D_vector(float &heading, Vector2f v)
 {
 	if (PX4_ISFINITE(v.norm_squared()) && v.longerThan(1e-3f)) {
@@ -888,7 +724,7 @@ bool FlightTaskAuto::_generateHeadingAlongTraj()
 {
 	bool res = false;
 	Vector2f vel_sp_xy(_velocity_setpoint);
-	Vector2f traj_to_target = Vector2f(_target) - Vector2f(_position);
+	Vector2f traj_to_target = Vector2f(_triplet_current) - Vector2f(_position);
 
 	if ((vel_sp_xy.longerThan(.1f)) &&
 	    (traj_to_target.longerThan(2.f))) {
@@ -903,9 +739,9 @@ bool FlightTaskAuto::_generateHeadingAlongTraj()
 
 bool FlightTaskAuto::isTargetModified() const
 {
-	const bool xy_modified = (_target - _position_setpoint).xy().longerThan(FLT_EPSILON);
+	const bool xy_modified = (_triplet_current - _position_setpoint).xy().longerThan(FLT_EPSILON);
 	const bool z_valid = PX4_ISFINITE(_position_setpoint(2));
-	const bool z_modified =  z_valid && std::fabs((_target - _position_setpoint)(2)) > FLT_EPSILON;
+	const bool z_modified =  z_valid && std::fabs((_triplet_current - _position_setpoint)(2)) > FLT_EPSILON;
 
 	return xy_modified || z_modified;
 }

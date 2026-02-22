@@ -5,6 +5,8 @@
 #include <matrix/math.hpp>
 #include <cstdlib>
 
+ModuleBase::Descriptor BlockLocalPositionEstimator::desc{task_spawn, custom_command, print_usage};
+
 orb_advert_t mavlink_log_pub = nullptr;
 
 // required standard deviation of estimate for estimator to publish data
@@ -171,7 +173,7 @@ void BlockLocalPositionEstimator::Run()
 {
 	if (should_exit()) {
 		_sensors_sub.unregisterCallback();
-		exit_and_cleanup();
+		exit_and_cleanup(desc);
 		return;
 	}
 
@@ -1037,8 +1039,8 @@ BlockLocalPositionEstimator::task_spawn(int argc, char *argv[])
 	BlockLocalPositionEstimator *instance = new BlockLocalPositionEstimator();
 
 	if (instance) {
-		_object.store(instance);
-		_task_id = task_id_is_work_queue;
+		desc.object.store(instance);
+		desc.task_id = task_id_is_work_queue;
 
 		if (instance->init()) {
 			return PX4_OK;
@@ -1049,8 +1051,8 @@ BlockLocalPositionEstimator::task_spawn(int argc, char *argv[])
 	}
 
 	delete instance;
-	_object.store(nullptr);
-	_task_id = -1;
+	desc.object.store(nullptr);
+	desc.task_id = -1;
 
 	return PX4_ERROR;
 }
@@ -1078,5 +1080,5 @@ Attitude and position estimator using an Extended Kalman Filter.
 
 extern "C" __EXPORT int local_position_estimator_main(int argc, char *argv[])
 {
-	return BlockLocalPositionEstimator::main(argc, argv);
+	return ModuleBase::main(BlockLocalPositionEstimator::desc, argc, argv);
 }

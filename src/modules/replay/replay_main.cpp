@@ -49,5 +49,5 @@ replay_main(int argc, char *argv[])
 		Replay::setupReplayFile(logfile);
 	}
 
-	return Replay::main(argc, argv);
+	return ModuleBase::main(Replay::desc, argc, argv);
 }

@@ -601,6 +601,7 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 	// 翻译：检查是否应进入延迟保持状态。
 	// e.g. 当rc连接断开，不应该立即触发保护，而是超过一段时间还没有恢复才执行保护.
 	const bool action_can_be_delayed = selected_action != Action::None &&
+					   selected_action != Action::Warn &&
 					   selected_action != Action::Disarm &&
 					   selected_action != Action::Terminate &&
 					   selected_action != Action::Hold;

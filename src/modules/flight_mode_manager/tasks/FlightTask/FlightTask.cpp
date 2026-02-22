@@ -158,6 +158,17 @@ void FlightTask::_evaluateVehicleLocalPosition()
 			_velocity(2) = _sub_vehicle_local_position.get().vz;
 		}
 
+		// acceleration is calculated as the velocity derivative in EKF2,
+		// if velocity is available acceleration values are available
+		if (_sub_vehicle_local_position.get().v_xy_valid) {
+			_acceleration(0) = _sub_vehicle_local_position.get().ax;
+			_acceleration(1) = _sub_vehicle_local_position.get().ay;
+		}
+
+		if (_sub_vehicle_local_position.get().v_z_valid) {
+			_acceleration(2) = _sub_vehicle_local_position.get().az;
+		}
+
 		// distance to bottom
 		// 翻译：距底部的距离
 		if (_sub_vehicle_local_position.get().dist_bottom_valid

@@ -443,6 +443,7 @@ public:
 	void updateParameters();
 
 	friend class AuxGlobalPosition;
+	friend class AgpSource;
 
 private:
 
