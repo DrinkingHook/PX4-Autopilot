@@ -110,5 +110,5 @@ src/systemcmds/topic_listener/listener_generated.cpp
 log/
 keys/
 
-#cache
-.cache
+# metadata
+_emscripten_sdk/
