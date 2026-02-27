@@ -782,15 +782,15 @@ bool EstimatorInterface::isHorizontalAidingActive() const
 
 /**
  * @brief 检查除了指定传感器外，是否还有其他活跃的垂直位置辅助源
- * 
+ *
  * @param aiding_flag 要排除检查的传感器的活跃状态
  *                   - true: 该传感器当前活跃，要从统计中排除
  *                   - false: 该传感器当前不活跃，统计所有活跃源
- * 
- * @return bool 
+ *
+ * @return bool
  *         - 如果 aiding_flag=true: 返回是否有其他活跃源 (nb_sources > 1)
  *         - 如果 aiding_flag=false: 返回是否有任何活跃源 (nb_sources > 0)
- * 
+ *
  * @note 这个函数用于检查冗余性：
  *       1. 当某个传感器活跃时，检查系统是否有备份
  *       2. 当某个传感器不活跃时，检查系统是否还有其他源可用
@@ -811,7 +811,7 @@ bool EstimatorInterface::isVerticalPositionAidingActive() const
 
 /**
  * @brief 检查指定的垂直位置源是否是唯一的活跃源
- * 
+ *
  * @param aiding_flag 具体传感器的活跃标志（true表示该传感器活跃）
  * @return true 该传感器活跃且是唯一活跃的垂直位置源
  * @return false 该传感器不活跃，或者有其他活跃源

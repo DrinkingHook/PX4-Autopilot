@@ -153,14 +153,14 @@ MavlinkMissionManager::load_safepoint_stats()
 /**
  * Publish mission topic to notify navigator about changes.
  */
- /** 发布任务主题以通知导航员有关变更的信息。
-  * @brief 更新当前活动任务状态
-  * @param mission_dataman_id 任务数据管理器ID
-  * @param count 任务数量
-  * @param seq 当前序列号
-  * @param crc32 CRC32校验和
-  * @param write_to_dataman 是否写入数据管理器
-  */
+/** 发布任务主题以通知导航员有关变更的信息。
+ * @brief 更新当前活动任务状态
+ * @param mission_dataman_id 任务数据管理器ID
+ * @param count 任务数量
+ * @param seq 当前序列号
+ * @param crc32 CRC32校验和
+ * @param write_to_dataman 是否写入数据管理器
+ */
 void
 MavlinkMissionManager::update_active_mission(dm_item_t mission_dataman_id, uint16_t count, int32_t seq, uint32_t crc32,
 		bool write_to_dataman)
@@ -1019,7 +1019,8 @@ MavlinkMissionManager::handle_mission_count(const mavlink_message_t *msg)
 			_transfer_land_start_marker = -1;
 			_transfer_land_marker = -1;
 
-		// 接收列表状态，px4正在从地面站接收任务列表
+			// 接收列表状态，px4正在从地面站接收任务列表
+
 		} else if (_state == MAVLINK_WPM_STATE_GETLIST) {
 			_time_last_recv = hrt_absolute_time();
 

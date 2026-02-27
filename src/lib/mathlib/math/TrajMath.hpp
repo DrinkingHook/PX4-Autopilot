@@ -58,19 +58,19 @@ namespace trajectory
  *
  * @return maximum speed
  */
- 
- /* 翻译：
-  * 计算给定期望速度、剩余距离、最大加速度和最大加加速度时，赛道上的最大可能速度.
-  * 我们假设加速度曲线恒定，且存在 2*accel/jerk 的延迟（从相反方向的最大加速度达到期望加速度所需的时间）。
-  * 待求解的方程：vel_final^2 = vel_initial^2 - 2*accel*(x - vel_initial*2*accel/jerk)
-  *
-  * @param jerk 最大加加速度
-  * @param accel 最大加速度
-  * @param braking_distance 到目标点的距离
-  * @param final_speed 车辆到达制动距离时的剩余速度
-  *
-  * @return maximum speed
-  */
+
+/* 翻译：
+ * 计算给定期望速度、剩余距离、最大加速度和最大加加速度时，赛道上的最大可能速度.
+ * 我们假设加速度曲线恒定，且存在 2*accel/jerk 的延迟（从相反方向的最大加速度达到期望加速度所需的时间）。
+ * 待求解的方程：vel_final^2 = vel_initial^2 - 2*accel*(x - vel_initial*2*accel/jerk)
+ *
+ * @param jerk 最大加加速度
+ * @param accel 最大加速度
+ * @param braking_distance 到目标点的距离
+ * @param final_speed 车辆到达制动距离时的剩余速度
+ *
+ * @return maximum speed
+ */
 inline float computeMaxSpeedFromDistance(const float jerk, const float accel, const float braking_distance,
 		const float final_speed)
 {
@@ -97,21 +97,21 @@ inline float computeMaxSpeedFromDistance(const float jerk, const float accel, co
  *
  *  @return maximum tangential speed
  */
- 
- /* 翻译：
-  * 计算由两条长度为“d”的线段构成的 V 形圆内的最大切向速度，该 V 形圆的开口角度为“alpha”。
-  * 该圆与两条线段的端点相切，如下图所示：
-  *      \\
-  *      | \ d
-  *      /  \
-  *  __='___a\
-  *      d
-  *  @param alpha 两个线段之间的夹角
-  *  @param accel 最大横向加速度
-  *  @param d 两个线段的长度
-  *
-  *  @return maximum tangential speed
-  */
+
+/* 翻译：
+ * 计算由两条长度为“d”的线段构成的 V 形圆内的最大切向速度，该 V 形圆的开口角度为“alpha”。
+ * 该圆与两条线段的端点相切，如下图所示：
+ *      \\
+ *      | \ d
+ *      /  \
+ *  __='___a\
+ *      d
+ *  @param alpha 两个线段之间的夹角
+ *  @param accel 最大横向加速度
+ *  @param d 两个线段的长度
+ *
+ *  @return maximum tangential speed
+ */
 inline float computeMaxSpeedInWaypoint(const float alpha, const float accel, const float d)
 {
 	float tan_alpha = tanf(alpha / 2.0f);
@@ -132,20 +132,20 @@ inline float computeMaxSpeedInWaypoint(const float alpha, const float accel, con
  *
  * @return braking distance
  */
- 
- /* 翻译：
-  * 已知最大加速度、最大加加速度和最大延迟加速度，计算制动距离。
-  * 我们假设加速度曲线恒定，存在一个延迟，延迟量为 accel_delay_max/jerk
-  *（从相反方向的最大加速度达到目标加速度所需的时间）
-  * 待求解的方程：vel_final^2 = vel_initial^2 - 2*accel*(x - vel_initial*2*accel/jerk)
-  *
-  * @param velocity 速度初始值
-  * @param jerk 最大加加速度
-  * @param accel 制动过程中最大目标加速度
-  * @param accel_delay_max 上述延迟所定义的加速度
-  *
-  * @return braking distance
-  */
+
+/* 翻译：
+ * 已知最大加速度、最大加加速度和最大延迟加速度，计算制动距离。
+ * 我们假设加速度曲线恒定，存在一个延迟，延迟量为 accel_delay_max/jerk
+ *（从相反方向的最大加速度达到目标加速度所需的时间）
+ * 待求解的方程：vel_final^2 = vel_initial^2 - 2*accel*(x - vel_initial*2*accel/jerk)
+ *
+ * @param velocity 速度初始值
+ * @param jerk 最大加加速度
+ * @param accel 制动过程中最大目标加速度
+ * @param accel_delay_max 上述延迟所定义的加速度
+ *
+ * @return braking distance
+ */
 inline float computeBrakingDistanceFromVelocity(const float velocity, const float jerk, const float accel,
 		const float accel_delay_max)
 {
@@ -170,24 +170,24 @@ inline float computeBrakingDistanceFromVelocity(const float velocity, const floa
  * @return longest distance between the point to the circle in the direction indicated by the vector or NAN if the
  * vector does not point towards the circle
  */
- 
- /* 翻译：
-  * 计算给定指向圆的方向向量时，点与圆之间的最大距离。点可以位于圆内或圆外。
-  *                  _
-  *               ,=' '=,               __
-  *    P-->------/-------A   Distance = PA
-  *       Dir   |    x    |
-  *              \       /
-  *               "=,_,="
-  * 待求解方程: ||(point - circle_pos) + direction_unit * distance_to_circle|| = radius
-  *
-  * @param pos 点的位置
-  * @param circle_pos 圆心的位置
-  * @param radius 圆的半径
-  * @param direction 从点指向圆的方向向量
-  *
-  * @return 沿向量方向，点到圆的最大距离；如果向量不指向圆，则结果为 NaN。
-  */
+
+/* 翻译：
+ * 计算给定指向圆的方向向量时，点与圆之间的最大距离。点可以位于圆内或圆外。
+ *                  _
+ *               ,=' '=,               __
+ *    P-->------/-------A   Distance = PA
+ *       Dir   |    x    |
+ *              \       /
+ *               "=,_,="
+ * 待求解方程: ||(point - circle_pos) + direction_unit * distance_to_circle|| = radius
+ *
+ * @param pos 点的位置
+ * @param circle_pos 圆心的位置
+ * @param radius 圆的半径
+ * @param direction 从点指向圆的方向向量
+ *
+ * @return 沿向量方向，点到圆的最大距离；如果向量不指向圆，则结果为 NaN。
+ */
 inline float getMaxDistanceToCircle(const matrix::Vector2f &pos, const matrix::Vector2f &circle_pos, float radius,
 				    const matrix::Vector2f &direction)
 {
@@ -209,11 +209,11 @@ inline float getMaxDistanceToCircle(const matrix::Vector2f &pos, const matrix::V
 
 	// 检查是否有有效解
 	// delta >= 0: 射线与圆有交点
-    	// direction.longerThan(0.f): 方向向量不为零
+	// direction.longerThan(0.f): 方向向量不为零
 	if (delta >= 0.f && direction.longerThan(0.f)) {
 		// 计算距离（取较大的根)
 		// t = (-b + √Δ) / 2
-    		// fmaxf(..., 0.f) 确保非负
+		// fmaxf(..., 0.f) 确保非负
 		distance_to_circle = fmaxf((-b + sqrtf(delta)) / 2.f, 0.f);
 
 	} else {

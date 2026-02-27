@@ -280,7 +280,7 @@ private:
 
 	perf_counter_t _control_latency_perf;
 
-        // 唯一分配的功能对象集合，便于统一管理和更新。
+	// 唯一分配的功能对象集合，便于统一管理和更新。
 	FunctionProviderBase *_function_allocated[MAX_ACTUATORS] {}; ///< unique allocated functions
 	// 每个通道实际分配的功能对象指针，决定通道输出什么功能
 	FunctionProviderBase *_functions[MAX_ACTUATORS] {}; ///< currently assigned functions
@@ -302,7 +302,7 @@ private:
 
 
 	DEFINE_PARAMETERS(
-	    // 翻译：多旋翼飞行器空中模式
+		// 翻译：多旋翼飞行器空中模式
 		(ParamInt<px4::params::MC_AIRMODE>) _param_mc_airmode,   ///< multicopter air-mode
 		// 翻译：电机控制信号建模因子
 		(ParamFloat<px4::params::THR_MDL_FAC>) _param_thr_mdl_fac ///< thrust to motor control signal modelling factor

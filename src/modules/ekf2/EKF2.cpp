@@ -563,7 +563,8 @@ void EKF2::Run()
 				command_ack.timestamp = hrt_absolute_time();
 				_vehicle_command_ack_pub.publish(command_ack);
 
-			// 车辆命令外部位置估计
+				// 车辆命令外部位置估计
+
 			} else if (vehicle_command.command == vehicle_command_s::VEHICLE_CMD_EXTERNAL_POSITION_ESTIMATE) {
 
 				if (PX4_ISFINITE(vehicle_command.param2)

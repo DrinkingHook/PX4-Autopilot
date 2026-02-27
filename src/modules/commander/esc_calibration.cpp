@@ -93,6 +93,7 @@ int do_esc_calibration(orb_advert_t *mavlink_log_pub)
 
 	uORB::Publication<actuator_test_s> actuator_test_pub{ORB_ID(actuator_test)};
 	// since we publish multiple at once, make sure the output driver subscribes before we publish
+	// 翻译：由于我们会一次发布多个内容，请确保输出驱动程序在发布之前已订阅
 	actuator_test_pub.advertise();
 
 	uORB::SubscriptionData<battery_status_s> battery_status_sub{ORB_ID(battery_status)};

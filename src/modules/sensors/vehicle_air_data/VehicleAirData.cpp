@@ -284,7 +284,8 @@ void VehicleAirData::Run()
 	if (!_relative_calibration_done) {
 		_relative_calibration_done = UpdateRelativeCalibrations(time_now_us);
 
-	// 在启用GNSS高度气压自动校准的情况判断是否校准完成
+		// 在启用GNSS高度气压自动校准的情况判断是否校准完成
+
 	} else if (!_baro_gnss_calibration_done && _param_sens_baro_autocal.get()) {
 		_baro_gnss_calibration_done = BaroGNSSAltitudeOffset();
 	}

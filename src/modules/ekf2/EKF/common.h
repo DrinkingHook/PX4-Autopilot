@@ -156,7 +156,7 @@ enum class GnssCtrl : uint8_t {
 };
 
 enum class GnssMode : uint8_t {
-    	// 如果没有其他位置源，则在融合超时时重置
+	// 如果没有其他位置源，则在融合超时时重置
 	kAuto           = 0,   	///< Reset on fusion timeout if no other source of position is available
 	// 如果没有速度源，则在融合超时时重置
 	kDeadReckoning = 1   	///< Reset on fusion timeout if no source of velocity is availabl
@@ -530,7 +530,7 @@ struct parameters {
 };
 
 /**
- * 
+ *
  | 位号 | 标志位名称              | 中文含义                               | 说明（翻译后的注释）                                                               |
  |------|--------------------------|------------------------------------|--------------------------------------------------------------------------------|
  | 0    | bad_mag_x               | 磁力计 X 轴融合异常                    | true 表示磁力计 X 轴的融合过程中遇到了数值错误                                       |

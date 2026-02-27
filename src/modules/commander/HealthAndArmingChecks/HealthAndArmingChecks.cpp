@@ -38,6 +38,7 @@ HealthAndArmingChecks::HealthAndArmingChecks(ModuleParams *parent, vehicle_statu
 	  _context(status)
 {
 	// Initialize mode requirements to invalid
+	// 翻译：初始化模式要求为无效
 	_failsafe_flags.angular_velocity_invalid = true;
 	_failsafe_flags.attitude_invalid = true;
 	_failsafe_flags.local_altitude_invalid = true;

@@ -57,7 +57,7 @@ public:
 private:
 	uORB::Subscription _safety_button_sub{ORB_ID::safety_button};
 
-        // 如果连接了安全开关则设置为true
+	// 如果连接了安全开关则设置为true
 	bool _button_available{false};///< Set to true if a safety button is connected
 	bool _safety_off{false}; ///< Set to true if safety is off
 	bool _previous_safety_off{false}; ///< Previous safety value

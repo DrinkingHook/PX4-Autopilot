@@ -107,7 +107,7 @@ private:
 	} _user_request{UserOnOffRequest::Off};
 
 	enum class ICESource {
-	    // 点火信号跟随飞机的解锁（Arming）状态
+		// 点火信号跟随飞机的解锁（Arming）状态
 		ArmingState,
 		// 点火信号直接跟随 遥控器 AUX1 通道 的值
 		Aux1,

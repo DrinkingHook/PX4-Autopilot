@@ -364,18 +364,19 @@ bool FailsafeBase::checkFailsafe(int caller_id, bool last_state_failure, bool cu
 			// if (!_actions[i].valid()) {
 			// 	free_idx = i;
 
-                        // } else if (_actions[i].id == caller_id) {
-                        // 	found_idx = i;
-                        // 	// 只有这个else if中break出去
-                        // 	break;
-                        // }
+			// } else if (_actions[i].id == caller_id) {
+			// 	found_idx = i;
+			// 	// 只有这个else if中break出去
+			// 	break;
+			// }
 
 			// 寻找相匹配的 action
-                        if (_actions[i].id == caller_id) {
-                        	found_idx = i;
+			if (_actions[i].id == caller_id) {
+				found_idx = i;
 				break;
-			// 寻找空闲的 action
-                        } else if (!_actions[i].valid()) {
+				// 寻找空闲的 action
+
+			} else if (!_actions[i].valid()) {
 				free_idx = i;
 			}
 		}
@@ -544,14 +545,14 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 	returned_state.updated_user_intended_mode = state.user_intended_mode;
 	returned_state.cause = Cause::Generic;
 
-        // 处理终止情况：如果用户意图为终止或已选择终止，直接返回终止动作
+	// 处理终止情况：如果用户意图为终止或已选择终止，直接返回终止动作
 	if (state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_TERMINATION
 	    || _selected_action == Action::Terminate) { // Terminate never clears
 		returned_state.action = Action::Terminate;
 		return;
 	}
 
-        // 如果车辆未武装，则返回无动作
+	// 如果车辆未武装，则返回无动作
 	if (!state.armed) {
 		returned_state.action = Action::None;
 		return;
@@ -562,7 +563,7 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 	 * @param selected_action 用于存储 _actions[] 的值
 	 * 这里不是简单的赋值而是类似c语言的指针用法，表示引用，修改 selected_action 等同于修改 returned_state.action
 	 * c写法为：Action *selected_action = &returned_state->action; // 取地址
-         *         *selected_action = Disarm; // 解引用修改
+	 *         *selected_action = Disarm; // 解引用修改
 	 */
 	Action &selected_action = returned_state.action;
 	UserTakeoverAllowed allow_user_takeover = UserTakeoverAllowed::Always;

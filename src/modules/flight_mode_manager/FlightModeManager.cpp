@@ -207,7 +207,6 @@ void FlightModeManager::start_flight_task()
 	}
 
 	// position slow mode
-	// 翻译：
 	if (_vehicle_status_sub.get().nav_state == vehicle_status_s::NAVIGATION_STATE_POSITION_SLOW) {
 		found_some_task = true;
 		FlightTaskError error = switchTask(FlightTaskIndex::ManualAccelerationSlow);
@@ -299,6 +298,9 @@ void FlightModeManager::start_flight_task()
 	_no_matching_task_error_printed = !matching_task_running;
 }
 
+/**
+ * @brief 尝试应用任何指令
+ */
 void FlightModeManager::tryApplyCommandIfAny()
 {
 	if (isAnyTaskActive() && _current_command.command != 0 && hrt_absolute_time() < _current_command.timestamp + 200_ms) {
@@ -344,6 +346,9 @@ void FlightModeManager::handleCommand()
 	}
 }
 
+/**
+ * @brief 生成轨迹设定点
+ */
 void FlightModeManager::generateTrajectorySetpoint(const float dt,
 		const vehicle_local_position_s &vehicle_local_position)
 {
@@ -381,7 +386,7 @@ void FlightModeManager::generateTrajectorySetpoint(const float dt,
 	_vehicle_constraints_pub.publish(constraints);
 
 	// if there's any change in landing gear setpoint publish it
-	// 翻译：如果存在任何更改的降落伞设定点，发布它。
+	// 翻译：如果存在任何更改的起落架设定点，发布它。
 	landing_gear_s landing_gear = _current_task.task->getGear();
 
 	if (landing_gear.landing_gear != _old_landing_gear_position

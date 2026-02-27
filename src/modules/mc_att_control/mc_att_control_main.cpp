@@ -214,9 +214,9 @@ MulticopterAttitudeControl::generate_attitude_setpoint(const Quatf &q, float dt)
 	//   let a := tilt angle, b := atan(y/x) (direction of maximum tilt)
 	//   yaw = atan(-2 * sin(b) * cos(b) * sin^2(a/2) / (1 - 2 * cos^2(b) * sin^2(a/2))).
 	// 翻译：轴角也会改变偏航（在较高的倾斜角时更明显）。
-	// 这是偏航变化量的公式：
-	//   设 a := 倾斜角, b := atan(y/x) (最大倾斜方向)
-	//   偏航 = atan(-2 * sin(b) * cos(b) * sin^2(a/2) / (1 - 2 * cos^2(b) * sin^2(a/2)))。
+	//      这是偏航变化量的公式：
+	//      设 a := 倾斜角, b := atan(y/x) (最大倾斜方向)
+	//      偏航 = atan(-2 * sin(b) * cos(b) * sin^2(a/2) / (1 - 2 * cos^2(b) * sin^2(a/2)))。
 
 	const Quatf q_sp_yaw(cosf(yaw_setpoint / 2.f), 0.f, 0.f, sinf(yaw_setpoint / 2.f));
 
@@ -227,8 +227,7 @@ MulticopterAttitudeControl::generate_attitude_setpoint(const Quatf &q, float dt)
 		// the user's view as the tilt will not be aligned with the heading of the vehicle.
 
 		// 翻译：修改滚转和俯仰设定点，以确保即使存在较大的偏航误差（yaw_sp - yaw），它们也能反映用户意图。
-		// 在存在偏航误差的情况下，从偏航设定点构建姿态设定点会导致从用户视角来看的意外姿态行为，
-		// 因为倾斜不会与车辆航向对齐。
+		//      在存在偏航误差的情况下，从偏航设定点构建姿态设定点会导致从用户视角来看的意外姿态行为，因为倾斜不会与车辆航向对齐。
 
 		AttitudeControlMath::correctTiltSetpointForYawError(q_sp_rp, q, q_sp_yaw);
 	}

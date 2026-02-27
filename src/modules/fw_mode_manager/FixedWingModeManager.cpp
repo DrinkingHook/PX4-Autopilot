@@ -379,10 +379,10 @@ FixedWingModeManager::set_control_mode_current(const hrt_abstime &now)
 		return; // do not publish the setpoint
 	}
 
-        // 首先记录当前的控制模式作为以前的控制模式
+	// 首先记录当前的控制模式作为以前的控制模式
 	const FW_POSCTRL_MODE previous_position_control_mode = _control_mode_current;
 
-        // 设置跳过起飞检查为false
+	// 设置跳过起飞检查为false
 	_skipping_takeoff_detection = false;
 	const bool doing_backtransition = _vehicle_status.in_transition_mode && !_vehicle_status.in_transition_to_fw;
 
@@ -1113,7 +1113,7 @@ FixedWingModeManager::control_auto_takeoff(const hrt_abstime &now, const float c
 	const float takeoff_airspeed = (_param_fw_tko_airspd.get() > FLT_EPSILON) ? _param_fw_tko_airspd.get() :
 				       _param_fw_airspd_min.get();
 
-        // 检测跑道起飞模式是否开启
+	// 检测跑道起飞模式是否开启
 	if (_runway_takeoff.runwayTakeoffEnabled()) {
 		if (!_runway_takeoff.isInitialized()) {
 			_runway_takeoff.init(now);
@@ -2009,13 +2009,13 @@ FixedWingModeManager::Run()
 		return;
 	}
 
-        // 记录开始时间
+	// 记录开始时间
 	perf_begin(_loop_perf);
 
 	_vehicle_status_sub.update(&_vehicle_status);
 
 	/* only run controller if position changed and we are not running an external mode*/
-        /* 翻译：仅当位置更改并且我们没有运行外部模式时运行控制器 */
+	/* 翻译：仅当位置更改并且我们没有运行外部模式时运行控制器 */
 
 	const bool is_external_nav_state = (_vehicle_status.nav_state >= vehicle_status_s::NAVIGATION_STATE_EXTERNAL1)
 					   && (_vehicle_status.nav_state <= vehicle_status_s::NAVIGATION_STATE_EXTERNAL8);
@@ -2092,7 +2092,7 @@ FixedWingModeManager::Run()
 							     _local_pos.ref_timestamp);
 		}
 
-                // 检查是否启用了板外控制
+		// 检查是否启用了板外控制
 		if (_control_mode.flag_control_offboard_enabled) {
 			// 轨迹设定点
 			trajectory_setpoint_s trajectory_setpoint;
@@ -2113,7 +2113,7 @@ FixedWingModeManager::Run()
 				_pos_sp_triplet.current.lon = static_cast<double>(NAN);
 				_pos_sp_triplet.current.alt = NAN;
 
-                                // 检查所有板外轨迹位置控制点是否都为有限值
+				// 检查所有板外轨迹位置控制点是否都为有限值
 				if (Vector3f(trajectory_setpoint.position).isAllFinite()) {
 					if (_global_local_proj_ref.isInitialized()) {
 						double lat;
@@ -2128,7 +2128,7 @@ FixedWingModeManager::Run()
 
 				}
 
-                                // 检查所有板外轨迹速度控制点是否都为有限值
+				// 检查所有板外轨迹速度控制点是否都为有限值
 				if (Vector3f(trajectory_setpoint.velocity).isAllFinite()) {
 					valid_setpoint = true;
 					_pos_sp_triplet.current.type = position_setpoint_s::SETPOINT_TYPE_POSITION;
@@ -2136,7 +2136,7 @@ FixedWingModeManager::Run()
 					_pos_sp_triplet.current.vy = trajectory_setpoint.velocity[1];
 					_pos_sp_triplet.current.vz = trajectory_setpoint.velocity[2];
 
-                                        // 检查板外轨迹控制点的加速度值是否为有限值
+					// 检查板外轨迹控制点的加速度值是否为有限值
 					if (Vector3f(trajectory_setpoint.acceleration).isAllFinite()) {
 						Vector2f velocity_sp_2d(trajectory_setpoint.velocity[0], trajectory_setpoint.velocity[1]);
 						Vector2f normalized_velocity_sp_2d = velocity_sp_2d.normalized();
@@ -2203,7 +2203,7 @@ FixedWingModeManager::Run()
 		Vector2d curr_pos(_current_latitude, _current_longitude);
 		Vector2f ground_speed(_local_pos.vx, _local_pos.vy);
 
-                // 设置当前的控制模式
+		// 设置当前的控制模式
 		set_control_mode_current(now);
 
 		update_in_air_states(now);

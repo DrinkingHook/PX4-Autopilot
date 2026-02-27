@@ -100,9 +100,9 @@ const T expo(const T &value, const T &e)
  * @return result of function output
  */
 /*
- * 所谓的SuperExpo 功能实现。 
- * 是一个1/(1-x)函数，进一步直观地塑造rc输入曲线。 
- * 与其他实现相比，我对其进行了增强，以将比例保持在 [-1,1] 之间。 
+ * 所谓的SuperExpo 功能实现。
+ * 是一个1/(1-x)函数，进一步直观地塑造rc输入曲线。
+ * 与其他实现相比，我对其进行了增强，以将比例保持在 [-1,1] 之间。
  * @param value [-1,1] 函数的输入值
  * @param e [0,1] 函数参数设置线性和立方形状之间的比率（参见expo）
  * @param g [0,1) 设置SuperExpo形状的函数参数
@@ -173,9 +173,9 @@ const T expo_deadzone(const T &value, const T &e, const T &dz)
  * y_low -------
  *         x_low   x_high
  */
- /**
-  * @brief 以两个拐点为参数的恒定线性函数
-  */
+/**
+ * @brief 以两个拐点为参数的恒定线性函数
+ */
 template<typename T>
 const T interpolate(const T &value, const T &x_low, const T &x_high, const T &y_low, const T &y_high)
 {
@@ -205,9 +205,9 @@ const T interpolate(const T &value, const T &x_low, const T &x_high, const T &y_
  * y[0] -------
  *        0 1/(N-1) 2/(N-1) ... 1
  */
- /**
-  * @brief 以 1/N 为间隔、N 个拐点为参数的恒定分段线性函数
-  */
+/**
+ * @brief 以 1/N 为间隔、N 个拐点为参数的恒定分段线性函数
+ */
 template<typename T, size_t N>
 const T interpolateN(const T &value, const T(&y)[N])
 {
@@ -237,7 +237,7 @@ const T interpolateNXY(const T &value, const T(&x)[N], const T(&y)[N])
 		index++;
 	}
 
-	// 可能是为了 interpolate函数的代码简化？ 
+	// 可能是为了 interpolate函数的代码简化？
 	// 当value为[-1,0]时,那么传入参数x_low为-1,x_high为0
 	// 当value为(0,1]时,那么传入参数x_low为0,x_high为1
 	return interpolate(value, x[index], x[index + 1], y[index], y[index + 1]);

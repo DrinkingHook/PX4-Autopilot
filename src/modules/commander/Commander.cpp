@@ -904,7 +904,7 @@ Commander::handle_command(const vehicle_command_s &cmd)
 							desired_nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_RTL;
 							break;
 
-                                                // 可能是已经弃用的模式,若是mission模式内部有起飞逻辑,若是手动触发由VEHICLE_CMD_NAV_TAKEOFF处理
+						// 可能是已经弃用的模式,若是mission模式内部有起飞逻辑,若是手动触发由VEHICLE_CMD_NAV_TAKEOFF处理
 						case PX4_CUSTOM_SUB_MODE_AUTO_TAKEOFF:
 							// mavlink_log_info(&_mavlink_log_pub, " mission_takeoff ----- start\t");
 							desired_nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_TAKEOFF;
@@ -987,7 +987,7 @@ Commander::handle_command(const vehicle_command_s &cmd)
 				const bool force = desired_nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_LAND;
 
 				if (_user_mode_intention.change(desired_nav_state, getSourceFromCommand(cmd), false, force)) {
-				// mavlink_log_info(&_mavlink_log_pub, "change ----- start\t");
+					// mavlink_log_info(&_mavlink_log_pub, "change ----- start\t");
 					main_ret = TRANSITION_CHANGED;
 
 				} else {
@@ -1958,36 +1958,36 @@ void Commander::run()
 
 		systemPowerUpdate();
 
-                // 更新着陆检测状态
+		// 更新着陆检测状态
 		landDetectorUpdate();
 
-        	// 更新安全开关状态
+		// 更新安全开关状态
 		safetyButtonUpdate();
 
-        	// 多轴抛飞状态更新
+		// 多轴抛飞状态更新
 		_multicopter_throw_launch.update(isArmed());
 
-        	// vtol状态更新
+		// vtol状态更新
 		vtolStatusUpdate();
 
 		_mission_in_progress = (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION)
 				       && !_mission_result_sub.get().finished;
 
-        	// 起飞点更新：当设置了自动刷新home位置参数，同时处于未解锁或已着陆并且不处于自动导航任务时刷新home位置
+		// 起飞点更新：当设置了自动刷新home位置参数，同时处于未解锁或已着陆并且不处于自动导航任务时刷新home位置
 		_home_position.update(_param_com_home_en.get(), !isArmed() && _vehicle_land_detected.landed && !_mission_in_progress);
 
-        	// 处理自动解除武装
+		// 处理自动解除武装
 		handleAutoDisarm();
 
 		battery_status_check();
 
-        	// 检查任务更新
+		// 检查任务更新
 		checkForMissionUpdate();
 
-                // 手动控制检查
+		// 手动控制检查
 		manualControlCheck();
 
-        	// 板外控制检查
+		// 板外控制检查
 		offboardControlCheck();
 
 		// data link checks which update the status
@@ -2001,7 +2001,7 @@ void Commander::run()
 			_status_changed = true;
 		}
 
-        	// 模式管理更新
+		// 模式管理更新
 		modeManagementUpdate();
 
 		const hrt_abstime now = hrt_absolute_time();
@@ -2110,7 +2110,7 @@ void Commander::run()
 		// 检查任务线程
 		checkWorkerThread();
 
-        	// 更新调音
+		// 更新调音
 		updateTunes();
 		// 控制状态灯
 		control_status_leds(_status_changed, _battery_warning);
@@ -2312,7 +2312,7 @@ void Commander::landDetectorUpdate()
 
 					} else if (_param_com_home_in_air.get()) {
 						// home位在空中的情况如：
-						// 1.飞控控制重启 
+						// 1.飞控控制重启
 						// 2.飞行器在空中时，安全开关被按下
 						// 3.抛飞
 						_home_position.setInAirHomePosition();
@@ -2926,7 +2926,7 @@ void Commander::dataLinkCheck()
 		}
 	}
 
-        // 循环处理多个radio模式
+	// 循环处理多个radio模式
 	for (auto &telemetry_status :  _telemetry_status_subs) {
 		telemetry_status_s telemetry;
 

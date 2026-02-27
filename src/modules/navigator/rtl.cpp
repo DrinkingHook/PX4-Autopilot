@@ -172,7 +172,7 @@ void RTL::on_inactive()
 
 	updateDatamanCache();
 
-        // 参数更新
+	// 参数更新
 	parameters_update();
 
 	if (_rtl_mission_type_handle) {

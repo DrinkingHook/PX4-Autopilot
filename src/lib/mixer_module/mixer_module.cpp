@@ -273,7 +273,7 @@ bool MixingOutput::updateSubscriptions(bool allow_wq_switch)
 			// 翻译：直接从参数中读取功能，由于 _function_assignment [i]将稍后更新
 			int32_t function;
 
-            // _param_handles 等参数 在 initParamHandles 中初始化
+			// _param_handles 等参数 在 initParamHandles 中初始化
 			if (_param_handles[i].function != PARAM_INVALID && param_get(_param_handles[i].function, &function) == 0) {
 				if (function >= (int32_t)OutputFunction::Motor1 && function <= (int32_t)OutputFunction::MotorMax) {
 					switch_requested = true;
@@ -324,12 +324,12 @@ bool MixingOutput::updateSubscriptions(bool allow_wq_switch)
 				all_disabled = false;
 				int found_index = -1;
 
-                /* p=0=min_func; p=1=max_func; p=2=Motor1~MotorMax ; p=3=Servo1~ServoMax
-				 * 假设我的配置为Motor1, Motor2, Servo1
-				 * 当第一次运行时 i = 0,p = 2 时会创建 Motor1 的 provider 实例，并记录 provider_indexes[0] = 2
-				 * 当第二次运行时 i = 1,p = 2 时会复用
-				 * 当第三次运行时 i = 2,p = 3 时会创建 Servo1 的 provider 实例，并记录 provider_indexes[1] = 3
-				 */
+				/* p=0=min_func; p=1=max_func; p=2=Motor1~MotorMax ; p=3=Servo1~ServoMax
+						 * 假设我的配置为Motor1, Motor2, Servo1
+						 * 当第一次运行时 i = 0,p = 2 时会创建 Motor1 的 provider 实例，并记录 provider_indexes[0] = 2
+						 * 当第二次运行时 i = 1,p = 2 时会复用
+						 * 当第三次运行时 i = 2,p = 3 时会创建 Servo1 的 provider 实例，并记录 provider_indexes[1] = 3
+						 */
 				for (int existing = 0; existing < next_provider; ++existing) {
 					if (provider_indexes[existing] == p) {
 						found_index = existing;
@@ -337,18 +337,18 @@ bool MixingOutput::updateSubscriptions(bool allow_wq_switch)
 					}
 				}
 
-                /* 如果找到则复用已分配的 provider 实例
-				 * 若没有找到则创建一个新的 provider 实例
-                 */
+				/* 如果找到则复用已分配的 provider 实例
+						 * 若没有找到则创建一个新的 provider 实例
+				 */
 				if (found_index >= 0) {
 					_functions[i] = _function_allocated[found_index];
 
 				} else {
 					_function_allocated[next_provider] = all_function_providers[p].constructor(context);
 
-                    /* 判断是否构建成功
-					 * 若成功则分配给当前通道，并记录 provider 索引
-					 */
+					/* 判断是否构建成功
+							 * 若成功则分配给当前通道，并记录 provider 索引
+							 */
 					if (_function_allocated[next_provider]) {
 						_functions[i] = _function_allocated[next_provider];
 						provider_indexes[next_provider++] = p;
@@ -530,7 +530,7 @@ bool MixingOutput::update()
 			_actuator_test.overrideValues(outputs, _max_num_outputs);
 		}
 
-        // 输出限制-也是实际的输出
+		// 输出限制-也是实际的输出
 		limitAndUpdateOutputs(outputs, has_updates);
 	}
 
@@ -590,7 +590,7 @@ MixingOutput::limitAndUpdateOutputs(float outputs[MAX_ACTUATORS], bool has_updat
 		// 发布执行器输出
 		setAndPublishActuatorOutputs(_max_num_outputs, actuator_outputs);
 
-        // 性能记录
+		// 性能记录
 		updateLatencyPerfCounter(actuator_outputs);
 	}
 }
@@ -671,7 +671,7 @@ MixingOutput::output_limit_calc(const bool armed, const int num_channels, const 
 
 		break;
 
-    // 爬升阶段 当超过设定的时间后切换输出状态为ON
+	// 爬升阶段 当超过设定的时间后切换输出状态为ON
 	case OutputLimitState::RAMP:
 		if (!armed) {
 			_output_state = OutputLimitState::OFF;
@@ -697,9 +697,9 @@ MixingOutput::output_limit_calc(const bool armed, const int num_channels, const 
 	 * regular arming time.
 	 */
 
-    /* 
-     * 翻译：如果系统已预先准备就绪，则限位状态会暂时开启，因为某些输出有效，而无效输出已被设置为 NaN。
-     *      但这不会存储在状态机中，因为油门通道需要在正常的准备时间经过斜坡过程。
+	/*
+	 * 翻译：如果系统已预先准备就绪，则限位状态会暂时开启，因为某些输出有效，而无效输出已被设置为 NaN。
+	 *      但这不会存储在状态机中，因为油门通道需要在正常的准备时间经过斜坡过程。
 	 */
 	auto local_limit_state = _output_state;
 

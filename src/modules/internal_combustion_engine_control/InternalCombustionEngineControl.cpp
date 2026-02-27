@@ -317,7 +317,7 @@ void InternalCombustionEngineControl::controlEngineFault()
 
 void InternalCombustionEngineControl::controlEngineStartup(const hrt_abstime now)
 {
-    // 点火延迟
+	// 点火延迟
 	float ignition_delay = 0.f;
 	// 阻塞风门持续时间
 	float choke_duration = 0.f;

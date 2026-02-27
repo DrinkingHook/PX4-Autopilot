@@ -363,6 +363,7 @@ int do_accel_calibration(orb_advert_t *mavlink_log_pub)
 				mat_A.row(2) = accel_upside_down - offset;
 
 				// calculate inverse matrix for A: simplify matrices mult because b has only one non-zero element == g at index i
+				// 翻译：计算矩阵 A 的逆矩阵：简化矩阵乘法，因为 b 在索引 i 处只有一个非零元素 == g
 				const Matrix3f accel_T = mat_A.I() * CONSTANTS_ONE_G;
 
 				// update calibration

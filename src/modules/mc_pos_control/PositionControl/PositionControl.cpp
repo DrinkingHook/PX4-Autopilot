@@ -289,8 +289,8 @@ void PositionControl::_accelerationControl()
 	// Convert to thrust assuming hover thrust produces standard gravity
 	// 翻译：假设悬停推力产生标准重力。
 	// collective_thrust_normalized = ( _acc_sp(2) / g ) × hover_thrust  -  hover_thrust
-        //                              = hover_thrust × ( _acc_sp(2)/g  -  1 )
-        // 这里是真正的推力计算， body_z只是期望的机体坐标系用作推力映射
+	//                              = hover_thrust × ( _acc_sp(2)/g  -  1 )
+	// 这里是真正的推力计算， body_z只是期望的机体坐标系用作推力映射
 	const float thrust_ned_z = _acc_sp(2) * (_hover_thrust / CONSTANTS_ONE_G) - _hover_thrust;
 	// Project thrust to planned body attitude
 	// 翻译：将推力投影到计划的机身姿态。

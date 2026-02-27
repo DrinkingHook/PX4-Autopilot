@@ -54,13 +54,13 @@ static inline int _constexpr_assert_failure(const char *msg)
  *
  * If executed at runtime, it has no effect other than slight runtime overhead.
  */
- /**
-  * 如果在 constexpr 上下文中使用（即在编译时执行），则会导致编译失败。
-  * 重要提示：您需要确保代码在编译时执行，例如：
-  * 将 constexpr 方法（使用断言的地方）的返回值赋给
-  * 一个标记为 constexpr 的变量。否则，编译器可能会静默地将执行移至
-  * 运行时。
-  *
-  * 如果在运行时执行，除了轻微的运行时开销外，不会产生任何其他影响。
-  */
+/**
+ * 如果在 constexpr 上下文中使用（即在编译时执行），则会导致编译失败。
+ * 重要提示：您需要确保代码在编译时执行，例如：
+ * 将 constexpr 方法（使用断言的地方）的返回值赋给
+ * 一个标记为 constexpr 的变量。否则，编译器可能会静默地将执行移至
+ * 运行时。
+ *
+ * 如果在运行时执行，除了轻微的运行时开销外，不会产生任何其他影响。
+ */
 #define constexpr_assert(expr, msg) if (!(expr)) { _constexpr_assert_failure(msg); }

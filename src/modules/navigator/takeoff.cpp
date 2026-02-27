@@ -61,7 +61,7 @@ Takeoff::on_activation()
 void
 Takeoff::on_active()
 {
-    	// 固定翼盘旋
+	// 固定翼盘旋
 	if (_navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) {
 
 		switch (_fw_takeoff_state) {
@@ -162,6 +162,7 @@ Takeoff::on_active()
 			position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
 
 			// set loiter item so position controllers stop doing takeoff logic
+			// 翻译：设置滞空项，以便位置控制器停止执行起飞逻辑
 			if (_navigator->get_land_detected()->landed) {
 				_mission_item.nav_cmd = NAV_CMD_IDLE;
 

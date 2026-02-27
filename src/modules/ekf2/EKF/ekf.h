@@ -493,7 +493,7 @@ private:
 	StateResets _state_reset_status{};	///< reset event monitoring structure containing velocity, position, height and yaw reset information
 	StateResetCounts _state_reset_count_prev{};
 
-	                            // 翻译：在延迟时间范围内运行的扩展卡尔曼滤波器 (EKF) 的状态结构
+	// 翻译：在延迟时间范围内运行的扩展卡尔曼滤波器 (EKF) 的状态结构
 	StateSample _state{};		///< state struct of the ekf running at the delayed time horizon
 
 	LatLonAlt _gpos{0.0, 0.0, 0.f};

@@ -59,7 +59,7 @@ int PCF8583::init()
 }
 
 /**
- * 这个函数是在最底层驱动文件中定义，如 :public device::I2C, 
+ * 这个函数是在最底层驱动文件中定义，如 :public device::I2C,
  */
 int PCF8583::probe()
 {

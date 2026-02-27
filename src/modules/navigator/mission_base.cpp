@@ -306,7 +306,7 @@ MissionBase::on_active()
 			}
 		}
 
-                // 任务点转换为导航点
+		// 任务点转换为导航点
 		mission_item_to_position_setpoint(_mission_item, &_navigator->get_position_setpoint_triplet()->current);
 
 		reset_mission_item_reached();

@@ -40,13 +40,13 @@
  *
  */
 
- /**
-  * @param CAS  | Calibrated Airspeed             | 校准空速             | 空速管测出来的原始动压，经过仪表误差校准（Instrument Error Correction）后的值 | 空速管直接输出   |
-  * @param TAS  | True Airspeed                   | 真空速 / 真速        | 飞机相对于空气的真实速度（不受气压、温度、密度影响）     | 飞控真正用于导航、风速估计、失速保护的那个速度 |
-  * @param IAS  | Indicated Airspeed              | 指示空速             | 仪表上直接读出来的（还没校准仪表误差）                   | 基本不用         |
-  * @param EAS  | Equivalent Airspeed             | 等效空速             | 考虑空气可压缩性后的中间值（>0.7Ma 才重要）              | 高亚音速才关心   |
-  * @param GS   | Ground Speed                    | 地速                 | 相对于地面的速度 = TAS ± 风                              | GPS 给出         |
-  */
+/**
+ * @param CAS  | Calibrated Airspeed             | 校准空速             | 空速管测出来的原始动压，经过仪表误差校准（Instrument Error Correction）后的值 | 空速管直接输出   |
+ * @param TAS  | True Airspeed                   | 真空速 / 真速        | 飞机相对于空气的真实速度（不受气压、温度、密度影响）     | 飞控真正用于导航、风速估计、失速保护的那个速度 |
+ * @param IAS  | Indicated Airspeed              | 指示空速             | 仪表上直接读出来的（还没校准仪表误差）                   | 基本不用         |
+ * @param EAS  | Equivalent Airspeed             | 等效空速             | 考虑空气可压缩性后的中间值（>0.7Ma 才重要）              | 高亚音速才关心   |
+ * @param GS   | Ground Speed                    | 地速                 | 相对于地面的速度 = TAS ± 风                              | GPS 给出         |
+ */
 #include "airspeed.h"
 
 #include <px4_platform_common/defines.h>

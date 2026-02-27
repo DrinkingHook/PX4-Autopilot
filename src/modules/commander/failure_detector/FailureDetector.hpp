@@ -105,6 +105,7 @@ private:
 	systemlib::Hysteresis _ext_ats_failure_hysteresis{false};
 	systemlib::Hysteresis _esc_failure_hysteresis{false};
 
+	// 螺旋桨低通滤波器时间常数不平衡
 	static constexpr float _imbalanced_prop_lpf_time_constant{5.f};
 	AlphaFilter<float> _imbalanced_prop_lpf{};
 	uint32_t _selected_accel_device_id{0};
@@ -127,6 +128,14 @@ private:
 
 	FailureInjector _failure_injector;
 
+	/**
+	 * @param _param_fd_fail_p 失效检测器最大俯仰限制
+	 * @param _param_fd_fail_r 失效检测器最大横滚限制
+	 * @param _param_fd_r_ttri 最大横滚角度触发失效的持续时间
+	 * @param _param_fd_p_ttri 最大俯仰角度触发失效的持续时间
+	 * @param _param_fd_ext_ats_en 启动外部自动触发系统（ATS）的失效保险(pwm信号)
+	 * @param _param_fd_ext_ats_trig 外部自动触发系统（ATS）的失效pwm信号的阈值
+	 */
 	DEFINE_PARAMETERS(
 		(ParamInt<px4::params::FD_FAIL_P>) _param_fd_fail_p,
 		(ParamInt<px4::params::FD_FAIL_R>) _param_fd_fail_r,

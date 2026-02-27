@@ -299,7 +299,7 @@ bool Ekf::resetLatLonTo(const double latitude, const double longitude, const flo
 
 /**
  * @brief 初始化高度到指定值
- * 
+ *
  * @param altitude 高度值
  * @param vpos_var 高度方差
  * @return true 初始化成功
@@ -331,7 +331,7 @@ bool Ekf::initialiseAltitudeTo(const float altitude, const float vpos_var)
 
 /**
  * @brief 获取ekf的地理位置精度
- * 
+ *
  * @param ekf_eph 横向误差
  * @param ekf_epv 纵向误差
  */
@@ -348,7 +348,7 @@ void Ekf::get_ekf_gpos_accuracy(float *ekf_eph, float *ekf_epv) const
 
 /**
  * @brief 获取ekf的水平位置精度
- * 
+ *
  * @param ekf_eph 横向误差
  * @param ekf_epv 纵向误差
  */
@@ -387,7 +387,7 @@ void Ekf::get_ekf_lpos_accuracy(float *ekf_eph, float *ekf_epv) const
 
 /**
  * @brief 获取EKF估计的速度精度
- * 
+ *
  * @param ekf_eph 横向误差
  * @param ekf_epv 纵向误差
  */
@@ -694,7 +694,7 @@ float Ekf::getHorizontalPositionInnovationTestRatio() const
 
 /**
  * @brief 获取垂直位置的创新测试比率（Innovation Test Ratio）
- * 
+ *
  * 该函数计算垂直位置测量（通常为气压高度、GPS高度、范围传感器或EV位置Z）的创新测试比率，
  * 用于评估本次测量的创新（残差）是否在合理范围内（创新门限检查/gating）。
  */
@@ -886,24 +886,24 @@ uint16_t Ekf::get_ekf_soln_status() const
 
 /**
  * @brief 执行卡尔曼滤波的状态修正步骤（应用增益和创新更新状态向量）
- * 
+ *
  * 该函数仅负责测量更新中的状态估计修正部分：
  * 使用预先计算的卡尔曼增益和创新值，直接更新状态向量。
  * 不更新协方差矩阵P（协方差更新通常在调用者或measurementUpdate中完成）。
- * 
+ *
  * 典型公式：x = x + K * innovation
- * 
+ *
  * @param[in] K           卡尔曼增益向量（状态维度×1）
  *                        通常由 measurementUpdate() 或类似函数计算得到
  * @param[in] innovation  创新值（标量），即 measurement - H * x_pred
- * 
+ *
  * @return void           无返回值，直接就地修改成员变量 _state（或等效状态向量）
- * 
- * @note 
+ *
+ * @note
  *       - 该函数仅更新状态估计，不涉及协方差更新。
  *       - 常用于标量测量场景，与计算增益和协方差更新的函数配合使用。
  *       - 在某些直接状态测量融合（如fuseDirectStateMeasurement）内部也会调用类似逻辑。
- * 
+ *
  * @see measurementUpdate()     完整标量测量更新（计算K并更新状态和协方差）
  * @see fuseDirectStateMeasurement()  直接状态测量的融合函数（内部可能调用fuse）
  */
@@ -1118,23 +1118,23 @@ void Ekf::updateVerticalDeadReckoningStatus()
 
 /**
  * @brief 获取机体坐标系（Body frame）下的姿态旋转误差方差（对角元素）
- * 
+ *
  * 该函数从状态协方差矩阵中提取四元数（quat_nominal）对应的3x3协方差子块，
  * 表示姿态误差在本地导航坐标系（NED/Earth frame）下的协方差，
  * 然后通过当前姿态旋转矩阵将该协方差旋转到机体坐标系（Body frame），
  * 最后返回旋转后协方差矩阵的对角元素，即roll、pitch、yaw三个轴在机体坐标系下的方差。
- * 
+ *
  * @return Vector3f 机体坐标系下三个旋转轴的误差方差（rad²）
  *         - x: roll轴方差
  *         - y: pitch轴方差
  *         - z: yaw轴方差
- * 
- * @note 
+ *
+ * @note
  *       - 姿态误差协方差最初定义在NED坐标系中（tilt error + yaw error）。
  *       - 通过相似变换 _R_to_earth^T * cov_ned * _R_to_earth 得到机体坐标系下的协方差。
  *       - 仅返回对角元素（即各轴独立方差），不返回完整协方差矩阵。
  *       - 常用于机载传感器（如磁力计、外部视觉姿态）的创新门限检查或诊断输出。
- * 
+ *
  * @see getRotVarNed() 获取NED坐标系下的姿态方差
  */
 Vector3f Ekf::getRotVarBody() const
@@ -1145,20 +1145,20 @@ Vector3f Ekf::getRotVarBody() const
 
 /**
  * @brief 获取本地导航坐标系（NED frame）下的姿态旋转误差方差（对角元素）
- * 
+ *
  * 该函数直接从状态协方差矩阵中提取四元数（quat_nominal）对应的3x3协方差子块，
  * 并返回其对角元素，即roll/pitch tilt误差和yaw误差在NED坐标系下的方差。
- * 
+ *
  * @return Vector3f NED坐标系下三个旋转轴的误差方差（rad²）
  *         - x: roll轴方差（或对应tilt误差分量）
  *         - y: pitch轴方差（或对应tilt误差分量）
  *         - z: yaw轴方差
- * 
- * @note 
+ *
+ * @note
  *       - 姿态误差协方差在EKF中天然定义在NED/Earth坐标系中。
  *       - 仅返回对角元素，不包含交叉协方差项。
  *       - 常用于整体姿态不确定性评估、yaw对齐检查或estimator_status输出。
- * 
+ *
  * @see getRotVarBody() 获取旋转到机体坐标系后的姿态方差
  */
 Vector3f Ekf::getRotVarNed() const
@@ -1282,26 +1282,26 @@ void Ekf::updateIMUBiasInhibit(const imuSample &imu_delayed)
 
 /**
  * @brief 融合直接状态测量的标量更新（约瑟夫形式，针对状态向量单一分量直接观测）
- * 
+ *
  * 此函数专用于测量直接对应状态向量中某个单一分量的情况（即测量模型 z = x[state_index] + v），
  * 执行卡尔曼滤波测量更新步骤，使用约瑟夫公式（Joseph stabilized form）更新协方差以保证数值稳定性。
  * 与通用标量测量更新不同，本函数无需显式传入测量矩阵H（隐式为单位向量第state_index行）。
- * 
+ *
  * @param[in] innov         创新值（标量），即 measurement - predicted_state[state_index]
  * @param[in] innov_var     创新方差（标量），即预测状态的不确定性 P[state_index][state_index]
  * @param[in] R             测量噪声的方差（标量），即测量不确定性
  * @param[in] state_index   要融合的状态分量索引（对应状态向量中的具体维度）
- * 
+ *
  * @return void             无返回值（更新失败时通常直接返回，不修改状态）
- * 
+ *
  * @note 此函数会就地修改成员变量（若更新通过创新门限检查）：
  *       1. 状态估计: x += K * innov
  *          其中 K 为状态维度×1 的卡尔曼增益向量，只有第state_index行为非零（K = P_row[state_index] / (innov_var + R)）
  *       2. 协方差估计: P = (I - K*H) * P * (I - K*H)^T + K*R*K^T （约瑟夫形式）
- * 
+ *
  * @note 函数内部通常包含创新门限检查（innovation gating），若 |innov| 过大（相对于 sqrt(innov_var + R)），
  *       将拒绝本次更新以提高鲁棒性。
- * 
+ *
  * @see 通用标量测量更新：measurementUpdate()（适用于任意H矩阵的线性测量）
  * @see 向量测量更新版本（处理多维观测）
  */
@@ -1420,7 +1420,7 @@ bool Ekf::measurementUpdate(VectorState &K, const VectorState &H, const float R,
 	// P = (I - K * H) * P * (I - K * H).T K * R * K.T
 	// = P_temp * (I - H.T * K.T) K * R * K.T
 	// = P_temp - P_temp * H.T * K.T K * R * K.T
-	
+
 	// 步骤1：常规更新
 	// 计算 P_temp 并将其存储在 P 中以避免分配更多内存
 	// P 是对称的，因此 PH == H.T * P.T == H.T * P。由于矩阵是行优先的，所以取行速度更快

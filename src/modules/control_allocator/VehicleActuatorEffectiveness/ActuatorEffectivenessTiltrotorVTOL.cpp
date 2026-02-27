@@ -223,7 +223,7 @@ void ActuatorEffectivenessTiltrotorVTOL::updateSetpoint(const matrix::Vector<flo
 			}
 		}
 
-                // 如果处于向前飞模式，那么停止无倾转电机的动力
+		// 如果处于向前飞模式，那么停止无倾转电机的动力
 		if (_flight_phase == FlightPhase::FORWARD_FLIGHT) {
 			stopMaskedMotorsWithZeroThrust(_motors & ~_untiltable_motors, actuator_sp);
 		}

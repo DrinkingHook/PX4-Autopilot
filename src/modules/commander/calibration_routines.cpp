@@ -227,6 +227,7 @@ calibrate_return calibrate_from_orientation(orb_advert_t *mavlink_log_pub,
 	unsigned orientation_failures = 0;
 
 	// Rotate through all requested orientation
+	// 翻译：旋转所有请求的方向
 	while (true) {
 		if (calibrate_cancel_check(mavlink_log_pub, calibration_started)) {
 			result = calibrate_return_cancelled;
@@ -242,6 +243,7 @@ calibrate_return calibrate_from_orientation(orb_advert_t *mavlink_log_pub,
 		unsigned int side_complete_count = 0;
 
 		// Update the number of completed sides
+		// 翻译：更新已完成校准的侧数
 		for (unsigned i = 0; i < detect_orientation_side_count; i++) {
 			if (side_data_collected[i]) {
 				side_complete_count++;
@@ -254,6 +256,7 @@ calibrate_return calibrate_from_orientation(orb_advert_t *mavlink_log_pub,
 		}
 
 		/* inform user which orientations are still needed */
+		// 翻译：告知用户仍需哪些方向信息
 		char pendingStr[80];
 		pendingStr[0] = 0;
 
@@ -305,12 +308,15 @@ calibrate_return calibrate_from_orientation(orb_advert_t *mavlink_log_pub,
 		px4_usleep(20000);
 
 		// Note that this side is complete
+		// 翻译：请注意，此部分已完成
 		side_data_collected[orient] = true;
 
 		// output neutral tune
+		// 翻译：输出中性调谐
 		set_tune(tune_control_s::TUNE_ID_NOTIFY_NEUTRAL);
 
 		// temporary priority boost for the white blinking led to come trough
+		// 翻译：暂时提高白色闪烁 LED 的优先级
 		rgbled_set_color_and_mode(led_control_s::COLOR_WHITE, led_control_s::MODE_BLINK_FAST, 3, 1);
 		px4_usleep(200000);
 	}

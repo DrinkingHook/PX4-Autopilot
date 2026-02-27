@@ -46,6 +46,7 @@ void GyroChecks::checkAndReport(const Context &context, Report &reporter)
 			continue;
 		}
 
+		// 判断是否存在
 		const bool exists = _sensor_gyro_sub[instance].advertised();
 		bool is_valid = false;
 		bool is_calibration_valid = false;
@@ -68,6 +69,7 @@ void GyroChecks::checkAndReport(const Context &context, Report &reporter)
 		const bool is_sensor_ok = is_valid && is_calibration_valid;
 
 		if (!is_sensor_ok) {
+			// 不存在
 			if (!exists) {
 				/* EVENT
 				 */
@@ -78,6 +80,8 @@ void GyroChecks::checkAndReport(const Context &context, Report &reporter)
 					mavlink_log_critical(reporter.mavlink_log_pub(), "Preflight Fail: Gyro Sensor %u missing", instance);
 				}
 
+				// 无效
+
 			} else if (!is_valid) {
 				/* EVENT
 				 */
@@ -87,6 +91,8 @@ void GyroChecks::checkAndReport(const Context &context, Report &reporter)
 				if (reporter.mavlink_log_pub()) {
 					mavlink_log_critical(reporter.mavlink_log_pub(), "Preflight Fail: No valid data from Gyro %u", instance);
 				}
+
+				// 校准无效
 
 			} else if (!is_calibration_valid) {
 				/* EVENT

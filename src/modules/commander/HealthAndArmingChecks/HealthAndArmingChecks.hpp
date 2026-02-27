@@ -107,11 +107,11 @@ public:
 	 */
 	bool modePreventsArming(uint8_t nav_state) const { return _reporter.modePreventsArming(nav_state); }
 
-        /**
-         * @brief 首先初始化failsafe_flags_s _failsafe_flags,然后通过uorb订阅更新,随后通过此传递
-         *
-         * @return const failsafe_flags_s&
-         */
+	/**
+	 * @brief 首先初始化failsafe_flags_s _failsafe_flags,然后通过uorb订阅更新,随后通过此传递
+	 *
+	 * @return const failsafe_flags_s&
+	 */
 	const failsafe_flags_s &failsafeFlags() const { return _failsafe_flags; }
 
 #ifndef CONSTRAINED_FLASH

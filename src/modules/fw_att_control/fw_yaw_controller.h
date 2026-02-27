@@ -64,7 +64,7 @@ public:
 	 */
 	/**
 	 * @brief 翻译为中文：根据当前姿态和空速计算欧拉角和身体角速度设定点
-	 * 
+	 *
 	 * @param roll_setpoint 翻译：滚转角设定点 [rad]
 	 * @param euler_pitch_rate_setpoint 翻译：欧拉角俯仰角速率设定点 [rad/s]
 	 * @param roll 翻译：滚转角 [rad]

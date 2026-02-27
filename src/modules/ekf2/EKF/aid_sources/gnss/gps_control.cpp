@@ -108,7 +108,7 @@ void Ekf::controlGpsFusion(const imuSample &imu_delayed)
 		controlGnssYawFusion(gnss_sample);
 #endif // CONFIG_EKF2_GNSS_YAW
 
-        // 控制GNSS航向估计器
+		// 控制GNSS航向估计器
 		controlGnssYawEstimator(_aid_src_gnss_vel);
 
 		bool do_vel_pos_reset = false;
@@ -441,7 +441,7 @@ void Ekf::controlGnssYawEstimator(estimator_aid_source3d_s &aid_src_vel)
 		    && !_control_status.flags.yaw_align
 		    && _control_status.flags.tilt_align) {
 			if (resetYawToEKFGSF()) {
-			    // 使用 IMU 进行 GPS 偏航角校准
+				// 使用 IMU 进行 GPS 偏航角校准
 				ECL_INFO("GPS yaw aligned using IMU");
 			}
 		}
@@ -463,7 +463,7 @@ bool Ekf::tryYawEmergencyReset()
 	// 翻译：如果水平速度创新检查持续失败，且偏航紧急估计值与偏航估计值之间的差异较大，则会快速重置偏航紧急估计值。
 	//      这有助于从错误的偏航估计值中恢复。如果故障情况在飞行前已存在，则不会执行重置操作，以防止因 GPS 故障或其他传感器错误而触发重置。
 	if (resetYawToEKFGSF()) {
-	    	// GPS 偏航角紧急重置
+		// GPS 偏航角紧急重置
 		ECL_WARN("GPS emergency yaw reset");
 
 		if (_control_status.flags.mag_hdg || _control_status.flags.mag_3D) {

@@ -109,10 +109,10 @@ protected:
 	/** determines when to trigger a takeoff (ignored in flight) */
 	bool _checkTakeoff() override { return _want_takeoff; };
 
-        void extracted(Vector2f &sticks_xy, Vector2f &sticks_ne,
-                       float &max_speed);
-        void _prepareLandSetpoints();
-        bool _highEnoughForLandingGear(); /**< Checks if gears can be lowered. */
+	void extracted(Vector2f &sticks_xy, Vector2f &sticks_ne,
+		       float &max_speed);
+	void _prepareLandSetpoints();
+	bool _highEnoughForLandingGear(); /**< Checks if gears can be lowered. */
 
 	void updateParams() override; /**< See ModuleParam class */
 

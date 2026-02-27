@@ -192,6 +192,25 @@ private:
 	bool _manual_control_lost_at_arming{false}; ///< true if manual control was lost at arming time
 	uint8_t _battery_warning_at_arming{0}; ///< low battery state at arming time
 
+	/**
+	 * @param _param_nav_dll_act              GCS连接丢失故障保护模式
+	 * @param _param_nav_rcl_act              手动控制丢失故障保护模式
+	 * @param _param_com_rcl_except           手动控制丢失例外(及在设定的模式下触发故障时将忽略故障)
+	 * @param _param_com_dll_except           数据链丢失例外(同上)
+	 * @param _param_com_rc_in_mode           手动控制输入源配置
+	 * @param _param_gf_action                地理围栏违规故障保护模式
+	 * @param _param_com_spoolup_time         强制在武装与后续导航之间进行延迟
+	 * @param _param_com_imb_prop_act         螺旋桨失衡故障保护模式
+	 * @param _param_com_lkdown_tko           起飞后检测故障的超时 s
+	 * @param _param_cbrk_flightterm          断路器用于终止飞行
+	 * @param _param_com_actuator_failure_act 执行器故障保护模式
+	 * @param _param_com_low_bat_act          低电压故障保护模式
+	 * @param _param_com_obl_rc_act           设置板外丢失故障保护模式
+	 * @param _param_com_qc_act vtol          在紧急其况下切换到四旋翼模式后执行的动作
+	 * @param _param_com_wind_max_act         高风速故障保护模式
+	 * @param _param_com_fltt_low_act         剩余时间小于预估RTL所需时间
+	 * @param _param_com_pos_low_act          低位置精度故障保护模式
+	 */
 	DEFINE_PARAMETERS_CUSTOM_PARENT(FailsafeBase,
 					(ParamInt<px4::params::NAV_DLL_ACT>) 	_param_nav_dll_act,
 					(ParamInt<px4::params::NAV_RCL_ACT>) 	_param_nav_rcl_act,

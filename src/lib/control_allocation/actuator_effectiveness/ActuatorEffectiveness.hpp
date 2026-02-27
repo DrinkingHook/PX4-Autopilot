@@ -220,8 +220,8 @@ public:
 	 * Can be implemented for every type separately. If not implemented then the effectivenes matrix is used instead.
 	 */
 	/**
-	 * 填写未分配的扭矩和推力，按功效类型定制。 
-	 * 可以针对每种类型单独实施。 如果未实现，则使用效果矩阵代替。 
+	 * 填写未分配的扭矩和推力，按功效类型定制。
+	 * 可以针对每种类型单独实施。 如果未实现，则使用效果矩阵代替。
 	 */
 	virtual void getUnallocatedControl(int matrix_index, control_allocator_status_s &status) {}
 

@@ -120,10 +120,12 @@ void StickAccelerationXY::generateSetpoints(Vector2f stick_xy, const float yaw, 
 	}
 
 	// Add drag to limit speed and brake again
+	// 翻译：增加阻力以限制速度并再次制动
 	Vector2f drag = calculateDrag(acceleration_scale.edivide(velocity_scale), dt, stick_xy, _velocity_setpoint);
 
 	// Don't allow the drag to change the sign of the velocity, otherwise we might get into oscillations around 0, due
 	// to discretization
+	// 翻译：不要让阻力改变速度的符号，否则由于离散化，速度可能会在 0 附近振荡
 	if (((_acceleration_setpoint.norm_squared() < FLT_EPSILON)
 	     || (sign(_acceleration_setpoint_prev(0)) != sign(_acceleration_setpoint(0)))
 	     || (sign(_acceleration_setpoint_prev(1)) != sign(_acceleration_setpoint(1))))
@@ -139,6 +141,7 @@ void StickAccelerationXY::generateSetpoints(Vector2f stick_xy, const float yaw, 
 	applyTiltLimit(_acceleration_setpoint);
 
 	// Generate velocity setpoint by forward integrating commanded acceleration
+	// 翻译：通过对指令加速度进行前向积分来生成速度设定值
 	_velocity_setpoint += _acceleration_setpoint * dt;
 
 	lockPosition(pos, vel_sp_feedback, dt);

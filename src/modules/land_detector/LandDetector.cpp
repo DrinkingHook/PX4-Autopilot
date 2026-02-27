@@ -156,7 +156,7 @@ void LandDetector::Run()
 	    (_land_detected.in_ground_effect != in_ground_effect) ||
 	    (_land_detected.at_rest != at_rest)) {
 
-		// 目前不处于已着陆状态，历史状态处于着陆状态，起飞时间为0 
+		// 目前不处于已着陆状态，历史状态处于着陆状态，起飞时间为0
 		if (!landDetected && _land_detected.landed && _takeoff_time == 0) { /* only set take off time once, until disarming */
 			// We did take off
 			// 翻译：我们确实起飞了

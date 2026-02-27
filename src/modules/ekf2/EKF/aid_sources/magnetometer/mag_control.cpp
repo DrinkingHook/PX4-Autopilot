@@ -242,7 +242,8 @@ void Ekf::controlMagFusion(const imuSample &imu_sample)
 					_flt_mag_align_start_time = _time_delayed_us;
 					aid_src.time_last_fuse = imu_sample.time_us;
 
-				// wmm_updated && 没有东北辅助或者车辆没有移动
+					// wmm_updated && 没有东北辅助或者车辆没有移动
+
 				} else if (wmm_updated && no_ne_aiding_or_not_moving) {
 					const bool reset_heading = _control_status.flags.mag_hdg || _control_status.flags.mag_3D;
 					resetMagStates(_mag_lpf.getState(), reset_heading);

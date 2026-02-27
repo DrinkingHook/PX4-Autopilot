@@ -326,6 +326,9 @@ FailsafeBase::Action Failsafe::fromOffboardLossActParam(int param_value, uint8_t
 	return action;
 }
 
+/**
+ * @brief 来自高风限制动作参数
+ */
 FailsafeBase::ActionOptions Failsafe::fromHighWindLimitActParam(int param_value)
 {
 	ActionOptions options{};
@@ -486,8 +489,9 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 	updateArmingState(time_us, state.armed, status_flags);
 
 	// Do not enter failsafe while doing a vtol takeoff after the vehicle has started a transition and before it reaches the loiter
-	// 翻译：在飞行器开始过渡后、到达徘徊点之前，进行垂直起降起飞时请勿进入故障保护
 	// altitude. The vtol takeoff navigaton mode will set mission_finished to true as soon as the loiter is established
+	// 翻译：在飞行器开始过渡后且尚未达到悬停高度的情况下进行垂直起降起飞时，请勿进入失控保护模式。
+	//      垂直起降起飞导航模式会在建立悬停高度后立即将 mission_finished 设置为 true。
 	const bool in_forward_flight = (state.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) || state.vtol_in_transition_mode;
 	const bool ignore_any_link_loss_vtol_takeoff_fixedwing = (state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_VTOL_TAKEOFF)
 			&& in_forward_flight && !state.mission_finished;
@@ -503,7 +507,7 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 				     || ignore_any_link_loss_vtol_takeoff_fixedwing || _manual_control_lost_at_arming;
 
 	/**
-	 * @brief 当rc的模式不为关闭手动控制且不忽略rc丢失，那么就运行故障检查。(当关闭了rc手动控制，且丢失rc信号时就不为故障)
+	 * @brief 当rc的模式不为关闭手动控制且不忽略rc丢失，那么就运行手动控制信号丢失故障检查。(当禁用了rc手动控制，但是丢失rc信号时就不判定为故障)
 	 *	  fromNavDllOrRclActParam(_param_nav_rcl_act.get()).causedBy(Cause::ManualControlLoss)属于方法链
 	 *	  fromNavDllOrRclActParam(_param_nav_rcl_act.get())作为前段返回ActionOptions类，而causedBy为ActionOptions类的成员函数
 	 *
@@ -514,6 +518,8 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 	}
 
 	// Ground control station connection loss
+
+	// dll 及 Data link loss(数据链路丢失)
 	const bool dll_loss_ignored_land = state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_LAND
 					   || state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_PRECLAND;
 
@@ -525,7 +531,7 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 	}
 
 	// VTOL transition failure (quadchute)
-	// VTOL 过渡失败（ ？）
+	// 翻译：VTOL 过渡失败（ ？）
 	if (state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION ||
 	    state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER ||
 	    state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_TAKEOFF ||
@@ -538,8 +544,8 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 		CHECK_FAILSAFE(status_flags, mission_failure, Action::RTL);
 
 		// If manual control loss and GCS connection loss are disabled and we lose both command links and the mission finished,
-		// 翻译：如果禁用手动控制丢失和 GCS 连接丢失，并且我们丢失了两个命令链接并且任务完成，
 		// trigger RTL to avoid losing the vehicle
+		// 翻译：如果手动控制失效和地面控制站连接失效，且两个指令链路均丢失，任务完成，则触发返航以避免车辆丢失
 		if ((_param_com_rc_in_mode.get() == int32_t(RcInMode::DisableManualControl)
 		     || isFailsafeIgnored(state.user_intended_mode, _param_com_rcl_except.get()))
 		    && _param_nav_dll_act.get() == int32_t(gcs_connection_loss_failsafe_mode::Disabled)
@@ -549,8 +555,10 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 		}
 	}
 
+	// 来自高风限制动作参数
 	CHECK_FAILSAFE(status_flags, wind_limit_exceeded,
 		       ActionOptions(fromHighWindLimitActParam(_param_com_wind_max_act.get()).cannotBeDeferred()));
+	// 飞行时间超出限制
 	CHECK_FAILSAFE(status_flags, flight_time_limit_exceeded, ActionOptions(Action::RTL).cannotBeDeferred());
 
 	// trigger Low Position Accuracy Failsafe (only in auto mission and auto loiter)
@@ -560,6 +568,7 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 		CHECK_FAILSAFE(status_flags, position_accuracy_low, fromPosLowActParam(_param_com_pos_low_act.get()));
 	}
 
+	// 起飞和返航状态时 导航错误特殊处理-> land 非特殊情况->hold
 	if (state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_TAKEOFF ||
 	    state.user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_RTL) {
 		CHECK_FAILSAFE(status_flags, navigator_failure,
@@ -570,6 +579,7 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 			       ActionOptions(Action::Hold).clearOn(ClearCondition::OnModeChangeOrDisarm));
 	}
 
+	// 违反地理围栏时的动作
 	CHECK_FAILSAFE(status_flags, geofence_breached, fromGfActParam(_param_gf_action.get()).cannotBeDeferred());
 
 	// Battery flight time remaining failsafe
@@ -587,9 +597,9 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 	}
 
 	// Battery low failsafe
-	// 翻译：电池低电压失败保护
 	// If battery was low and arming was allowed through COM_ARM_BAT_MIN, don't failsafe immediately for the current low battery warning state
-	// 翻译：如果电池较低，并且通过COM_ARM_BAT_MIN允许武装，请不要立即失败电池警告状态
+	// 翻译：电池低电压失败保护
+	//      如果电池较低，并且通过COM_ARM_BAT_MIN允许武装，请不要立即失败电池警告状态
 	const bool warning_worse_than_at_arming = (status_flags.battery_warning > _battery_warning_at_arming);
 	const int32_t low_battery_action = warning_worse_than_at_arming ?
 					   _param_com_low_bat_act.get() : (int32_t)LowBatteryAction::Warning;
@@ -644,7 +654,9 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 		CHECK_FAILSAFE(status_flags, fd_critical_failure, Action::Warn);
 	}
 
+	// 螺旋桨不平衡故障检查
 	CHECK_FAILSAFE(status_flags, fd_imbalanced_prop, fromImbalancedPropActParam(_param_com_imb_prop_act.get()));
+	// 电机电调故障检查
 	CHECK_FAILSAFE(status_flags, fd_motor_failure, fromActuatorFailureActParam(_param_com_actuator_failure_act.get()));
 
 

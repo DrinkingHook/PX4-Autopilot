@@ -31,9 +31,9 @@
  *
  ****************************************************************************/
 
- /**
-  * @brief 标准固定翼/传统舵面 公共接口函数
-  */
+/**
+ * @brief 标准固定翼/传统舵面 公共接口函数
+ */
 #include <px4_platform_common/log.h>
 #include <px4_platform_common/events.h>
 
@@ -210,7 +210,7 @@ bool ActuatorEffectivenessControlSurfaces::addActuators(Configuration &configura
 	for (int i = 0; i < _count; i++) {
 		int actuator_idx = configuration.addActuator(ActuatorType::SERVOS, _params[i].torque, Vector3f{});
 
-                // 大于0则表示注册成功
+		// 大于0则表示注册成功
 		if (actuator_idx >= 0) {
 			configuration.trim[configuration.selected_matrix](actuator_idx) = _params[i].trim;
 		}

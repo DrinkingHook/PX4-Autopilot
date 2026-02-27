@@ -39,6 +39,9 @@
 
 using namespace matrix;
 
+/**
+ * @brief 过渡
+ */
 FlightTaskTransition::FlightTaskTransition()
 {
 	param_get(param_find("FW_PSP_OFF"), &_param_fw_psp_off);

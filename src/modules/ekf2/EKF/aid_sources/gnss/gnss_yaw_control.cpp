@@ -47,7 +47,7 @@
 
 void Ekf::controlGnssYawFusion(const gnssSample &gnss_sample)
 {
-    // 如果GNSS未开启 Dual antenna heading（双天线航向） 则退出融合。因为其没有有效的YAW数据
+	// 如果GNSS未开启 Dual antenna heading（双天线航向） 则退出融合。因为其没有有效的YAW数据
 	if (!(_params.ekf2_gps_ctrl & static_cast<int32_t>(GnssCtrl::YAW))
 	    || _control_status.flags.gnss_yaw_fault) {
 

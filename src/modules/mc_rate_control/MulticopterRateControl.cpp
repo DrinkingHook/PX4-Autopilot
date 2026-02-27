@@ -192,7 +192,8 @@ MulticopterRateControl::Run()
 				_vehicle_rates_setpoint_pub.publish(vehicle_rates_setpoint);
 			}
 
-		// 如果没有启用手动设定速率，则直接检查其它模块是否有订阅速率是否有更新
+			// 如果没有启用手动设定速率，则直接检查其它模块是否有订阅速率是否有更新
+
 		} else if (_vehicle_rates_setpoint_sub.update(&vehicle_rates_setpoint)) {
 			if (_vehicle_rates_setpoint_sub.copy(&vehicle_rates_setpoint)) {
 				_rates_setpoint(0) = PX4_ISFINITE(vehicle_rates_setpoint.roll)  ? vehicle_rates_setpoint.roll  : rates(0);

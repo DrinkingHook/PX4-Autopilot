@@ -392,11 +392,15 @@ void FlightTaskAuto::_smoothYaw()
 	}
 }
 
+/**
+ * @brief 评估位置设定点三元组
+ */
 bool FlightTaskAuto::_evaluatePositionSetpointTriplet()
 {
 	const position_setpoint_triplet_s &position_setpoint_triplet = _position_setpoint_triplet_sub.get();
 
 	// Check if triplet is valid. There must be at least a valid altitude.
+	// 翻译：检查三元组是否有效。必须至少有一个有效的高度值。
 	if (!position_setpoint_triplet.current.valid || !PX4_ISFINITE(position_setpoint_triplet.current.alt)) {
 		// Best we can do is to just set all waypoints to current state
 		_triplet_previous = _triplet_current = _triplet_next = _position;
@@ -410,6 +414,7 @@ bool FlightTaskAuto::_evaluatePositionSetpointTriplet()
 	_type = (WaypointType)position_setpoint_triplet.current.type;
 
 	// Prioritize cruise speed from the triplet when it's valid and more recent than the previously commanded cruise speed
+	// 翻译：当三元组中的巡航速度有效且比之前指令的巡航速度更新时，优先使用巡航速度
 	const float cruise_speed_from_triplet = position_setpoint_triplet.current.cruising_speed;
 
 	if (PX4_ISFINITE(cruise_speed_from_triplet)
@@ -458,6 +463,8 @@ bool FlightTaskAuto::_evaluatePositionSetpointTriplet()
 	// Check if anything has changed. We do that by comparing the temporary target
 	// to the internal _triplet_current.
 	// TODO This is a hack and it would be much better if the navigator only sends out a waypoints once they have changed.
+	// 翻译：检查是否有任何更改。我们通过将临时目标与内部的 _triplet_current 进行比较来实现。
+	//      TODO：这是一种权宜之计，如果导航器仅在航点更改后才发送航点，则会更好。
 
 	const bool prev_next_validity_changed = (_prev_was_valid != position_setpoint_triplet.previous.valid)
 						|| (_next_was_valid != position_setpoint_triplet.next.valid);
@@ -612,12 +619,18 @@ bool FlightTaskAuto::_isFinite(const position_setpoint_s &sp)
 	return (PX4_ISFINITE(sp.lat) && PX4_ISFINITE(sp.lon) && PX4_ISFINITE(sp.alt));
 }
 
+/**
+ * @brief 评估全局参考
+ */
 bool FlightTaskAuto::_evaluateGlobalReference()
 {
 	// check if reference has changed and update.
 	// Only update if reference timestamp has changed AND no valid reference altitude
 	// is available.
 	// TODO: this needs to be revisited and needs a more clear implementation
+	// 翻译：检查参考是否已更改并更新。
+	//      仅当参考时间戳已更改且没有有效的参考高度时才更新。
+	//      TODO：需要重新审视并需要更清晰的实现。
 	if (_sub_vehicle_local_position.get().ref_timestamp == _time_stamp_reference && PX4_ISFINITE(_reference_altitude)) {
 		// don't need to update anything
 		return true;
@@ -644,6 +657,7 @@ bool FlightTaskAuto::_evaluateGlobalReference()
 	_reference_position.initReference(ref_lat, ref_lon, _time_stamp_current);
 
 	// check if everything is still finite
+	// 翻译：检查所有参数是否仍然有限
 	return PX4_ISFINITE(_reference_altitude) && PX4_ISFINITE(ref_lat) && PX4_ISFINITE(ref_lon);
 }
 
@@ -694,6 +708,10 @@ void FlightTaskAuto::_ekfResetHandlerHeading(const float delta_psi)
 	_heading_smoothing.reset(wrap_pi(_heading_smoothing.getSmoothedHeading() + delta_psi));
 }
 
+
+/**
+ * @brief 检查紧急制动
+ */
 void FlightTaskAuto::_checkEmergencyBraking()
 {
 	if (!_is_emergency_braking_active) {
@@ -712,6 +730,7 @@ void FlightTaskAuto::_checkEmergencyBraking()
 
 	} else {
 		// deactivate emergency braking when the vehicle has come to a full stop
+		// 翻译：车辆完全停止后停用紧急制动
 		if (_position_smoothing.getCurrentVelocityZ() < 0.01f
 		    && _position_smoothing.getCurrentVelocityZ() > -0.01f
 		    && !_position_smoothing.getCurrentVelocityXY().longerThan(0.01f)) {
@@ -730,6 +749,7 @@ bool FlightTaskAuto::_generateHeadingAlongTraj()
 	    (traj_to_target.longerThan(2.f))) {
 		// Generate heading from velocity vector, only if it is long enough
 		// and if the drone is far enough from the target
+		// 翻译：仅当速度矢量足够长且无人机距离目标足够远时，才根据速度矢量生成航向
 		_compute_heading_from_2D_vector(_yaw_setpoint, vel_sp_xy);
 		res = true;
 	}
@@ -788,7 +808,8 @@ void FlightTaskAuto::_updateTrajConstraints()
 		_constraints.speed_down = math::max(fabsf(_position_smoothing.getCurrentVelocityZ()), _constraints.speed_down);
 		_constraints.speed_up = math::max(fabsf(_position_smoothing.getCurrentVelocityZ()), _constraints.speed_up);
 
-	// 如果未平滑的设定点速度小于0(PX4 使用 NED（北东地）坐标系，Z 轴负方向表示向上。所以 < 0 意味着飞行器想要向上爬升)
+		// 如果未平滑的设定点速度小于0(PX4 使用 NED（北东地）坐标系，Z 轴负方向表示向上。所以 < 0 意味着飞行器想要向上爬升)
+
 	} else if (_unsmoothed_velocity_setpoint(2) < 0.f) { // up
 		// 从参数获取最大的z轴加速度
 		float z_accel_constraint = _param_mpc_acc_up_max.get();
@@ -800,9 +821,9 @@ void FlightTaskAuto::_updateTrajConstraints()
 		// doesn't use z speed constraints, this can go in _prepareTakeoffSetpoints(). Accel limit is to
 		// emulate the motor ramp (also done in the controller) so that the controller can actually track the setpoint.
 		// 翻译：由于位置控制器将这些约束用作硬性限制，因此这些约束被打破。所以，在约束不再导致控制器积分器饱和等问题之前，请将其放在此处。
-		// 一旦控制器不再使用 Z 方向速度约束，则可以将其放入 _prepareTakeoffSetpoints() 函数中。
-		// 加速度限制用于模拟电机斜坡（也在控制器中完成），以便控制器能够实际跟踪设定点。
-		
+		//      一旦控制器不再使用 Z 方向速度约束，则可以将其放入 _prepareTakeoffSetpoints() 函数中。
+		//      加速度限制用于模拟电机斜坡（也在控制器中完成），以便控制器能够实际跟踪设定点。
+
 		// 如果处于起飞阶段并且离地距离小于设定值
 		if (_type == WaypointType::takeoff &&  _dist_to_ground < _param_mpc_land_alt1.get()) {
 			// 强制使用起飞阶段专用参数
@@ -813,7 +834,7 @@ void FlightTaskAuto::_updateTrajConstraints()
 			// Keep the altitude setpoint at the current altitude
 			// to avoid having it going down into the ground during
 			// the initial ramp as the velocity does not start at 0
-			
+
 			// 作用：强制将轨迹平滑器的当前 Z 轴位置设定为飞行器当前的实际高度 (_position(2))。
 			// 原因：在起飞初始阶段，速度不是瞬间建立的。如果轨迹生成器认为应该已经在上升，但电机还在加速（Ramp up），实际位置可能滞后。
 			// 如果不重置，轨迹误差会导致控制器试图先向下调节再向上，或者产生剧烈的积分累积。
@@ -825,7 +846,8 @@ void FlightTaskAuto::_updateTrajConstraints()
 		_position_smoothing.setMaxVelocityZ(z_vel_constraint);
 		_position_smoothing.setMaxAccelerationZ(z_accel_constraint);
 
-	// 大于0 则表示机体下降
+		// 大于0 则表示机体下降
+
 	} else { // down
 		// 设定最大的z轴加速度(来自参数：最大下降加速度)
 		_position_smoothing.setMaxAccelerationZ(_param_mpc_acc_down_max.get());

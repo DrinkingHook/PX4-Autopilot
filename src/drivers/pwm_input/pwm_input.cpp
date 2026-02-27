@@ -115,7 +115,7 @@ PWMIN::timer_init(void)
 	 * rSMCR = SMCR_PWMIN_2;  // 使能从模式控制器
 	 * rCCER = CCER_PWMIN;    // 配置捕获使能和极性
 	 */
-		
+
 	/* disable and configure the timer */
 	rCR1 = 0;
 	rCR2 = 0;

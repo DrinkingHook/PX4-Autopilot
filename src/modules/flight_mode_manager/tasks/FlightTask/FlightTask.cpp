@@ -56,6 +56,9 @@ bool FlightTask::update()
 	return true;
 }
 
+/**
+ * @brief 检查EKF重置计数器
+ */
 void FlightTask::_checkEkfResetCounters()
 {
 	// Check if a reset event has happened
@@ -191,7 +194,7 @@ void FlightTask::_evaluateVehicleLocalPosition()
 	}
 }
 
-/* 
+/*
  * @brief 评估车辆局部位置设定点
  *
  */

@@ -122,9 +122,9 @@ ControlAllocator::parameters_updated()
 	}
 
 	// Allocation method & effectiveness source
-	// 翻译：分配方法及效果来源
 	// Do this first: in case a new method is loaded, it will be configured below
-	// 翻译：首先执行此操作：如果加载了新方法，则将在下方进行配置
+	// 翻译：分配方法及效果来源
+	//      首先执行此操作：如果加载了新方法，则将在下方进行配置
 	bool updated = update_effectiveness_source();
 	// 在函数 update_effectiveness_source() 后必须被调用
 	update_allocation_method(updated); // must be called after update_effectiveness_source()
@@ -166,11 +166,11 @@ ControlAllocator::update_allocation_method(bool force)
 			_control_allocation[i] = nullptr;
 		}
 
-	        /**
-	         * @brief 获取有效矩阵数量
+		/**
+		 * @brief 获取有效矩阵数量
 		 * 几个VTOL机型都是两个，其它的机型默认1个
-	         *
-	         */
+		 *
+		 */
 		_num_control_allocation = _actuator_effectiveness->numMatrices();
 
 		AllocationMethod desired_methods[ActuatorEffectiveness::MAX_NUM_MATRICES];
@@ -362,7 +362,7 @@ ControlAllocator::Run()
 	{
 		vehicle_status_s vehicle_status;
 
-                // 车辆状态更新
+		// 车辆状态更新
 		if (_vehicle_status_sub.update(&vehicle_status)) {
 
 			_armed = vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_ARMED;
@@ -396,7 +396,7 @@ ControlAllocator::Run()
 		}
 	}
 
-        // 检查车辆模式更新
+	// 检查车辆模式更新
 	{
 		// 此变量离开{}便会因为作用域自动销毁
 		vehicle_control_mode_s vehicle_control_mode;
@@ -433,11 +433,11 @@ ControlAllocator::Run()
 	if (do_update) {
 		_last_run = now;
 
-                // 检查电机故障
+		// 检查电机故障
 		check_for_motor_failures();
 
-                // 必要时更新有效性矩阵
-                // 感觉这句代码在这里毫无作用，第一层进入函数会根据reason的值和更新时间判断是否退出，第二层大多数机型都还是会因为传入的reason直接return
+		// 必要时更新有效性矩阵
+		// 感觉这句代码在这里毫无作用，第一层进入函数会根据reason的值和更新时间判断是否退出，第二层大多数机型都还是会因为传入的reason直接return
 		update_effectiveness_matrix_if_needed(EffectivenessUpdateReason::NO_EXTERNAL_UPDATE);
 
 		// Set control setpoint vector(s)
@@ -483,7 +483,7 @@ ControlAllocator::Run()
 				_control_allocation[i]->applySlewRateLimit(dt);
 			}
 
-                        // 对传动机构限幅
+			// 对传动机构限幅
 			_control_allocation[i]->clipActuatorSetpoint();
 		}
 	}
@@ -521,11 +521,11 @@ ControlAllocator::update_effectiveness_matrix_if_needed(EffectivenessUpdateReaso
 		return;
 	}
 
-        // 获取控制效果矩阵，若reason == EffectivenessUpdateReason::NO_EXTERNAL_UPDATE那么返回false
+	// 获取控制效果矩阵，若reason == EffectivenessUpdateReason::NO_EXTERNAL_UPDATE那么返回false
 	if (_actuator_effectiveness->getEffectivenessMatrix(config, reason)) {
 		_last_effectiveness_update = hrt_absolute_time();
 
-                // 拷贝用于记录每个执行器都是处于哪个效能矩阵上的数据到_control_allocation_selection_indexes
+		// 拷贝用于记录每个执行器都是处于哪个效能矩阵上的数据到_control_allocation_selection_indexes
 		memcpy(_control_allocation_selection_indexes, config.matrix_selection_indexes,
 		       sizeof(_control_allocation_selection_indexes));
 
@@ -552,7 +552,7 @@ ControlAllocator::update_effectiveness_matrix_if_needed(EffectivenessUpdateReaso
 					break;
 				}
 
-                                // 判断是1号矩阵还是2号矩阵
+				// 判断是1号矩阵还是2号矩阵
 				int selected_matrix = _control_allocation_selection_indexes[actuator_idx];
 
 				if ((ActuatorType)actuator_type == ActuatorType::MOTORS) {
@@ -627,7 +627,7 @@ ControlAllocator::update_effectiveness_matrix_if_needed(EffectivenessUpdateReaso
 			// That ensures that the algorithm doesn't try to control axes with only marginal control authority,
 			// which in turn would degrade the control of the main axes that actually should and can be controlled.
 			// 翻译：如果某一行的权限较弱，则将该行的所有元素设置为 0
-			// 	这样就能确保算法不会尝试控制仅具有边缘控制权限的轴
+			//      这样就能确保算法不会尝试控制仅具有边缘控制权限的轴
 			//      这反过来又会降低对实际应该控制和可以控制的主轴的控制
 
 			ActuatorEffectiveness::EffectivenessMatrix &matrix = config.effectiveness_matrices[i];
@@ -735,19 +735,23 @@ ControlAllocator::get_ice_shedding_output(hrt_abstime now, bool any_stopped_moto
 	// If any stopped motor has failed, the feature will create much more
 	// torque than in the nominal case, and becomes pointless anyway as we
 	// cannot go back to multicopter
+	// 翻译：如果任何停止的电机发生故障，该功能将产生比正常情况下大得多的扭矩，并且由于我们无法返回多旋翼飞行器，因此该功能将变得毫无意义。
 	const bool apply_shedding = _is_vtol && in_forward_flight && !any_stopped_motor_failed;
 
 	if (feature_disabled_by_param || !apply_shedding) {
 		// Bypass slew limit and immediately set zero, to not
 		// interfere with backtransition in any way
+		// 翻译：绕过回转限制并立即将其设置为零，以免以任何方式干扰反向过渡
 		_slew_limited_ice_shedding_output.setForcedValue(0.0f);
 
 	} else {
 		// Raw square wave output
+		// 翻译：原始方波输出
 		const float elapsed_in_period = fmodf(static_cast<float>(now) / 1_s, period_sec);
 		const float raw_ice_shedding_output = elapsed_in_period < ICE_SHEDDING_ON_SEC ? ICE_SHEDDING_OUTPUT : 0.0f;
 
 		// Apply slew rate limit
+		// 翻译：应用回转速率限制
 		const float dt = static_cast<float>(now - _last_ice_shedding_update) / 1_s;
 		_slew_limited_ice_shedding_output.update(raw_ice_shedding_output, dt);
 	}

@@ -215,6 +215,7 @@ void FailureDetector::updateImbalancedPropStatus()
 	const bool updated = _vehicle_imu_status_sub.updated(); // save before doing a copy
 
 	// Find the imu_status instance corresponding to the selected accelerometer
+	// 翻译：找到与所选加速度计对应的 imu_status 实例
 	vehicle_imu_status_s imu_status{};
 	_vehicle_imu_status_sub.copy(&imu_status);
 
@@ -249,6 +250,7 @@ void FailureDetector::updateImbalancedPropStatus()
 				const float std_z = sqrtf(math::max(imu_status.var_accel[2], 0.f));
 
 				// Note: the metric is done using standard deviations instead of variances to be linear
+				// 翻译:注意：为了保持线性关系，该指标使用标准差而非方差
 				const float metric = (std_x + std_y) / 2.f - std_z;
 				const float metric_lpf = _imbalanced_prop_lpf.update(metric);
 
@@ -264,13 +266,15 @@ void FailureDetector::updateMotorStatus(const vehicle_status_s &vehicle_status, 
 	// 1. Telemetry times out -> communication or power lost on that ESC
 	// 2. Too low current draw compared to commanded thrust
 	// Overvoltage, overcurrent do not have checks yet esc_report.failures are handled separately
+	// 翻译：1. 遥测超时 -> 该电调通信中断或断电
+	// 	2. 电流消耗过低，与指令推力不符
+	// 	过压和过流问题目前尚未进行检查，esc_report.failures 单独处理。
 
 	const hrt_abstime now = hrt_absolute_time();
 
 	// Only check while armed
 
 	/**
-	 * @brief 翻译
 	 * 需要检查的内容：
 	 * 1. 电调遥测数据完全消失 -> 电调损坏或该电调断电
 	 * 2. 电调故障，例如过压、过流等。但例如，DShot 驱动程序没有填充 'esc_report.failures' 字段
@@ -285,8 +289,10 @@ void FailureDetector::updateMotorStatus(const vehicle_status_s &vehicle_status, 
 		_actuator_motors_sub.copy(&actuator_motors);
 
 		// Check individual ESC reports
+		// 翻译：检查各个电调的报告
 		for (uint8_t i = 0; i < esc_status_s::CONNECTED_ESC_MAX; ++i) {
 			// Map the esc status index to the actuator function index
+			// 翻译：将电调状态索引映射到执行器功能索引
 			const uint8_t actuator_function_index =
 				esc_status.esc[i].actuator_function - actuator_motors_s::ACTUATOR_FUNCTION_MOTOR1;
 
@@ -298,6 +304,7 @@ void FailureDetector::updateMotorStatus(const vehicle_status_s &vehicle_status, 
 			const float current = esc_status.esc[i].esc_current;
 
 			// First wait for ESC telemetry reporting non-zero current. Before that happens, don't check it.
+			// 翻译：首先等待电调遥测数据报告电流不为零。在此之前，请勿检查。
 			if (current > FLT_EPSILON) {
 				_esc_has_reported_current[i] = true;
 			}
@@ -314,6 +321,7 @@ void FailureDetector::updateMotorStatus(const vehicle_status_s &vehicle_status, 
 
 			if (PX4_ISFINITE(actuator_motors.control[actuator_function_index])) {
 				// Normalized motor thrust commands before thrust model factor is applied, NAN means motor is turned off -> 0 thrust
+				// 翻译：在应用推力模型因子之前，已对电机推力指令进行归一化处理。NAN 表示电机已关闭，推力为 0。
 				thrust = fabsf(actuator_motors.control[actuator_function_index]);
 			}
 
@@ -326,11 +334,13 @@ void FailureDetector::updateMotorStatus(const vehicle_status_s &vehicle_status, 
 
 			if (!_esc_undercurrent_hysteresis[i].get_state()) {
 				// Do not clear mid operation because a reaction could be to stop the motor and that would be conidered healthy again
+				// 翻译：不要在运行过程中清除数据，因为可能会导致电机停止运转，而这也会被认为是正常的。
 				_esc_undercurrent_hysteresis[i].set_state_and_update(thrust_above_threshold && current_too_low && !timeout, now);
 			}
 
 			if (!_esc_overcurrent_hysteresis[i].get_state()) {
 				// Do not clear mid operation because a reaction could be to stop the motor and that would be conidered healthy again
+				// 翻译：不要在运行过程中清除数据，因为可能会导致电机停止运转，而这也会被认为是正常的。
 				_esc_overcurrent_hysteresis[i].set_state_and_update(current_too_high && !timeout, now);
 			}
 

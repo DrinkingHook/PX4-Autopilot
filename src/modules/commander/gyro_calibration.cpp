@@ -175,6 +175,7 @@ int do_gyro_calibration(orb_advert_t *mavlink_log_pub)
 	worker_data.mavlink_log_pub = mavlink_log_pub;
 
 	// We should not try to subscribe if the topic doesn't actually exist and can be counted.
+	// 翻译：如果主题实际上并不存在且无法计数，我们就不应该尝试订阅。
 	const unsigned orb_gyro_count = orb_group_count(ORB_ID(sensor_gyro));
 
 	// Warn that we will not calibrate more than MAX_GYROS gyroscopes
@@ -200,6 +201,7 @@ int do_gyro_calibration(orb_advert_t *mavlink_log_pub)
 
 	do {
 		// Calibrate gyro and ensure user didn't move
+		// 翻译：校准陀螺仪并确保用户未移动
 		calibrate_return cal_return = gyro_calibration_worker(worker_data);
 
 		if (cal_return == calibrate_return_cancelled) {

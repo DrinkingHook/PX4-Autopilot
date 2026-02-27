@@ -87,9 +87,9 @@ public:
 	 * @return true if setpoint has updated correctly
 	 */
 	/**
-	* 更新并返回起飞期间的速度约束斜坡值。 
-	* 通过在起飞期间增加 _takeoff_ramp_vz 并使用它来限制最大爬升率，可以实现平稳的起飞行为。 
-	* 在地面返回零，在飞行中返回 takeoff_desired_vz。 
+	* 更新并返回起飞期间的速度约束斜坡值。
+	* 通过在起飞期间增加 _takeoff_ramp_vz 并使用它来限制最大爬升率，可以实现平稳的起飞行为。
+	* 在地面返回零，在飞行中返回 takeoff_desired_vz。
 	* @param dt 自上次调用/循环迭代以来的时间（以秒为单位）
 	* @param takeoff_desired_vz 速度斜坡的最终值
 	* @return true 如果设定点已正确更新

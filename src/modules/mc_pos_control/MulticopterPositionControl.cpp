@@ -715,7 +715,8 @@ trajectory_setpoint_s MulticopterPositionControl::generateFailsafeSetpoint(const
 			PX4_WARN("Failsafe: stop and wait");
 		}
 
-	// 水平速度本身都是 NaN/inf → 完全不知道自己在哪飞 → 已经刹不住了
+		// 水平速度本身都是 NaN/inf → 完全不知道自己在哪飞 → 已经刹不住了
+
 	} else {
 		// descend with land speed since we can't stop
 		// 翻译：以陆地速度下降，因为我们无法停下来
@@ -735,7 +736,8 @@ trajectory_setpoint_s MulticopterPositionControl::generateFailsafeSetpoint(const
 			failsafe_setpoint.velocity[2] = 0.f;
 		}
 
-	// 为无效值不知道往哪里飞，则将其设置为较小的向上加速度
+		// 为无效值不知道往哪里飞，则将其设置为较小的向上加速度
+
 	} else {
 		// emergency descend with a bit below hover thrust
 		// 翻译：紧急下降，略低于悬停推力

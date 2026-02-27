@@ -151,13 +151,13 @@ float ActuatorEffectivenessHelicopterCoaxial::throttleSpoolupProgress()
 {
 	vehicle_status_s vehicle_status;
 
-        // 获取最新的车辆状态
+	// 获取最新的车辆状态
 	if (_vehicle_status_sub.update(&vehicle_status)) {
 		_armed = vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_ARMED;
 		_armed_time = vehicle_status.armed_time;
 	}
 
-        // 计算从解锁到现在的时间
+	// 计算从解锁到现在的时间
 	const float time_since_arming = (hrt_absolute_time() - _armed_time) / 1e6f;
 	// 计算油门渐起进度
 	const float spoolup_progress = time_since_arming / _geometry.spoolup_time;
@@ -167,7 +167,7 @@ float ActuatorEffectivenessHelicopterCoaxial::throttleSpoolupProgress()
 		return spoolup_progress;
 	}
 
-        // 否则返回1，表示油门已经完全渐起
+	// 否则返回1，表示油门已经完全渐起
 	return 1.f;
 }
 
