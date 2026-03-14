@@ -74,6 +74,7 @@ bool VehicleAngularVelocity::Start()
 	ParametersUpdate(true);
 
 	// sensor_selection needed to change the active sensor if the primary stops updating
+	// 翻译：如果主传感器停止更新，则需要使用 sensor_selection 来切换当前使用的传感器
 	if (!_sensor_selection_sub.registerCallback()) {
 		PX4_ERR("callback registration failed");
 		return false;
@@ -226,6 +227,12 @@ void VehicleAngularVelocity::SensorBiasUpdate(bool force)
 	}
 }
 
+/**
+ * @brief 传感器选择更新
+ *
+ * sensor_gyro_fifo：多个连续采样点（FIFO 缓冲区一次读出的批量数据）带 FIFO 缓冲的芯片才高效支持
+ * sensor_gyro：个陀螺仪采样点（最新的或平均/滤波后的值）几乎所有 IMU 驱动都支持
+ */
 bool VehicleAngularVelocity::SensorSelectionUpdate(const hrt_abstime &time_now_us, bool force)
 {
 	if (_sensor_selection_sub.updated() || (_selected_sensor_device_id == 0) || force) {
@@ -237,6 +244,7 @@ bool VehicleAngularVelocity::SensorSelectionUpdate(const hrt_abstime &time_now_u
 		uint32_t device_id_first_valid_imu = 0;
 
 		// use vehicle_imu_status to do basic sensor selection validation
+		// 翻译：使用 vehicle_imu_status 进行基本的传感器选择验证。
 		for (uint8_t i = 0; i < MAX_SENSOR_COUNT; i++) {
 			uORB::SubscriptionData<vehicle_imu_status_s> imu_status{ORB_ID(vehicle_imu_status), i};
 
@@ -250,6 +258,7 @@ bool VehicleAngularVelocity::SensorSelectionUpdate(const hrt_abstime &time_now_u
 				}
 
 				// record first valid IMU as a backup option
+				// 翻译：将第一个有效的 IMU 记录为备用选项
 				if (device_id_first_valid_imu == 0) {
 					device_id_first_valid_imu = imu_status.get().gyro_device_id;
 				}
@@ -266,6 +275,7 @@ bool VehicleAngularVelocity::SensorSelectionUpdate(const hrt_abstime &time_now_u
 			const bool device_id_valid = (device_id != 0);
 
 			// see if the selected sensor publishes sensor_gyro_fifo
+			// 翻译：检查所选传感器是否发布 sensor_gyro_fifo 数据
 			for (uint8_t i = 0; i < MAX_SENSOR_COUNT; i++) {
 				uORB::SubscriptionData<sensor_gyro_fifo_s> sensor_gyro_fifo_sub{ORB_ID(sensor_gyro_fifo), i};
 
@@ -275,6 +285,7 @@ bool VehicleAngularVelocity::SensorSelectionUpdate(const hrt_abstime &time_now_u
 				    && (time_now_us < sensor_gyro_fifo_sub.get().timestamp + 1_s)) {
 
 					// if no gyro was selected use the first valid sensor_gyro_fifo
+					// 翻译：如果没有选择陀螺仪，则使用第一个有效的 sensor_gyro_fifo
 					if (!device_id_valid) {
 						device_id = sensor_gyro_fifo_sub.get().device_id;
 						PX4_DEBUG("no gyro selected, using sensor_gyro_fifo:%" PRIu8 " %" PRIu32, i, sensor_gyro_fifo_sub.get().device_id);
@@ -317,6 +328,7 @@ bool VehicleAngularVelocity::SensorSelectionUpdate(const hrt_abstime &time_now_u
 				    && (time_now_us < sensor_gyro_sub.get().timestamp + 1_s)) {
 
 					// if no gyro was selected use the first valid sensor_gyro
+					// 翻译：如果没有选择陀螺仪，则使用第一个有效的 sensor_gyro 数据
 					if (!device_id_valid) {
 						device_id = sensor_gyro_sub.get().device_id;
 						PX4_DEBUG("no gyro selected, using sensor_gyro:%" PRIu8 " %" PRIu32, i, sensor_gyro_sub.get().device_id);
@@ -566,6 +578,9 @@ void VehicleAngularVelocity::DisableDynamicNotchFFT()
 #endif // !CONSTRAINED_FLASH
 }
 
+/**
+ * @brief 更新动态陷波 ESC RPM
+ */
 void VehicleAngularVelocity::UpdateDynamicNotchEscRpm(const hrt_abstime &time_now_us, bool force)
 {
 #if !defined(CONSTRAINED_FLASH)
@@ -579,6 +594,7 @@ void VehicleAngularVelocity::UpdateDynamicNotchEscRpm(const hrt_abstime &time_no
 
 		if (_esc_status_sub.copy(&esc_status) && (time_now_us < esc_status.timestamp + DYNAMIC_NOTCH_FITLER_TIMEOUT)) {
 
+			// IMU陀螺仪ESC陷波器带宽
 			const float bandwidth_hz = _param_imu_gyro_dnf_bw.get();
 			const float freq_min = math::max(_param_imu_gyro_dnf_min.get(), bandwidth_hz);
 
@@ -588,6 +604,7 @@ void VehicleAngularVelocity::UpdateDynamicNotchEscRpm(const hrt_abstime &time_no
 				const bool esc_connected = (esc_status.esc_online_flags & (1 << esc)) || (esc_report.esc_rpm != 0);
 
 				// only update if ESC RPM range seems valid
+				// 翻译：仅当 ESC 转速范围有效时才更新
 				if (esc_connected && (time_now_us < esc_report.timestamp + DYNAMIC_NOTCH_FITLER_TIMEOUT)) {
 
 					const float esc_hz = abs(esc_report.esc_rpm) / 60.f;
@@ -597,9 +614,11 @@ void VehicleAngularVelocity::UpdateDynamicNotchEscRpm(const hrt_abstime &time_no
 					for (int harmonic = 0; harmonic < _esc_rpm_harmonics; harmonic++) {
 						// as RPM drops leave the notch filter "parked" at the minimum rather than disabling
 						//  keep harmonics separated by half the notch filter bandwidth
+						// 翻译：当 RPM 下降时，将陷波滤波器保持在最小值“驻留”状态，而不是完全禁用。保持谐波之间的间隔为陷波滤波器带宽的一半。
 						const float frequency_hz = math::max(esc_hz * (harmonic + 1), freq_min + (harmonic * 0.5f * bandwidth_hz));
 
 						// update filter parameters if frequency changed or forced
+						// 翻译：如果频率发生变化或被强制改变，则更新滤波器参数
 						for (int axis = 0; axis < 3; axis++) {
 							auto &nf = _dynamic_notch_filter_esc_rpm[harmonic][axis][esc];
 
@@ -608,6 +627,7 @@ void VehicleAngularVelocity::UpdateDynamicNotchEscRpm(const hrt_abstime &time_no
 							const bool notch_freq_changed = (notch_freq_delta > 0.1f);
 
 							// only allow initializing one new filter per axis each iteration
+							// 翻译：每次迭代仅允许每个轴初始化一个新滤波器
 							const bool allow_update = !axis_init[axis] || (nf.initialized() && notch_freq_delta < nf.getBandwidth());
 
 							if ((force_update || notch_freq_changed) && allow_update) {
@@ -630,11 +650,13 @@ void VehicleAngularVelocity::UpdateDynamicNotchEscRpm(const hrt_abstime &time_no
 		}
 
 		// check notch filter timeout
+		// 翻译：检查动态滤波是监察室
 		for (size_t esc = 0; esc < MAX_NUM_ESCS; esc++) {
 			if (_esc_available[esc] && (time_now_us > _last_esc_rpm_notch_update[esc] + DYNAMIC_NOTCH_FITLER_TIMEOUT)) {
 				bool all_disabled = true;
 
 				// disable notch filters from highest frequency to lowest
+				// 翻译：从最高频率到最低频率依次禁用陷波滤波器。
 				for (int harmonic = _esc_rpm_harmonics - 1; harmonic >= 0; harmonic--) {
 					for (int axis = 0; axis < 3; axis++) {
 						auto &nf = _dynamic_notch_filter_esc_rpm[harmonic][axis][esc];
@@ -722,6 +744,9 @@ void VehicleAngularVelocity::UpdateDynamicNotchFFT(const hrt_abstime &time_now_u
 #endif // !CONSTRAINED_FLASH
 }
 
+/**
+ * @brief 滤波器角速度
+ */
 float VehicleAngularVelocity::FilterAngularVelocity(int axis, float data[], int N)
 {
 #if !defined(CONSTRAINED_FLASH)
@@ -866,6 +891,7 @@ void VehicleAngularVelocity::Run()
 
 	} else {
 		// process all outstanding messages
+		// 翻译：处理所有未完成的消息
 		int sensor_sub_updates = 0;
 		sensor_gyro_s sensor_data;
 

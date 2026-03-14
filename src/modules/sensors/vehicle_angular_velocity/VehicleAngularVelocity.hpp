@@ -181,6 +181,19 @@ private:
 	perf_counter_t _filter_reset_perf{perf_alloc(PC_COUNT, MODULE_NAME": gyro filter reset")};
 	perf_counter_t _selection_changed_perf{perf_alloc(PC_COUNT, MODULE_NAME": gyro selection changed")};
 
+	/**
+	 * @param _param_imu_gyro_dnf_en    IMU陀螺动陷波滤波(RPM or FFT)
+	 * @param _param_imu_gyro_dnf_hmc   IMU陀螺动陷波滤波器谐波
+	 * @param _param_imu_gyro_dnf_bw    IMU陀螺仪ESC陷波器带宽
+	 * @param _param_imu_gyro_dnf_min   IMU陀螺动陷波滤波器最低频率
+	 * @param _param_imu_gyro_cutoff    陀螺仪的低通滤波器截止频率
+	 * @param _param_imu_gyro_nf0_frq   陀螺仪的陷波滤波频率
+	 * @param _param_imu_gyro_nf0_bw    为陀螺仪加陷波滤波带宽
+	 * @param _param_imu_gyro_nf1_frq   陀螺仪的陷波滤波器2频率
+	 * @param _param_imu_gyro_nf1_bw    陀螺仪用陷波滤波器2带宽
+	 * @param _param_imu_gyro_ratemax   陀螺仪控制数据最大发布率（内环速率）
+	 * @param _param_imu_dgyro_cutoff   角加速度截止频率（D项滤波器）
+	 */
 	DEFINE_PARAMETERS(
 #if !defined(CONSTRAINED_FLASH)
 		(ParamInt<px4::params::IMU_GYRO_DNF_EN>) _param_imu_gyro_dnf_en,

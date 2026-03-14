@@ -166,11 +166,7 @@ ControlAllocator::update_allocation_method(bool force)
 			_control_allocation[i] = nullptr;
 		}
 
-		/**
-		 * @brief 获取有效矩阵数量
-		 * 几个VTOL机型都是两个，其它的机型默认1个
-		 *
-		 */
+		// 获取有效矩阵数量  VTOL机型都是两个，其它的机型默认1个
 		_num_control_allocation = _actuator_effectiveness->numMatrices();
 
 		AllocationMethod desired_methods[ActuatorEffectiveness::MAX_NUM_MATRICES];
@@ -735,7 +731,7 @@ ControlAllocator::get_ice_shedding_output(hrt_abstime now, bool any_stopped_moto
 	// If any stopped motor has failed, the feature will create much more
 	// torque than in the nominal case, and becomes pointless anyway as we
 	// cannot go back to multicopter
-	// 翻译：如果任何停止的电机发生故障，该功能将产生比正常情况下大得多的扭矩，并且由于我们无法返回多旋翼飞行器，因此该功能将变得毫无意义。
+	// 翻译：如果任何停止的电机发生故障，该功能将产生比正常情况下大得多的扭矩，并且由于我们无法返回多旋翼飞行器，因此该功能将变得毫无意义
 	const bool apply_shedding = _is_vtol && in_forward_flight && !any_stopped_motor_failed;
 
 	if (feature_disabled_by_param || !apply_shedding) {

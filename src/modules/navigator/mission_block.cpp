@@ -61,16 +61,20 @@ MissionBlock::MissionBlock(Navigator *navigator, uint8_t navigator_state_id) :
 
 }
 
-// 是否到达或完成任务项目
+/**
+ * @brief 是否到达或完成任务项目
+ */
 bool
 MissionBlock::is_mission_item_reached_or_completed()
 {
 	const hrt_abstime now = hrt_absolute_time();
 
 	// Handle indefinite waypoints and action commands
+	// 翻译:处理不确定的航点和操作命令
 	switch (_mission_item.nav_cmd) {
 
 	// Action Commands that doesn't have timeout completes instantaneously
+	// 翻译：没有超时的操作命令将立即完成
 	case NAV_CMD_DO_SET_ACTUATOR:
 	case NAV_CMD_DO_LAND_START:
 	case NAV_CMD_DO_TRIGGER_CONTROL:

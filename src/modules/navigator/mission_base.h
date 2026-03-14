@@ -329,6 +329,7 @@ protected:
 	bool _mission_checked{false};				/**< Flag indicating if the mission has been checked by the mission validator*/
 	bool _system_disarmed_while_inactive{false};		/**< Flag indicating if the system has been disarmed while mission is inactive*/
 	mission_s _mission;					/**< Currently active mission*/
+	// 任务开始时飞行器将爬升到的海拔高度（以海平面为基准）
 	float _mission_init_climb_altitude_amsl{NAN}; 		/**< altitude AMSL the vehicle will climb to when mission starts */
 	int _inactivation_index{-1}; // index of mission item at which the mission was paused. Used to resume survey missions at previous waypoint to not lose images.
 	int _mission_activation_index{-1};					/**< Index of the mission item that will bring the vehicle back to a mission waypoint */
@@ -474,6 +475,7 @@ private:
 
 	bool canRunMissionFeasibility();
 
+	// 用于存储返航点更改检测的先前值的变量。
 	uint32_t _home_update_counter = 0; /**< Variable to store the previous value for home change detection.*/
 
 	// 翻译：如果为 "true"，则车辆的航向需要与下一个航点的航向对齐。用于为航向对齐创建新任务项目。

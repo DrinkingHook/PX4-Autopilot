@@ -193,10 +193,10 @@ const Vector3f PositionSmoothing::_generateVelocitySetpoint(const Vector3f &posi
 	// If a velocity is specified, that is used as a feedforward to track the position setpoint
 	// (ie. it assumes the position setpoint is moving at the specified velocity)
 	// If the position setpoints are set to NAN, the values in the velocity setpoints are used as velocity targets: nothing to do here.
-	// 翻译：接口：有效的位置设定点使用保守运动约束生成速度目标。
-	// 如果指定了速度，则将其用作前馈来跟踪位置设定点。
-	// （即，它假设位置设定点以指定的速度移动）
-	// 如果位置设定点设置为 NAN，则速度设定点中的值用作速度目标：此处无需执行任何操作。
+	// 翻译：
+	// 接口：有效的位置设定点使用保守运动约束生成速度目标。
+	//      如果指定了速度，则将其用作前馈来跟踪位置设定点。（ie. 它假设位置设定点以指定的速度移动）
+	//      如果位置设定点设置为 NAN，则速度设定点中的值用作速度目标：此处无需执行任何操作。
 	const Vector3f &target = waypoints[1];
 	const bool xy_target_valid = Vector2f(target).isAllFinite();
 	const bool z_target_valid = PX4_ISFINITE(target(2));
@@ -318,7 +318,7 @@ void PositionSmoothing::_generateTrajectory(
 	 */
 	/**
 	 * 翻译：减慢轨迹速度，通过减少积分时间来减少位置误差。
-	 * 	这只在无人机在轨迹后面时才执行
+	 * 	    这只在无人机在轨迹后面时才执行
 	 */
 	Vector2f position_trajectory_xy(_trajectory[0].getCurrentPosition(), _trajectory[1].getCurrentPosition());
 	Vector2f position_xy(position);

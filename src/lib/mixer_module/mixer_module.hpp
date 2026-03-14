@@ -137,6 +137,7 @@ public:
 	/**
 	 * Check if a function is configured, i.e. not set to Disabled and initialized
 	 */
+	// 翻译：检查函数是否已配置，即是否未设置为 Disabled 且已初始化
 	bool isFunctionSet(int index) const { return _functions[index] != nullptr; }
 
 	OutputFunction outputFunction(int index) const { return _function_assignment[index]; }

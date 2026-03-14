@@ -40,23 +40,21 @@ using namespace time_literals;
 
 
 /**
- * @brief
- FunctionProvider提供了两个构造函数：
-
-   FunctionProvider(OutputFunction min_func_, OutputFunction max_func_, Constructor constructor_)
-       : min_func(min_func_), max_func(max_func_), constructor(constructor_) {}
-
-   - 接受三个参数：`min_func_`（最小功能标识）、`max_func_`（最大功能标识）、`constructor_`（构造函数指针）。
-   - 使用**初始化列表**（`: min_func(min_func_)` 等）将参数值赋值给成员变量。
-   - 这个构造函数适用于定义一个功能范围（从 `min_func_` 到 `max_func_`）以及对应的构造函数。
-
-   FunctionProvider(OutputFunction func, Constructor constructor_)
-       : min_func(func), max_func(func), constructor(constructor_) {}
-
-   - 接受两个参数：`func`（单一的功能标识）和 `constructor_`（构造函数指针）。
-   - 将 `min_func` 和 `max_func` 都设置为同一个 `func`，表示这个功能没有范围（最小值和最大值相同）。
-   - 同样使用初始化列表赋值。
-
+ * FunctionProvider提供了两个构造函数：
+ *
+ *  FunctionProvider(OutputFunction min_func_, OutputFunction max_func_, Constructor constructor_)
+ *      : min_func(min_func_), max_func(max_func_), constructor(constructor_) {}
+ *
+ *  - 接受三个参数：`min_func_`（最小功能标识）、`max_func_`（最大功能标识）、`constructor_`（构造函数指针）。
+ *  - 使用**初始化列表**（`: min_func(min_func_)` 等）将参数值赋值给成员变量。
+ *  - 这个构造函数适用于定义一个功能范围（从 `min_func_` 到 `max_func_`）以及对应的构造函数。
+ *
+ *  FunctionProvider(OutputFunction func, Constructor constructor_)
+ *      : min_func(func), max_func(func), constructor(constructor_) {}
+ *
+ *  - 接受两个参数：`func`（单一的功能标识）和 `constructor_`（构造函数指针）。
+ *  - 将 `min_func` 和 `max_func` 都设置为同一个 `func`，表示这个功能没有范围（最小值和最大值相同）。
+ *  - 同样使用初始化列表赋值。
  *
  */
 struct FunctionProvider {
@@ -324,12 +322,13 @@ bool MixingOutput::updateSubscriptions(bool allow_wq_switch)
 				all_disabled = false;
 				int found_index = -1;
 
-				/* p=0=min_func; p=1=max_func; p=2=Motor1~MotorMax ; p=3=Servo1~ServoMax
-						 * 假设我的配置为Motor1, Motor2, Servo1
-						 * 当第一次运行时 i = 0,p = 2 时会创建 Motor1 的 provider 实例，并记录 provider_indexes[0] = 2
-						 * 当第二次运行时 i = 1,p = 2 时会复用
-						 * 当第三次运行时 i = 2,p = 3 时会创建 Servo1 的 provider 实例，并记录 provider_indexes[1] = 3
-						 */
+				/**
+				 * p=0=min_func; p=1=max_func; p=2=Motor1~MotorMax ; p=3=Servo1~ServoMax
+				 * 假设我的配置为Motor1, Motor2, Servo1
+				 * 当第一次运行时 i = 0,p = 2 时会创建 Motor1 的 provider 实例，并记录 provider_indexes[0] = 2
+				 * 当第二次运行时 i = 1,p = 2 时会复用
+				 * 当第三次运行时 i = 2,p = 3 时会创建 Servo1 的 provider 实例，并记录 provider_indexes[1] = 3
+				 */
 				for (int existing = 0; existing < next_provider; ++existing) {
 					if (provider_indexes[existing] == p) {
 						found_index = existing;
@@ -337,8 +336,9 @@ bool MixingOutput::updateSubscriptions(bool allow_wq_switch)
 					}
 				}
 
-				/* 如果找到则复用已分配的 provider 实例
-						 * 若没有找到则创建一个新的 provider 实例
+				/**
+				 * 如果找到则复用已分配的 provider 实例
+				 * 若没有找到则创建一个新的 provider 实例
 				 */
 				if (found_index >= 0) {
 					_functions[i] = _function_allocated[found_index];
@@ -346,9 +346,10 @@ bool MixingOutput::updateSubscriptions(bool allow_wq_switch)
 				} else {
 					_function_allocated[next_provider] = all_function_providers[p].constructor(context);
 
-					/* 判断是否构建成功
-							 * 若成功则分配给当前通道，并记录 provider 索引
-							 */
+					/**
+					 * 判断是否构建成功
+					 * 若成功则分配给当前通道，并记录 provider 索引
+					 */
 					if (_function_allocated[next_provider]) {
 						_functions[i] = _function_allocated[next_provider];
 						provider_indexes[next_provider++] = p;

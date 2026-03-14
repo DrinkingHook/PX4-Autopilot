@@ -574,6 +574,7 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 
 	// First we handle legacy support requests which were used before we had
 	// the generic MAV_CMD_REQUEST_MESSAGE.
+	// 翻译：首先，我们处理在通用 MAV_CMD_REQUEST_MESSAGE 出现之前使用的旧版支持请求
 	if (cmd_mavlink.command == MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES) {
 		result = handle_request_message_command(MAVLINK_MSG_ID_AUTOPILOT_VERSION);
 

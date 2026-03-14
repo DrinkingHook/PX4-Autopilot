@@ -99,9 +99,9 @@ void ManualVelocitySmoothingZ::checkPositionLock(float velocity_target)
 	 * is used to set current velocity of the trajectory.
 	 */
 	/**
-	 * 翻译：在位置锁定 -> 位置解锁转换期间，我们必须确保速度设定点是连续的。我们知道位置环的输出（速度设定点的一部分）
-	 * 突然变为零，只有反馈（由该飞行任务生成）将保持不变。
-	 * 因此，速度控制器的上一个输入用于设置轨迹的当前速度。
+	 * 翻译：在位置锁定到位置解锁的转换过程中，我们必须确保速度设定值保持连续。
+	 *      我们知道，位置环路的输出（速度设定值的一部分）会突然变为零，只剩下前馈（由本次飞行任务产生）。
+	 *      因此，速度控制器的先前输入值被用来设定轨迹的当前速度。
 	 */
 	if (fabsf(_state.v) < 0.1f &&
 	    fabsf(_state.a) < .2f &&

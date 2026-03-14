@@ -193,7 +193,7 @@ int VelocitySmoothing::computeDirection() const
 {
 	// Compute the velocity at which the trajectory will be
 	// when the acceleration will be zero
-	// 翻译：
+	// 翻译：计算当加速度为零时轨迹的速度
 	float vel_zero_acc = computeVelAtZeroAcc();
 
 	/* Depending of the direction, start accelerating positively or negatively */

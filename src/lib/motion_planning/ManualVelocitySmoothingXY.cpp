@@ -62,7 +62,7 @@ void ManualVelocitySmoothingXY::update(float dt, const Vector2f &velocity_target
 	// Lock or unlock position
 	// Has to be done before _updateTrajDurations()
 	// 翻译：更新位置锁定状态
-	// 	必须在 `_updateTrajDurations()` 之前完成
+	//      必须在 _updateTrajDurations()之前完成
 	checkPositionLock(velocity_target);
 
 	// Update durations and sync XY
@@ -102,9 +102,9 @@ void ManualVelocitySmoothingXY::checkPositionLock(const Vector2f &velocity_targe
 	 * is used to set current velocity of the trajectory.
 	 */
 	/**
-	 * 翻译：在位置锁定到位置解锁转换期间，我们必须确保速度设定点是连续的。我们知道位置环的输出（速度设定点的一部分）
-	 * 	突然变为零，只有反馈（由该飞行任务生成）将保持不变。
-	 * 	这就是为什么使用速度控制器的上一个输入来设置轨迹的当前速度。
+	 * 翻译：在位置锁定到位置解锁的转换过程中，我们必须确保速度设定值保持连续。
+	 *      我们知道位置环路的输出（速度设定值的一部分）会突然变为空，只剩下前馈（由本次飞行任务生成）。
+	 * 	    这就是为什么使用速度控制器的上一个输入来设置轨迹的当前速度。
 	 */
 	if (_state.v.length() < 0.1f &&
 	    _state.a.length() < .2f &&

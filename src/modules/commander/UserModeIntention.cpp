@@ -42,8 +42,7 @@ UserModeIntention::UserModeIntention(const vehicle_status_s &vehicle_status,
 }
 
 /**
- * @brief
- *
+ * @brief 更改模式
  * @param user_intended_nav_state 用户所需的导航模式
  * @param source 任务请求来源 user or ModeExecutor
  * @param allow_fallback

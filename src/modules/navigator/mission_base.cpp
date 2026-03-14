@@ -54,6 +54,7 @@ MissionBase::MissionBase(Navigator *navigator, int32_t dataman_cache_size_signed
 	_dataman_cache.resize(abs(dataman_cache_size_signed));
 
 	// Reset _mission here, and listen on changes on the uorb topic instead of initialize from dataman.
+	// 翻译：在此处重置 _mission，并监听 uorb 主题的变化，而不是从 dataman 初始化
 	_mission.mission_dataman_id = DM_KEY_WAYPOINTS_OFFBOARD_0;
 	_mission.fence_dataman_id = DM_KEY_FENCE_POINTS_0;
 	_mission.safepoint_dataman_id = DM_KEY_SAFE_POINTS_0;
@@ -213,6 +214,7 @@ MissionBase::on_activation()
 
 	// reset the cache and fill it with the items up to the previous item. The cache contains
 	// commands that are valid for the whole mission, not just a single waypoint.
+	// 翻译：重置缓存，并用直到上一个项的条目填充它。缓存包含适用于整个任务的命令，而不仅仅是单个航点
 	if (_mission.current_seq > 0) {
 		resetItemCache();
 		updateCachedItemsUpToIndex(_mission.current_seq - 1);
@@ -220,6 +222,7 @@ MissionBase::on_activation()
 
 	int32_t resume_index = _inactivation_index > 0 ? _inactivation_index : 0;
 
+	// 从上一个位置恢复任务
 	bool resume_mission_on_previous = false;
 
 	if (_inactivation_index > 0 && cameraWasTriggering()) {
@@ -230,6 +233,8 @@ MissionBase::on_activation()
 			// The mission we are resuming had camera triggering enabled. In order to not lose any images
 			// we restart the mission at the previous position item.
 			// We will replay the cached commands once we reach the previous position item and have yaw aligned.
+			// 翻译：我们正在恢复的任务启用了相机触发。为了不丢失任何图像，我们将从上一个位置项重新启动任务。
+			// 	一旦到达上一个位置项并完成偏航角对齐，我们将重放缓存的命令。
 			setMissionIndex(resume_index);
 
 			_align_heading_necessary = true;
@@ -240,6 +245,8 @@ MissionBase::on_activation()
 	if (!resume_mission_on_previous) {
 		// Only replay speed changes immediately if we are not resuming the mission at the previous position item.
 		// Otherwise it must be handled in the on_active() method once we reach the previous position item.
+		// 翻译：仅当我们不是从上一个位置项恢复任务时才立即重放速度更改。
+		// 	否则，必须在到达上一个位置项后在 on_active() 方法中处理。
 		replayCachedSpeedChangeItems();
 		_speed_replayed_on_activation = true;
 
@@ -247,6 +254,7 @@ MissionBase::on_activation()
 		_speed_replayed_on_activation = false;
 	}
 
+	// 检查是否需要先爬升
 	checkClimbRequired(_mission.current_seq);
 	set_mission_items();
 
@@ -338,6 +346,7 @@ MissionBase::on_active()
 
 	if (!_speed_replayed_on_activation && _mission.current_seq > _mission_activation_index) {
 		// replay speed change items if not already done on mission (re-)activation
+		// 翻译：如果任务（重新）激活时尚未完成，则重放速度更改项目
 		replayCachedSpeedChangeItems();
 	}
 
@@ -369,6 +378,8 @@ MissionBase::on_active()
 		// Mount control is disabled If the vehicle is in ROI-mode, the vehicle
 		// needs to rotate such that ROI is in the field of view.
 		// ROI only makes sense for multicopters.
+		// 翻译：如果飞行器处于 ROI 模式，则飞行器需要旋转以使 ROI 位于视野范围内，此时挂载控制功能已禁用。
+		// 	ROI 模式仅适用于多旋翼飞行器。
 		heading_sp_update();
 	}
 
@@ -531,7 +542,7 @@ MissionBase::set_mission_items()
 
 	if (_is_current_planned_mission_item_valid && _mission_type == MissionType::MISSION_TYPE_MISSION && isMissionValid()) {
 		/* By default set the mission item to the current planned mission item. Depending on request, it can be altered. */
-		// 翻译:默认情况下，任务项目设置为当前计划的任务项目。可根据要求进行更改。
+		// 翻译: 默认情况下，任务项目设置为当前计划的任务项目。可根据要求进行更改。
 		if (loadCurrentMissionItem()) {
 			/* force vtol land */
 			if (_navigator->force_vtol() && _mission_item.nav_cmd == NAV_CMD_LAND) {
@@ -1469,6 +1480,7 @@ void MissionBase::parameters_update()
 
 		// If any parameter updated, call updateParams() to check if
 		// this class attributes need updating (and do so).
+		// 翻译：如果任何参数已更新，则调用 updateParams() 来检查此类属性是否需要更新（并进行更新）
 		updateParams();
 	}
 }
@@ -1493,6 +1505,7 @@ void MissionBase::checkClimbRequired(int32_t mission_item_index)
 					       && _vehicle_status_sub.get().vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING;
 
 		// for FW when on a Takeoff item do not require climb before mission, as we need to keep course to takeoff item straight
+		// 翻译：对于 FW 来说，起飞时无需爬升即可执行任务，因为我们需要保持航向直达起飞点
 		if (success && !is_fw_and_takeoff) {
 			const float altitude_amsl_next_position_item = MissionBlock::get_absolute_altitude_for_item(mission);
 			const float error_below_setpoint = altitude_amsl_next_position_item -
@@ -1509,6 +1522,7 @@ void MissionBase::checkClimbRequired(int32_t mission_item_index)
 bool MissionBase::checkMissionDataChanged(mission_s new_mission)
 {
 	/* count and land_index are the same if the mission_id did not change. We do not care about changes in geofence or rally counters.*/
+	// 翻译：如果 mission_id 没有改变，则 count 和 land_index 保持不变。我们不关心地理围栏或集结计数器的变化
 	return ((new_mission.mission_dataman_id != _mission.mission_dataman_id) ||
 		(new_mission.mission_id != _mission.mission_id) ||
 		(new_mission.current_seq != _mission.current_seq));
@@ -1523,6 +1537,12 @@ bool MissionBase::canRunMissionFeasibility()
 	       (_geofence_status_sub.get().status == geofence_status_s::GF_STATUS_READY);
 }
 
+/**
+ * @brief Home位置变更后更新任务高度
+ *
+ * 当返航点高度或位置发生变化时，同步调整任务中所有相对Home的高度参数，
+ * 保证任务执行时的实际高度与预期一致。
+ */
 void MissionBase::updateMissionAltAfterHomeChanged()
 {
 	if (_navigator->get_home_position()->update_count > _home_update_counter) {

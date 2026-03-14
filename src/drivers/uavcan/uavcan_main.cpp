@@ -596,6 +596,7 @@ UavcanNode::init(uavcan::NodeID node_id, UAVCAN_DRIVER::BusEvent &bus_events)
 		return ret;
 	}
 
+	// uavcan传感器桥接 初始化配置参数 并将配置值有效的对应的对象添加到列表 _sensor_bridges
 	// Sensor bridges
 	IUavcanSensorBridge::make_all(_node, _sensor_bridges, &_node_info_publisher);
 
@@ -615,6 +616,7 @@ UavcanNode::init(uavcan::NodeID node_id, UAVCAN_DRIVER::BusEvent &bus_events)
 #endif
 
 	/* Set up shared service clients */
+	// 翻译：设置共享服务客户端
 	_param_getset_client.setCallback(GetSetCallback(this, &UavcanNode::cb_getset));
 	_param_opcode_client.setCallback(ExecuteOpcodeCallback(this, &UavcanNode::cb_opcode));
 	_param_restartnode_client.setCallback(RestartNodeCallback(this, &UavcanNode::cb_restart));
@@ -676,7 +678,7 @@ UavcanNode::handle_time_sync(const uavcan::TimerEvent &)
 }
 
 /**
- * init的逻辑也包含在Run函数里面，如果没有初始化才
+ * init的逻辑也包含在Run函数里面
  */
 void
 UavcanNode::Run()
@@ -702,8 +704,8 @@ UavcanNode::Run()
 		 */
 		/**
 		 * 翻译：CAN 驱动程序初始化
-		 * 我们只允许把 CAN 控制器初始化一次，因为 libuavcan 自带的 STM32 bxCAN 驱动压根不支持“反初始化”（deinit）。
-		 * 一旦初始化过，想关掉再重新初始化会出大问题，所以只能一次成功，失败就直接退出程序。
+		 * 	我们只允许把 CAN 控制器初始化一次，因为 libuavcan 自带的 STM32 bxCAN 驱动压根不支持“反初始化”（deinit）。
+		 * 	一旦初始化过，想关掉再重新初始化会出大问题，所以只能一次成功，失败就直接退出程序。
 		 */
 		const int can_init_res = can->init(bitrate);
 
@@ -733,6 +735,11 @@ UavcanNode::Run()
 		 * System RTC setting to the GPS) we would call UAVCAN_DRIVER::clock::setUtc() when that
 		 * happens, but for now we use adjustUtc with a correction of the hrt so that the
 		 * time bases are the same
+		 */
+		/**
+		 * 翻译：当我们有系统级的时间更新概念（例如，从初始系统 RTC 设置过渡到 GPS 时），
+		 * 	我们会调用 UAVCAN_DRIVER::clock::setUtc()，
+		 *	但目前我们使用 adjustUtc 并对 hrt 进行校正，以使时间基准相同。
 		 */
 		UAVCAN_DRIVER::clock::adjustUtc(uavcan::UtcDuration::fromUSec(hrt_absolute_time()));
 		_master_timer.setCallback(TimerCallback(this, &UavcanNode::handle_time_sync));
@@ -908,9 +915,11 @@ UavcanNode::Run()
 	}
 
 	// Check if we're still listing, and need to get the next parameter
+	// 翻译：检查是否仍在列出，以及是否需要获取下一个参数
 	if (_param_list_in_progress && !_param_in_progress && !_count_in_progress) {
 		// Ready to request the next value -- _param_index is incremented
 		// after each successful fetch by cb_getset
+		// 翻译：准备请求下一个值 -- 每次 cb_getset 成功获取值后，_param_index 都会递增
 		uavcan::protocol::param::GetSet::Request req;
 		req.index = _param_index;
 
@@ -954,6 +963,7 @@ UavcanNode::Run()
 
 			case 2: {
 					// Command is a param erase request -- apply it to all active nodes by setting the dirty bit
+					// 翻译：该命令是一个参数擦除请求——通过设置脏位将其应用于所有活动节点
 					_param_save_opcode = uavcan::protocol::param::ExecuteOpcode::Request::OPCODE_ERASE;
 
 					for (int i = 1; i < 128; i = get_next_active_node_id(i)) {
@@ -1106,6 +1116,9 @@ bool UavcanMixingInterfaceESC::updateOutputs(uint16_t outputs[MAX_ACTUATORS], un
 		// num_outputs is the maximum possible number of outputs (8)
 		// output_array_size adapts to the highest output index that is mapped (4 for a quad)
 		// this allows for sending less CAN frames depending on what output indices are mapped
+		// 翻译：num_outputs 是输出的最大数量 (8)
+		// 	output_array_size 会根据映射的最大输出索引进行调整（四路输出为 4）
+		// 	这样可以根据映射的输出索引发送更少的 CAN 帧
 		uint8_t output_array_size = 0;
 
 		for (int i = MAX_ACTUATORS - 1; i >= 0; i--) {
