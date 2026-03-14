@@ -8,7 +8,7 @@ Supported vehicle types include: mutirotor, VTOL, Plane, Rover.
 
 :::warning
 See [Gazebo Classic Vehicles](../sim_gazebo_classic/vehicles.md) for vehicles that work with the older [Gazebo "Classic" simulation](../sim_gazebo_classic/index.md).
-Note that vehicle models are not interchangable between the two versions of the simulator: the vehicles on this page only work with (new) [Gazebo](../sim_gazebo_gz/index.md).
+Note that vehicle models are not interchangeable between the two versions of the simulator: the vehicles on this page only work with (new) [Gazebo](../sim_gazebo_gz/index.md).
 :::
 
 ## Multicopter
@@ -185,7 +185,7 @@ make px4_sitl gz_tiltrotor
 [Differential Rover](../frames_rover/index.md#differential) uses the [rover world](../sim_gazebo_gz/worlds.md#rover) by default.
 
 ```sh
-make px4_sitl gz_r1_rover
+make px4_sitl gz_rover_differential
 ```
 
 ![Differential Rover in Gazebo](../../assets/simulation/gazebo/vehicles/rover_differential.png)
@@ -199,3 +199,13 @@ make px4_sitl gz_rover_ackermann
 ```
 
 ![Ackermann Rover in Gazebo](../../assets/simulation/gazebo/vehicles/rover_ackermann.png)
+
+### Mecanum Rover
+
+[Mecanum Rover](../frames_rover/index.md#mecanum) uses the [rover world](../sim_gazebo_gz/worlds.md#rover) by default.
+
+```sh
+make px4_sitl gz_rover_mecanum
+```
+
+![Mecanum Rover in Gazebo](../../assets/simulation/gazebo/vehicles/rover_mecanum.png)

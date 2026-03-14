@@ -435,6 +435,7 @@ public:
 	void updateParameters();
 
 	friend class AuxGlobalPosition;
+	friend class AgpSource;
 
 private:
 
@@ -580,6 +581,8 @@ private:
 	estimator_aid_source1d_s _aid_src_gnss_hgt{};
 	estimator_aid_source2d_s _aid_src_gnss_pos{};
 	estimator_aid_source3d_s _aid_src_gnss_vel{};
+
+	uint64_t _time_last_gnss_hgt_rejected{0};
 
 # if defined(CONFIG_EKF2_GNSS_YAW)
 	estimator_aid_source1d_s _aid_src_gnss_yaw {};
@@ -765,7 +768,6 @@ private:
 # if defined(CONFIG_EKF2_RANGE_FINDER)
 	// update the terrain vertical position estimate using a height above ground measurement from the range finder
 	bool fuseHaglRng(estimator_aid_source1d_s &aid_src, bool update_height, bool update_terrain);
-	void updateRangeHagl(estimator_aid_source1d_s &aid_src);
 	void resetTerrainToRng(estimator_aid_source1d_s &aid_src);
 	float getRngVar() const;
 # endif // CONFIG_EKF2_RANGE_FINDER
@@ -820,6 +822,8 @@ private:
 
 	void constrainStateVar(const IdxDof &state, float min, float max);
 	void constrainStateVarLimitRatio(const IdxDof &state, float min, float max, float max_ratio = 1.e6f);
+
+	void uncorrelateAndLimitHeadingCovariance();
 
 	// generic function which will perform a fusion step given a kalman gain K
 	// and a scalar innovation value
@@ -887,6 +891,7 @@ private:
 
 	void controlGnssHeightFusion(const gnssSample &gps_sample);
 	void stopGpsHgtFusion();
+	bool isGnssHgtResetAllowed();
 
 # if defined(CONFIG_EKF2_GNSS_YAW)
 	void controlGnssYawFusion(const gnssSample &gps_sample);
@@ -945,8 +950,6 @@ private:
 	void resetFakeHgtFusion();
 	void resetHeightToLastKnown();
 	void stopFakeHgtFusion();
-
-	void controlZeroInnovationHeadingUpdate();
 
 #if defined(CONFIG_EKF2_AUXVEL)
 	// control fusion of auxiliary velocity observations
@@ -1017,6 +1020,7 @@ private:
 	void resetQuatStateYaw(float yaw, float yaw_variance);
 	void propagateQuatReset(const Quatf &quat_before_reset);
 	void resetYawByFusion(float yaw, float yaw_variance);
+	void resetHorizontalVelocityToMatchYaw(float delta_yaw);
 
 	HeightSensor _height_sensor_ref{HeightSensor::UNKNOWN};
 	PositionSensor _position_sensor_ref{PositionSensor::GNSS};

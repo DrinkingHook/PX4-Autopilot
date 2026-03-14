@@ -27,6 +27,8 @@ DroneCAN was previously known as UAVCAN v0 (or just UAVCAN).
 - Проводка менше складна, оскільки ви можете мати один шину для підключення всіх ваших ESC і інших периферійних пристроїв DroneCAN.
 - Налаштування стає простіше, оскільки ви налаштовуєте нумерацію ESC, обертаючи кожен двигун вручну.
 - Це дозволяє користувачам налаштовувати та оновлювати прошивку всіх пристроїв, підключених через CAN, централізовано через PX4.
+- PX4 automatically tracks device information (vendor, model, versions, serial numbers) for maintenance and fleet management.
+  See [Asset Tracking](../debug/asset_tracking.md).
 
 ## Підтримуване обладнання
 
@@ -67,6 +69,8 @@ DroneCAN was previously known as UAVCAN v0 (or just UAVCAN).
   - [RaccoonLab RM3100 Magnetometer](https://docs.raccoonlab.co/guide/gps_mag_baro/mag_rm3100.html)
 
 - Датчики відстані
+  - [ARK Dist](ark_dist.md)
+  - [Ark Dist MR](ark_dist_mr.md)
   - [ARK Flow](ark_flow.md)
   - [Ark Flow MR](ark_flow_mr.md)
   - [Avionics Anonymous Laser Altimeter UAVCAN Interface](../dronecan/avanon_laser_interface.md)
@@ -102,6 +106,10 @@ If you wish to disable the DNA completely, set `UAVCAN_ENABLE` to `1` and manual
 :::info
 The PX4 node ID can be configured using the [UAVCAN_NODE_ID](../advanced_config/parameter_reference.md#UAVCAN_NODE_ID) parameter.
 Параметр за замовчуванням встановлено на 1.
+
+Devices running the [PX4 DroneCAN firmware](px4_cannode_fw.md) (such as [ARK CANnode](ark_cannode.md)) can use the
+[CANNODE_NODE_ID](../advanced_config/parameter_reference.md#CANNODE_NODE_ID) parameter to set a static node ID.
+Set it to 0 (default) for dynamic allocation, or to a value between 1-127 to use a specific static node ID.
 :::
 
 :::warning
@@ -150,7 +158,7 @@ DroneCAN peripherals connected to PX4 can also be [configured using parameters v
 By convention, parameters named with the prefix [CANNODE\_](../advanced_config/parameter_reference.md#CANNODE_BITRATE) have prefined meaning, and may be documented in the parameter reference.
 `CANNODE_` parameters prefixed with `CANNODE_PUB_` and `CANNODE_SUB_` enable the peripheral to publish or subscribe the associated DroneCAN message.
 These allow DroneCAN peripherals to be configured to only subscribe and publish messages that they actually need (in the same way that PX4 uses the corresponding `UAVCAN_PUB_`/`UAVCAN_SUB_` parameters).
-Note that a peripheral might might not use `CANNODE_` parameters, in which case it may have to publish/subscribe to particular messages whether or not they are needed.
+Note that a peripheral might not use `CANNODE_` parameters, in which case it may have to publish/subscribe to particular messages whether or not they are needed.
 
 Наступні розділи надають додаткові відомості про параметри периферійних пристроїв PX4 та DroneCAN, які використовуються для увімкнення певних функцій.
 
@@ -279,6 +287,14 @@ If the rangefinder is connected via DroneCAN (whether inbuilt or separate), you 
 Select the specific CAN interface(s) used for ESC data output using the [UAVCAN_ESC_IFACE](../advanced_config/parameter_reference.md#UAVCAN_ESC_IFACE) parameter (all that all interfaces are selected by default).
 Note that DroneCAN ESCs should be on their own dedicated CAN interface(s) because ESC messages can saturate the bus and starve other nodes of bandwidth.
 
+### Lights
+
+PX4 can control external LEDs on a connected DroneCAN peripheral using the standard DroneCAN [LightsCommand](https://dronecan.github.io/Specification/7._List_of_standard_data_types/#lightscommand) message.
+Up to 2 lights acan be controlled.
+Each light can independently show [system status colours](../getting_started/led_meanings.md#ui-led), a fixed colour (commonly used for indicating aircraft orientation), or switch between both depending on arm state.
+
+See [DroneCAN Lights](lights.md) for full configuration details.
+
 ## Налаштування параметрів CANNODE QGC
 
 QGroundControl може переглядати та змінювати параметри, що належать до пристроїв CAN, підключених до автопілота, за умови, що пристрої підключені до автопілота до запуску QGC.
@@ -287,6 +303,11 @@ CAN nodes are displayed separate sections in [Vehicle Settings > Parameters](../
 For example, the screenshot below shows the parameters for a CAN GPS with node id 125 (after the _Standard_, _System_, and _Developer_ parameter groupings).
 
 ![QGC Parameter showing selected DroneCAN node](../../assets/can/dronecan/qgc_can_parameters.png)
+
+Common CANNODE parameters that you can configure include:
+
+- [CANNODE_NODE_ID](../advanced_config/parameter_reference.md#CANNODE_NODE_ID): Set a static node ID (1-127) or use 0 for dynamic allocation. See [PX4 DroneCAN Firmware > Static Node ID](px4_cannode_fw.md#static-node-id) for more information.
+- [CANNODE_TERM](../advanced_config/parameter_reference.md#CANNODE_TERM): Enable CAN bus termination on the last node in the bus.
 
 ## Налаштування пристрою
 

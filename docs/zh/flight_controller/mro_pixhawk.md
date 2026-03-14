@@ -72,7 +72,7 @@ It is pre-built and automatically installed by _QGroundControl_ when appropriate
 
 To [build PX4](../dev_setup/building_px4.md) for this target:
 
-```
+```sh
 make px4_fmu-v3_default
 ```
 
@@ -86,14 +86,14 @@ See [3DR Pixhawk 1 > Pinouts](../flight_controller/pixhawk.md#pinouts)
 
 ## 串口映射
 
-| UART   | 设备         | Port                                     |
-| ------ | ---------- | ---------------------------------------- |
-| UART1  | /dev/ttyS0 | IO debug                                 |
-| USART2 | /dev/ttyS1 | TELEM1 (flow control) |
-| USART3 | /dev/ttyS2 | TELEM2 (flow control) |
-| UART4  |            |                                          |
-| UART7  | CONSOLE    |                                          |
-| UART8  | SERIAL4    |                                          |
+| UART   | 设备         | Port                           |
+| ------ | ---------- | ------------------------------ |
+| UART1  | /dev/ttyS0 | IO debug                       |
+| USART2 | /dev/ttyS1 | TELEM1 (流控) |
+| USART3 | /dev/ttyS2 | TELEM2 (流控) |
+| UART4  |            |                                |
+| UART7  | CONSOLE    |                                |
+| UART8  | SERIAL4    |                                |
 
 <!-- Note: Got ports using https://github.com/PX4/PX4-user_guide/pull/672#issuecomment-598198434 -->
 

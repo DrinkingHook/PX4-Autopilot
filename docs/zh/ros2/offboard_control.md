@@ -1,6 +1,6 @@
 # ROS 2 Offboard 控制示例
 
-以下的 C++ 示例展示了如何在 [离板模式] (../flight_modes/offboard.md) 中从 ROS 2 节点进行位置控制。
+以下的 C++ 示例展示了如何在[offboard mode](../flight_modes/offboard.md)  中从 ROS 2 节点进行多轴位置控制。
 
 示例将首先发送设置点、进入offboard模式、解锁、起飞至5米，并悬停等待。
 虽然简单，但它显示了如何使用offboard控制以及如何向无人机发送指令。
@@ -13,18 +13,18 @@ _Offboard_ control is dangerous.
 :::
 
 :::info
-ROS 与 PX4 存在若干不同的预设（假设），尤其是在坐标系约定（[frame conventions]）方面../ros/external_position_estimation.md#reference-frames-and-ros
+ROS 与 PX4 存在若干不同的预设（假设），尤其是在 [frame conventions](../ros/external_position_estimation.md#reference-frames-and-ros)
 当主题发布或订阅时，坐标系类型之间没有隐含转换！
 
-这个例子按照PX4的预期在NED坐标系下发布位置。
-若要订阅来自在不同框架内发布的节点的数据(例如ENU, 这是ROS/ROS 2中的标准参考框架，使用 [frame_transforms](https://github.com/PX4/px4_ros_com/blob/main/src/lib/frame_transforms.cpp)库中的辅助函数。
+这个例子按照 PX4 的预期在NED坐标系下发布位置。
+若要订阅来自在不同框架内发布的节点的数据(例如ENU, 这是ROS/ROS 2中的标准参考框架），使用[frame_transforms](https://github.com/PX4/px4_ros_com/blob/main/src/lib/frame_transforms.cpp)库中的辅助函数。
 :::
 
-## 小試身手
+## 小试身手
 
-请遵循 ROS 2 用户指南 （../ros2/user_guide.md）中的说明，完成安装 PX4和运行模拟器，安装 ROS 2和启动 XRCE-DDS 代理（Agent）。
+按照 [ROS 2 用户指南](../ros2/user_guide.md)中的说明来安装PX 并运行多轴模拟器，安装ROS 2, 并启动XRCE-DDS代理。
 
-之后，我们可参照 ROS 2 用户指南 > 构建 ROS 2 工作空间 （../ros2/user_guide.md#build-ros-2-workspace）中的相似的步骤来运行这个例子。
+之后，我们可参照 [ROS 2 用户指南 > 构建 ROS 2 工作空间](../ros2/user_guide.md#build-ros-2-workspace)中的相似的步骤来运行这个例子。
 
 :::tip
 运行 ROS 2 节点前，请确保 QGC已连接到 PX4。
@@ -42,14 +42,14 @@ ROS 与 PX4 存在若干不同的预设（假设），尤其是在坐标系约�
    cd ~/ws_offboard_control/src/
    ```
 
-3. 将 px4_msgs 代码仓库克隆到 /src 目录下（每个 ROS 2 PX4 工作空间都需要该仓库！）：
+3. 将[px4_msgs](https://github.com/PX4/px4_msgs)代码仓库克隆到 /src 目录下（每个 ROS 2 PX4 工作空间都需要该仓库！）：
 
    ```sh
    git clone https://github.com/PX4/px4_msgs.git
-   #若未使用 PX4 的 main 分支，请切换到对应的发布分支
+   # checkout the matching release branch if not using PX4 main.
    ```
 
-4. 将示例代码仓库 px4_ros_com （https://github.com/PX4/px4_ros_com）克隆到 /src 目录下：
+4. 将示例代码仓库 [px4_ros_com](https://github.com/PX4/px4_ros_com)克隆到 /src 目录下：
 
    ```sh
    git clone https://github.com/PX4/px4_ros_com.git
@@ -95,7 +95,7 @@ ROS 与 PX4 存在若干不同的预设（假设），尤其是在坐标系约�
    ros2 run px4_ros_com offboard_control
    ```
 
-飞行器将解锁、起飞至5米并悬停等待（永久）。
+飞行器将解锁、起飞至 5 米并悬停等待(永久)。
 
 ## 实现
 
@@ -133,7 +133,7 @@ timer_ = this-&gt;create_wall_timer(100ms, timer_callback);
 ```
 
 循环运行在一个100毫秒计时器。
-在最初的 10 个循环中，它会调用 publish_offboard_control_mode() 和 publish_trajectory_setpoint() 这两个函数，向 PX4 发送 OffboardControlMode（离板控制模式）（../msg_docs/OffboardControlMode.md） 和 TrajectorySetpoint（轨迹设定点）（../msg_docs/TrajectorySetpoint.md） 消息。
+在最初的 10 个循环中，它会调用 `publish_offboard_control_mode()` 和 `publish_trajectory_setpoint()` 这两个函数，向 PX4 发送 OffboardControlMode[OffboardControlMode](../msg_docs/OffboardControlMode.md) 和 [TrajectorySetpoint](../msg_docs/TrajectorySetpoint.md) 消息。
 OffboardControlMode消息会持续发送，以便 PX4 切换到离板模式后允许解锁；而 TrajectorySetpoint消息会被忽略（直到载具处于离板模式）
 
 10 个循环后，会调用 publish_vehicle_command() 函数切换至离板模式，并调用 arm() 函数对载具进行解锁。
@@ -143,7 +143,7 @@ OffboardControlMode消息会持续发送，以便 PX4 切换到离板模式后�
 publish_offboard_control_mode() 和 publish_trajectory_setpoint() 这两个方法的实现代码如下所示。
 这些方法会分别发布到 PX4 的 [OffboardControlMode](../msg_docs/OffboardControlMode.md和 [TrajectorySetpoint](../msg_docs/TrajectorySetpoint.md) 消息。
 
-OffboardControlMode（离板控制模式）消息是必需的，其作用是告知 PX4 当前所使用的离板控制类型。
+The `OffboardControlMode` is required in order to inform PX4 of the _type_ of offboard control being used.
 此处我们仅使用位置控制，因此将 `position` 字段设为`true`，而所有其他字段均设为 `false`。
 
 ```cpp
@@ -213,10 +213,10 @@ void OffboardControl::publish_vehicle_command(uint16_t command, float param1, fl
 ```
 
 :::info
-[VehicleCommand](../msg_docs/VehicleCommand.md是命令PX4的最简单和最高效的方式之一。 通过订阅 [VehicleCommandAck](../msg_docs/VehicleCommandAck.md)，您也可以确认设置特定命令是否成功。
+[VehicleCommand](../msg_docs/VehicleCommand.md) 是命令PX4的最简单和最高效的方式之一。 通过订阅 [VehicleCommandAck](../msg_docs/VehicleCommandAck.md)，您也可以确认设置特定命令是否成功。
 参数字段和 指令字段对应于 [MAVLink commands](https://mavlink.io/en/messages/common.html#mav_commands)以及他们的参数值
 :::
 
-## See Also
+## 另见
 
 - [Python ROS2 offboard examples with PX4](https://github.com/Jaeyoung-Lim/px4-offboard) (Jaeyoung-Lim/px4-offboard).

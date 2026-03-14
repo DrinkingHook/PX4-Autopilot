@@ -71,7 +71,7 @@ using namespace time_literals;
 
 static constexpr char sensor_name[] {"mag"};
 static constexpr int MAX_MAGS = 4;
-static constexpr float MAG_SPHERE_RADIUS_DEFAULT = 0.2f;
+static constexpr float MAG_SPHERE_RADIUS_DEFAULT = 0.4f;
 static constexpr unsigned int calibration_total_points = 240;	///< The total points per magnetometer
 static constexpr unsigned int calibraton_duration_s = 42; 	///< The total duration the routine is allowed to take
 
@@ -278,14 +278,22 @@ static calibrate_return mag_calibration_worker(detect_orientation_return orienta
 
 	uORB::SubscriptionBlocking<sensor_gyro_s> gyro_sub{ORB_ID(sensor_gyro)};
 
+	hrt_abstime last_cancel_check = hrt_absolute_time();
+
 	while (fabsf(gyro_x_integral) < gyro_int_thresh_rad &&
 	       fabsf(gyro_y_integral) < gyro_int_thresh_rad &&
 	       fabsf(gyro_z_integral) < gyro_int_thresh_rad) {
 
-		/* abort on request */
-		if (calibrate_cancel_check(worker_data->mavlink_log_pub, calibration_started)) {
-			result = calibrate_return_cancelled;
-			return result;
+		// Throttle cancel check — calibrate_cancel_check() creates a new
+		// uORB::Subscription each call, triggering an O(n) topic lookup.
+		// At high sensor rates this dominates CPU. Check at most every 200ms.
+		if (hrt_elapsed_time(&last_cancel_check) > 200_ms) {
+			last_cancel_check = hrt_absolute_time();
+
+			if (calibrate_cancel_check(worker_data->mavlink_log_pub, calibration_started)) {
+				result = calibrate_return_cancelled;
+				return result;
+			}
 		}
 
 		/* abort with timeout */
@@ -297,6 +305,10 @@ static calibrate_return mag_calibration_worker(detect_orientation_return orienta
 		}
 
 		/* Wait clocking for new data on all gyro */
+		// Yield CPU — updateBlocking() returns immediately when data is
+		// already available, so with high-rate sensors the loop never blocks.
+		px4_usleep(1000);
+
 		sensor_gyro_s gyro;
 
 		if (gyro_sub.updateBlocking(gyro, 1000_ms)) {
@@ -326,13 +338,26 @@ static calibrate_return mag_calibration_worker(detect_orientation_return orienta
 	unsigned poll_errcount = 0;
 	unsigned calibration_counter_side = 0;
 
+	last_cancel_check = hrt_absolute_time();
+
 	while (hrt_absolute_time() < calibration_deadline &&
 	       calibration_counter_side < worker_data->calibration_points_perside) {
 
-		if (calibrate_cancel_check(worker_data->mavlink_log_pub, calibration_started)) {
-			result = calibrate_return_cancelled;
-			break;
+		// Throttle cancel check — calibrate_cancel_check() creates a new
+		// uORB::Subscription each call, triggering an O(n) topic lookup.
+		// At high sensor rates this dominates CPU. Check at most every 200ms.
+		if (hrt_elapsed_time(&last_cancel_check) > 200_ms) {
+			last_cancel_check = hrt_absolute_time();
+
+			if (calibrate_cancel_check(worker_data->mavlink_log_pub, calibration_started)) {
+				result = calibrate_return_cancelled;
+				break;
+			}
 		}
+
+		// Yield CPU — updatedBlocking() returns immediately when data is
+		// already available, so with high-rate sensors the loop never blocks.
+		px4_usleep(1000);
 
 		if (mag_sub[0].updatedBlocking(1000_ms)) {
 			bool rejected = false;
@@ -520,12 +545,36 @@ calibrate_return mag_calibrate_all(orb_advert_t *mavlink_log_pub, int32_t cal_ma
 
 	const unsigned int calibration_points_maxcount = worker_data.calibration_sides * worker_data.calibration_points_perside;
 
+	uORB::SubscriptionMultiArray<sensor_mag_s, MAX_MAGS> mag_sub{ORB_ID::sensor_mag};
+	int mag_available_enabled_count = 0;
+
 	for (uint8_t cur_mag = 0; cur_mag < MAX_MAGS; cur_mag++) {
 
-		uORB::SubscriptionData<sensor_mag_s> mag_sub{ORB_ID(sensor_mag), cur_mag};
+		if (!mag_sub[cur_mag].advertised()) {
+			continue;
+		}
 
-		if (mag_sub.advertised() && (mag_sub.get().device_id != 0) && (mag_sub.get().timestamp > 0)) {
-			worker_data.calibration[cur_mag].set_device_id(mag_sub.get().device_id);
+		sensor_mag_s mag_data;
+
+		if (!mag_sub[cur_mag].copy(&mag_data) || mag_data.device_id == 0) {
+			continue;
+		}
+
+		int calibration_index = calibration::FindCurrentCalibrationIndex("MAG", mag_data.device_id);
+
+		if (calibration_index >= 0) {
+			int priority = calibration::GetCalibrationParamInt32("MAG", "PRIO", calibration_index);
+
+			if (priority != 0) {
+				++mag_available_enabled_count;
+			}
+
+		} else {
+			++mag_available_enabled_count;
+		}
+
+		if ((mag_data.device_id != 0) && (mag_data.timestamp > 0)) {
+			worker_data.calibration[cur_mag].set_device_id(mag_data.device_id);
 		}
 
 		// reset calibration index to match uORB numbering
@@ -545,6 +594,11 @@ calibrate_return mag_calibrate_all(orb_advert_t *mavlink_log_pub, int32_t cal_ma
 		} else {
 			break;
 		}
+	}
+
+	if (mag_available_enabled_count <= 0) {
+		calibration_log_critical(mavlink_log_pub, "Failed: No magnetometer available or enabled");
+		return calibrate_return_error;
 	}
 
 	if (result == calibrate_return_ok) {

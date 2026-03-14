@@ -82,18 +82,20 @@ The test steps are:
    If an [Enable/Disable Autotune Switch](#enable-disable-autotune-switch) is configured you can just toggle the switch to the "enabled" position.
 
    </div></div>
-
    1. In QGroundControl, open the menu **Vehicle setup > PID Tuning**:
 
-      ![Tuning Setup > Autotune Enabled](../../assets/qgc/setup/autotune/autotune.png)
+   ![Tuning Setup > Autotune Enabled](../../assets/qgc/setup/autotune/autotune.png) 2. Select either the _Rate Controller_ or _Attitude Controller_ tabs. 3. Ensure that the **Autotune enabled** button is enabled (this will display the **Autotune** button and remove the manual tuning selectors). 4. Read the warning popup and click on **OK** to start tuning.
 
-   2. Select either the _Rate Controller_ or _Attitude Controller_ tabs.
-   3. Ensure that the **Autotune enabled** button is enabled (this will display the **Autotune** button and remove the manual tuning selectors).
-   4. Read the warning popup and click on **OK** to start tuning.
+<div style="display: inline;" v-if="$frontmatter.frame === 'Multicopter'">
 
 4. The drone will first start to perform quick roll motions followed by pitch and yaw motions.
    The progress is shown in the progress bar, next to the _Autotune_ button.
 
+</div><div v-else-if="$frontmatter.frame === 'Plane'">
+
+4. The drone will first start to perform quick roll motions followed by pitch and yaw motions. When [`FW_AT_SYSID_TYPE`](../advanced_config/parameter_reference.md#FW_AT_SYSID_TYPE) is set to linear/logarithmic sine sweep (recommended), the max rates reached during the maneuvers are 75% of the maximum configured roll (`FW_R_RMAX`), pitch (`FW_P_RMAX_NEG`, `FW_P_RMAX_POS`) and yaw (`FW_Y_RMAX`) rates. The progress is shown in the progress bar, next to the _Autotune_ button.
+
+</div>
 <div style="display: inline;" v-if="$frontmatter.frame === 'Multicopter'">
 
 5. Manually land and disarm to apply the new tuning parameters.
@@ -103,6 +105,13 @@ The test steps are:
 
 5. The tuning will be immediately/automatically be applied and tested in flight (by default).
    PX4 will then run a 4 second test and revert the new tuning if a problem is detected.
+
+The figure below shows how steps 4 and 5 might look in flight on the pitch axis.
+The pitch rate gradually increases up until it reaches the target.
+This amplitude is then held while the signal frequency is increased.
+You can then see how the tuned system is able to follow the setpoint in the test signal.
+
+<img src="../../assets/config/fw/autotune.png" title="Fixed-Wing Autotune"/>
 
 </div>
 
@@ -115,7 +124,7 @@ Additional notes:
 <div v-if="$frontmatter.frame === 'Multicopter'">
 
 - The instructions above tune the vehicle in [Altitude mode](../flight_modes_mc/altitude.md).
-  You can instead takeoff in [Takeoff mode](../flight_modes_mc/takeoff.md) and tune in [Position mode](../flight_modes_mc/position.md) if the vehicle is is _known_ to be stable in these modes.
+  You can instead takeoff in [Takeoff mode](../flight_modes_mc/takeoff.md) and tune in [Position mode](../flight_modes_mc/position.md) if the vehicle is _known_ to be stable in these modes.
 
 </div>
 <div v-else-if="$frontmatter.frame === 'Plane'">
@@ -170,9 +179,20 @@ Fast oscillations (more than 1 oscillation per second): this is because the gain
 
 ### The auto-tuning sequence fails
 
+<div v-if="$frontmatter.frame === 'Multicopter'">
+
 If the drone was not moving enough during auto-tuning, the system identification algorithm might have issues to find the correct coefficients.
 
-Increase the <div style="display: inline;" v-if="$frontmatter.frame === 'Multicopter'">[MC_AT_SYSID_AMP](../advanced_config/parameter_reference.md#MC_AT_SYSID_AMP)</div><div style="display: inline;" v-else-if="$frontmatter.frame === 'Plane'">[FW_AT_SYSID_AMP](../advanced_config/parameter_reference.md#FW_AT_SYSID_AMP)</div> parameter by steps of 1 and trigger the auto-tune again.
+Increase the [MC_AT_SYSID_AMP](../advanced_config/parameter_reference.md#MC_AT_SYSID_AMP) parameter by steps of 1 and trigger the auto-tune again.
+
+</div>
+<div v-else-if="$frontmatter.frame === 'Plane'">
+
+By default, the autotune maneuvers ensure that a sufficient angular rate is reached for system identification, corresponding to 75% of the configured maximum roll (`FW_R_RMAX`), pitch (`FW_P_RMAX_NEG`, `FW_P_RMAX_POS`) and yaw (`FW_Y_RMAX`) rates.
+
+If the signal-to-noise ratio of the vehicle is low, the system identification algorithm might have issues finding the correct coefficients. Ensure that there is no excessive noise and/or platform vibration.
+
+</div>
 
 ### The drone oscillates after auto-tuning
 
@@ -221,7 +241,7 @@ To map a switch:
 2. Set [RC_MAP_AUX1](../advanced_config/parameter_reference.md#RC_MAP_AUX1) to match the RC channel for your switch (you can use any of `RC_MAP_AUX1` to `RC_MAP_AUX6`).
 3. Set [FW_AT_MAN_AUX](../advanced_config/parameter_reference.md#FW_AT_MAN_AUX) to the selected channel (i.e. `1: Aux 1` if you mapped `RC_MAP_AUX1`).
 
-The auto tuner will be disabled when the switch is below `0.5` (on the manual control setpoint range of of `[-1, 1]`) and enabled when the switch channel is above `0.5`.
+The auto tuner will be disabled when the switch is below `0.5` (on the manual control setpoint range of `[-1, 1]`) and enabled when the switch channel is above `0.5`.
 
 If using an RC AUX switch to enable autotuning, make sure to [select the tuning axes](#select-tuning-axis) before flight.
 

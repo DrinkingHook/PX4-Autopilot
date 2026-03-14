@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2012-2023 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2012-2026 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -54,6 +54,7 @@
 #include <lib/systemlib/mavlink_log.h>
 #include <lib/version/version.h>
 
+#include <px4_platform_common/atomic.h>
 #include <px4_platform_common/events.h>
 
 #include <uORB/topics/event.h>
@@ -82,6 +83,8 @@
 
 static pthread_mutex_t mavlink_module_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t mavlink_event_buffer_mutex = PTHREAD_MUTEX_INITIALIZER;
+static px4::atomic<int> mavlink_instance_count {0};
+
 events::EventBuffer *Mavlink::_event_buffer = nullptr;
 
 Mavlink *mavlink_module_instances[MAVLINK_COMM_NUM_BUFFERS] {};
@@ -91,6 +94,17 @@ void mavlink_start_uart_send(mavlink_channel_t chan, int length) { mavlink_modul
 void mavlink_end_uart_send(mavlink_channel_t chan, int length) { mavlink_module_instances[chan]->send_finish(); }
 mavlink_status_t *mavlink_get_channel_status(uint8_t channel) { return mavlink_module_instances[channel]->get_status(); }
 mavlink_message_t *mavlink_get_channel_buffer(uint8_t channel) { return mavlink_module_instances[channel]->get_buffer(); }
+
+static bool accept_unsigned_callback(const mavlink_status_t *status, uint32_t message_id)
+{
+	Mavlink *m = Mavlink::get_instance_for_status(status);
+
+	if (m != nullptr) {
+		return m -> accept_unsigned(m->sign_mode(), m -> is_usb_uart(), message_id);
+	}
+
+	return false;
+}
 
 static void usage();
 
@@ -159,9 +173,6 @@ Mavlink::~Mavlink()
 		} while (running());
 	}
 
-	if (_instance_id >= 0) {
-		mavlink_module_instances[_instance_id] = nullptr;
-	}
 
 	// if this instance was responsible for checking events then select a new mavlink instance
 	if (check_events()) {
@@ -187,12 +198,7 @@ Mavlink::mavlink_update_parameters()
 {
 	updateParams();
 
-	int32_t proto = _param_mav_proto_ver.get();
-
-	if (_protocol_version_switch != proto) {
-		_protocol_version_switch = proto;
-		set_proto_version(proto);
-	}
+	setProtocolVersion(_param_mav_proto_ver.get());
 
 	if (_param_mav_type.get() < 0 || _param_mav_type.get() >= MAV_TYPE_ENUM_END) {
 		_param_mav_type.set(0);
@@ -270,6 +276,7 @@ Mavlink::set_instance_id()
 		if (mavlink_module_instances[instance_id] == nullptr) {
 			mavlink_module_instances[instance_id] = this;
 			_instance_id = instance_id;
+			mavlink_instance_count.fetch_add(1);
 			return true;
 		}
 	}
@@ -277,16 +284,13 @@ Mavlink::set_instance_id()
 	return false;
 }
 
-void
-Mavlink::set_proto_version(unsigned version)
+void Mavlink::setProtocolVersion(uint8_t version)
 {
-	if ((version == 1 || version == 0) &&
-	    ((_protocol_version_switch == 0) || (_protocol_version_switch == 1))) {
+	if (version == 1) {
 		get_status()->flags |= MAVLINK_STATUS_FLAG_OUT_MAVLINK1;
 		_protocol_version = 1;
 
-	} else if (version == 2 &&
-		   ((_protocol_version_switch == 0) || (_protocol_version_switch == 2))) {
+	} else {
 		get_status()->flags &= ~(MAVLINK_STATUS_FLAG_OUT_MAVLINK1);
 		_protocol_version = 2;
 	}
@@ -314,6 +318,20 @@ Mavlink::get_instance_for_device(const char *device_name)
 
 	for (Mavlink *inst : mavlink_module_instances) {
 		if (inst && (inst->_protocol == Protocol::SERIAL) && (strcmp(inst->_device_name, device_name) == 0)) {
+			return inst;
+		}
+	}
+
+	return nullptr;
+}
+
+Mavlink *
+Mavlink::get_instance_for_status(const mavlink_status_t *status)
+{
+	LockGuard lg{mavlink_module_mutex};
+
+	for (Mavlink *inst : mavlink_module_instances) {
+		if (status == mavlink_get_channel_status(inst->get_instance_id())) {
 			return inst;
 		}
 	}
@@ -381,8 +399,13 @@ Mavlink::destroy_all_instances()
 		LockGuard lg{mavlink_module_mutex};
 
 		// we know all threads have exited, so it's safe to delete objects.
-		for (Mavlink *inst_to_del : mavlink_module_instances) {
-			delete inst_to_del;
+		for (int i = 0; i < MAVLINK_COMM_NUM_BUFFERS; i++) {
+			if (mavlink_module_instances[i] != nullptr) {
+				Mavlink *inst = mavlink_module_instances[i];
+				mavlink_module_instances[i] = nullptr;
+				mavlink_instance_count.fetch_sub(1);
+				delete inst;
+			}
 		}
 	}
 
@@ -469,6 +492,11 @@ Mavlink::forward_message(const mavlink_message_t *msg, Mavlink *self)
 		if (meta->flags & MAV_MSG_ENTRY_FLAG_HAVE_TARGET_COMPONENT) {
 			target_component_id = static_cast<uint8_t>((_MAV_PAYLOAD(msg))[meta->target_component_ofs]);
 		}
+	}
+
+	// Avoid locking/iteration when there is no instance to forward to.
+	if (mavlink_instance_count.load() <= 1) {
+		return;
 	}
 
 	// If it's a message only for us, we keep it
@@ -1026,6 +1054,12 @@ Mavlink::handle_message(const mavlink_message_t *msg)
 	 *  NOTE: this is called from the receiver thread
 	 */
 
+	if (is_usb_uart()) {
+		if (_sign_control.check_for_signing(msg)) {
+			return;
+		}
+	}
+
 	if (get_forwarding_on()) {
 		/* forward any messages to other mavlink instances */
 		Mavlink::forward_message(msg, this);
@@ -1084,7 +1118,7 @@ Mavlink::send_autopilot_capabilities()
 			param_t param_handle = param_find_no_notification("MNT_MODE_IN");
 			int32_t mnt_mode_in = 0;
 
-			if (mnt_mode_in != PARAM_INVALID) {
+			if (param_handle != PARAM_INVALID) {
 				param_get(param_handle, &mnt_mode_in);
 
 				if (mnt_mode_in == 4) {
@@ -1156,13 +1190,7 @@ Mavlink::send_protocol_version()
 	//memcpy(&msg.spec_version_hash, &mavlink_spec_git_version_binary, sizeof(msg.spec_version_hash));
 	memcpy(&msg.library_version_hash, &mavlink_lib_git_version_binary, sizeof(msg.library_version_hash));
 
-	// Switch to MAVLink 2
-	int curr_proto_ver = _protocol_version;
-	set_proto_version(2);
-	// Send response - if it passes through the link its fine to use MAVLink 2
 	mavlink_msg_protocol_version_send_struct(get_channel(), &msg);
-	// Reset to previous value
-	set_proto_version(curr_proto_ver);
 }
 
 int
@@ -1208,8 +1236,8 @@ Mavlink::configure_stream(const char *stream_name, const float rate)
 	}
 
 	// if we reach here, the stream list does not contain the stream.
-	// flash constrained target's don't include all streams, and some are only available for the development dialect
-#if defined(CONSTRAINED_FLASH) || !defined(MAVLINK_DEVELOPMENT_H)
+	// flash constrained target's don't include all streams
+#if defined(CONSTRAINED_FLASH)
 	return PX4_OK;
 #else
 	PX4_WARN("stream %s not found", stream_name);
@@ -1436,12 +1464,14 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("ESC_STATUS", 1.0f);
 		configure_stream_local("ESTIMATOR_STATUS", 0.5f);
 		configure_stream_local("EXTENDED_SYS_STATE", 1.0f);
-		configure_stream_local("GIMBAL_DEVICE_ATTITUDE_STATUS", 1.0f);
+		configure_stream_local("GIMBAL_DEVICE_ATTITUDE_STATUS", 5.0f);
 		configure_stream_local("GIMBAL_DEVICE_SET_ATTITUDE", 5.0f);
 		configure_stream_local("GIMBAL_MANAGER_STATUS", 0.5f);
-		configure_stream_local("GLOBAL_POSITION", 5.0f);
+		configure_stream_local("GLOBAL_POSITION_SENSOR", 5.0f);
 		configure_stream_local("GLOBAL_POSITION_INT", 5.0f);
+#if defined(MAVLINK_MSG_ID_GNSS_INTEGRITY)
 		configure_stream_local("GNSS_INTEGRITY", 1.0f);
+#endif
 		configure_stream_local("GPS2_RAW", 1.0f);
 		configure_stream_local("GPS_GLOBAL_ORIGIN", 1.0f);
 		configure_stream_local("GPS_RAW_INT", 5.0f);
@@ -1510,11 +1540,13 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("EFI_STATUS", 2.0f);
 		configure_stream_local("ESTIMATOR_STATUS", 1.0f);
 		configure_stream_local("EXTENDED_SYS_STATE", 5.0f);
-		configure_stream_local("GIMBAL_DEVICE_ATTITUDE_STATUS", 1.0f);
+		configure_stream_local("GIMBAL_DEVICE_ATTITUDE_STATUS", 5.0f);
 		configure_stream_local("GIMBAL_DEVICE_SET_ATTITUDE", 5.0f);
 		configure_stream_local("GIMBAL_MANAGER_STATUS", 0.5f);
 		configure_stream_local("GLOBAL_POSITION_INT", 50.0f);
+#if defined(MAVLINK_MSG_ID_GNSS_INTEGRITY)
 		configure_stream_local("GNSS_INTEGRITY", 1.0f);
+#endif
 		configure_stream_local("GPS2_RAW", unlimited_rate);
 		configure_stream_local("GPS_GLOBAL_ORIGIN", 1.0f);
 		configure_stream_local("GPS_RAW_INT", unlimited_rate);
@@ -1675,12 +1707,14 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("ESTIMATOR_STATUS", 5.0f);
 		configure_stream_local("EXTENDED_SYS_STATE", 2.0f);
 		configure_stream_local("GLOBAL_POSITION_INT", 10.0f);
+#if defined(MAVLINK_MSG_ID_GNSS_INTEGRITY)
 		configure_stream_local("GNSS_INTEGRITY", 1.0f);
+#endif
 		configure_stream_local("GPS2_RAW", unlimited_rate);
 		configure_stream_local("GPS_GLOBAL_ORIGIN", 1.0f);
 		configure_stream_local("GPS_RAW_INT", unlimited_rate);
 		configure_stream_local("GPS_STATUS", 1.0f);
-		configure_stream_local("GIMBAL_DEVICE_ATTITUDE_STATUS", 0.5f);
+		configure_stream_local("GIMBAL_DEVICE_ATTITUDE_STATUS", 5.0f);
 		configure_stream_local("GIMBAL_MANAGER_STATUS", 0.5f);
 		configure_stream_local("HIGHRES_IMU", 50.0f);
 		configure_stream_local("HOME_POSITION", 0.5f);
@@ -1760,8 +1794,7 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("DISTANCE_SENSOR", 10.0f);
 		configure_stream_local("MOUNT_ORIENTATION", 10.0f);
 		configure_stream_local("OBSTACLE_DISTANCE", 10.0f);
-		configure_stream_local("ODOMETRY", 30.0f);
-		configure_stream_local("GIMBAL_DEVICE_ATTITUDE_STATUS", 1.0f);
+		configure_stream_local("GIMBAL_DEVICE_ATTITUDE_STATUS", 5.0f);
 		configure_stream_local("GIMBAL_MANAGER_STATUS", 0.5f);
 		configure_stream_local("GIMBAL_DEVICE_SET_ATTITUDE", 5.0f);
 		configure_stream_local("ESC_INFO", 1.0f);
@@ -1775,10 +1808,12 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("CURRENT_MODE", 0.5f);
 		configure_stream_local("ESTIMATOR_STATUS", 1.0f);
 		configure_stream_local("EXTENDED_SYS_STATE", 1.0f);
-		configure_stream_local("GLOBAL_POSITION", 10.0f);
+		configure_stream_local("GLOBAL_POSITION_SENSOR", 10.0f);
 		configure_stream_local("GLOBAL_POSITION_INT", 10.0f);
 		configure_stream_local("GPS_GLOBAL_ORIGIN", 1.0f);
+#if defined(MAVLINK_MSG_ID_GNSS_INTEGRITY)
 		configure_stream_local("GNSS_INTEGRITY", 1.0f);
+#endif
 		configure_stream_local("GPS2_RAW", unlimited_rate);
 		configure_stream_local("GPS_RAW_INT", unlimited_rate);
 		configure_stream_local("HOME_POSITION", 0.5f);
@@ -1825,12 +1860,11 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("DISTANCE_SENSOR", 1.0f);
 		configure_stream_local("MOUNT_ORIENTATION", 2.0f);
 		configure_stream_local("OBSTACLE_DISTANCE", 2.0f);
-		configure_stream_local("GIMBAL_DEVICE_ATTITUDE_STATUS", 1.0f);
+		configure_stream_local("GIMBAL_DEVICE_ATTITUDE_STATUS", 5.0f);
 		configure_stream_local("GIMBAL_MANAGER_STATUS", 0.5f);
 		configure_stream_local("GIMBAL_DEVICE_SET_ATTITUDE", 2.0f);
-		configure_stream_local("ESC_INFO", 0.2f);
-		configure_stream_local("ESC_STATUS", 0.5f);
-
+		configure_stream_local("ESC_INFO", 1.0f);
+		configure_stream_local("ESC_STATUS", 2.0f);
 		configure_stream_local("ADSB_VEHICLE", 1.0f);
 		configure_stream_local("ATTITUDE_TARGET", 0.5f);
 		configure_stream_local("AVAILABLE_MODES", 0.3f);
@@ -1840,7 +1874,7 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("ESTIMATOR_STATUS", 1.0f);
 		configure_stream_local("EXTENDED_SYS_STATE", 0.5f);
 		configure_stream_local("GLOBAL_POSITION_INT", 2.0f);
-		configure_stream_local("GLOBAL_POSITION", 2.0f);
+		configure_stream_local("GLOBAL_POSITION_SENSOR", 2.0f);
 		configure_stream_local("GPS_GLOBAL_ORIGIN", 1.0f);
 		configure_stream_local("GPS2_RAW", 2.0f);
 		configure_stream_local("GPS_RAW_INT", 2.0f);
@@ -1926,6 +1960,8 @@ Mavlink::task_main(int argc, char *argv[])
 			close(tmp);
 		}
 	}
+
+	_sign_control.start(_instance_id, get_status(), &accept_unsigned_callback);
 
 	int ch;
 	_baudrate = 57600;
@@ -2910,6 +2946,14 @@ int Mavlink::start_helper(int argc, char *argv[])
 		res = instance->task_main(argc, argv);
 
 		if (res != PX4_OK) {
+			LockGuard lg{mavlink_module_mutex};
+			int instance_id = instance->get_instance_id();
+
+			if (instance_id >= 0) {
+				mavlink_module_instances[instance_id] = nullptr;
+				mavlink_instance_count.fetch_sub(1);
+			}
+
 			delete instance;
 		}
 	}
@@ -3055,7 +3099,7 @@ Mavlink::display_status()
 	}
 
 	printf("\tForwarding: %s\n", get_forwarding_on() ? "On" : "Off");
-	printf("\tMAVLink version: %" PRId32 "\n", _protocol_version);
+	printf("\tMAVLink version: %" PRId8 "\n", _protocol_version);
 
 	printf("\ttransport protocol: ");
 
@@ -3224,8 +3268,9 @@ Mavlink::stop_command(int argc, char *argv[])
 
 				for (int mavlink_instance = 0; mavlink_instance < MAVLINK_COMM_NUM_BUFFERS; mavlink_instance++) {
 					if (mavlink_module_instances[mavlink_instance] == inst) {
-						delete inst;
 						mavlink_module_instances[mavlink_instance] = nullptr;
+						mavlink_instance_count.fetch_sub(1);
+						delete inst;
 						return PX4_OK;
 					}
 				}

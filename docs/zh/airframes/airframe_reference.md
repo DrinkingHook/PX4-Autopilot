@@ -402,7 +402,7 @@ div.frame_variant td, div.frame_variant th {
  <td>Maintainer: Lorenz Meier &lt;lorenz@px4.io&gt;<p><code>SYS_AUTOSTART</code> = 4050</p></td>
 </tr>
 <tr id="copter_quadrotor_x_holybro_qav250">
- <td><a href="https://docs.px4.io/main/en/frames_multicopter/holybro_qav250_pixhawk4_mini.html">HolyBro QAV250</a></td>
+ <td><a href="https://docs.px4.io/main/en/frames_multicopter/holybro_qav250_pixhawk4_mini">HolyBro QAV250</a></td>
  <td>Maintainer: Beat Kueng &lt;beat-kueng@gmx.net&gt;<p><code>SYS_AUTOSTART</code> = 4052</p></td>
 </tr>
 <tr id="copter_quadrotor_x_holybro_kopis_2">
@@ -604,7 +604,7 @@ div.frame_variant td, div.frame_variant th {
  <td>Maintainer: John Doe &lt;john@example.com&gt;<p><code>SYS_AUTOSTART</code> = 50000</p></td>
 </tr>
 <tr id="rover_rover_aion_robotics_r1_ugv">
- <td><a href="https://docs.px4.io/main/en/complete_vehicles_rover/aion_r1.html">Aion Robotics R1 UGV</a></td>
+ <td><a href="https://docs.px4.io/main/en/complete_vehicles_rover/aion_r1">Aion Robotics R1 UGV</a></td>
  <td>Maintainer: John Doe &lt;john@example.com&gt;<p><code>SYS_AUTOSTART</code> = 50001</p></td>
 </tr>
 <tr id="rover_rover_generic_rover_ackermann">
@@ -614,6 +614,10 @@ div.frame_variant td, div.frame_variant th {
 <tr id="rover_rover_axial_scx10_2_trail_honcho">
  <td><a href="https://www.axialadventure.com/product/1-10-scx10-ii-trail-honcho-4wd-rock-crawler-brushed-rtr/AXID9059.html">Axial SCX10 2 Trail Honcho</a></td>
  <td>Maintainer: John Doe &lt;john@example.com&gt;<p><code>SYS_AUTOSTART</code> = 51001</p></td>
+</tr>
+<tr id="rover_rover_nxp_b3rb_rover_ackermann">
+ <td>NXP B3RB Rover Ackermann</td>
+ <td>Maintainer: John Doe &lt;john@example.com&gt;<p><code>SYS_AUTOSTART</code> = 51002</p></td>
 </tr>
 <tr id="rover_rover_generic_rover_mecanum">
  <td>Generic Rover Mecanum</td>

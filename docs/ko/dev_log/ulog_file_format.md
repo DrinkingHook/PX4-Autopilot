@@ -218,7 +218,7 @@ A key defined in the Information message must be unique. Meaning there must not 
 | `char[value_len] ver_sw_branch`     | git branch                                              | "master"                                                          |
 | `uint32_t ver_sw_release`           | 소프트웨어 버전 (아래 참고)                     | 0x010401ff                                                        |
 | `char[value_len] sys_os_name`       | 운영체제 이름                                                 | "Linux"                                                           |
-| `char[value_len] sys_os_ve`r        | 운영체제 버전 (git tag)                    | "9f82919"                                                         |
+| `char[value_len] sys_os_ver`        | 운영체제 버전 (git tag)                    | "9f82919"                                                         |
 | `uint32_t ver_os_release`           | 운영체제 버전 (아래 참고)                      | 0x010401ff                                                        |
 | `char[value_len] sys_toolchain`     | 툴체인 이름                                                  | "GNU GCC"                                                         |
 | `char[value_len] sys_toolchain_ver` | 툴체인 버전                                                  | "6.2.1"                           |
@@ -502,6 +502,7 @@ Since the Definitions and Data Sections use the same message header format, they
 - [ulogreader](https://github.com/maxsun/ulogreader): Javascript, ULog reader and parser outputs log in JSON object format.
 - [Foxglove](https://foxglove.dev): an integrated visualization and diagnosis tool for robotics data that supports ULog files.
 - [TypeScript ULog parser](https://github.com/foxglove/ulog): TypeScript, ULog reader that outputs JS objects.
+- [yule_log](https://crates.io/crates/yule_log): A streaming ULog parser written in Rust.
 
 ## 파일 형식 버전 이력
 
