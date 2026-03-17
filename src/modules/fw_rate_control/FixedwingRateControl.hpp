@@ -163,6 +163,48 @@ private:
 	param_t _handle_param_vt_fw_difthr_en{PARAM_INVALID};
 	int32_t _param_vt_fw_difthr_en{0};
 
+	/**
+	 * @param _param_fw_acro_x_max 固定翼特技模式最大滚转速率（deg/s，通常对应X轴/滚转）
+	 * @param _param_fw_acro_y_max 固定翼特技模式最大俯仰速率（deg/s，通常对应Y轴/俯仰）
+	 * @param _param_fw_acro_z_max 固定翼特技模式最大偏航速率（deg/s，通常对应Z轴/偏航）
+	 * @param _param_fw_acro_yaw_en 特技模式中偏航控制使能（0=禁用，1=启用）
+	 * @param _param_fw_airspd_max 固定翼最大允许空速（m/s）
+	 * @param _param_fw_airspd_min 固定翼最小允许空速（m/s，通常失速速度以上）
+	 * @param _param_fw_airspd_stall 固定翼失速空速（m/s）
+	 * @param _param_fw_airspd_trim 固定翼配平（巡航）空速（m/s）
+	 * @param _param_fw_use_airspd 是否使用空速传感器数据进行控制
+	 * @param _param_fw_arsp_scale_en 空速缩放使能（根据实际空速与配平空速比值调整控制增益）
+	 * @param _param_fw_bat_scale_en 电池电压缩放使能（自动补偿低电压时的控制能力下降）
+	 * @param _param_fw_dtrim_p_vmax 高速时俯仰配平调整最大值
+	 * @param _param_fw_dtrim_p_vmin 低速时俯仰配平调整最大值
+	 * @param _param_fw_dtrim_r_vmax 高速时滚转配平调整最大值
+	 * @param _param_fw_dtrim_r_vmin 低速时滚转配平调整最大值
+	 * @param _param_fw_dtrim_y_vmax 高速时偏航配平调整最大值
+	 * @param _param_fw_dtrim_y_vmin 低速时偏航配平调整最大值
+	 * @param _param_fw_man_p_sc 手动滚转输入缩放系数
+	 * @param _param_fw_man_r_sc 手动俯仰输入缩放系数
+	 * @param _param_fw_man_y_sc 手动偏航输入缩放系数
+	 * @param _param_fw_pr_ff 俯仰速率前馈增益
+	 * @param _param_fw_pr_i 俯仰速率I增益
+	 * @param _param_fw_pr_imax 俯仰速率积分限幅
+	 * @param _param_fw_pr_p 俯仰速率P增益
+	 * @param _param_fw_pr_d 俯仰速率D增益
+	 * @param _param_fw_rll_to_yaw_ff 滚转到偏航的前馈系数（协调转弯辅助）
+	 * @param _param_fw_rr_ff 滚转速率前馈增益
+	 * @param _param_fw_rr_i 滚转速率I增益
+	 * @param _param_fw_rr_imax 滚转速率积分限幅
+	 * @param _param_fw_rr_p 滚转速率P增益
+	 * @param _param_fw_rr_d 滚转速率D增益
+	 * @param _param_fw_yr_ff 偏航速率前馈增益
+	 * @param _param_fw_yr_i 偏航速率I增益
+	 * @param _param_fw_yr_imax 偏航速率积分限幅
+	 * @param _param_fw_yr_p 偏航速率P增益
+	 * @param _param_fw_yr_d 偏航速率D增益
+	 * @param _param_trim_pitch 地面配平俯仰角（度）
+	 * @param _param_trim_roll 地面配平滚转角（度）
+	 * @param _param_trim_yaw 地面配平偏航角（度）
+	 * @param _param_fw_spoilers_man 手动扰流板/副翼差动控制使能（用于手动模式）
+	 */
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::FW_ACRO_X_MAX>) _param_fw_acro_x_max,
 		(ParamFloat<px4::params::FW_ACRO_Y_MAX>) _param_fw_acro_y_max,

@@ -152,6 +152,25 @@ private:
 
 	uint8_t _quat_reset_counter{0};
 
+	/**
+	 * @param _param_mc_airmode 多旋翼空中模式（Air mode，0=禁用，1=仅滚转/俯仰，2=全姿态控制）
+	 * @param _param_mc_man_tilt_tau 手动倾斜时间常数（秒）
+	 * @param _param_mc_roll_p 多旋翼滚转位置P增益
+	 * @param _param_mc_pitch_p 多旋翼俯仰位置P增益
+	 * @param _param_mc_yaw_p 多旋翼偏航位置P增益
+	 * @param _param_mc_yaw_weight 偏航权重系数
+	 * @param _param_mc_rollrate_max 多旋翼最大滚转速率（deg/s）
+	 * @param _param_mc_pitchrate_max 多旋翼最大俯仰速率（deg/s）
+	 * @param _param_mc_yawrate_max 多旋翼最大偏航速率（deg/s）
+	// Stabilized mode params
+	 * @param _param_man_deadzone 手动摇杆死区阈值
+	 * @param _param_mpc_man_tilt_max 手动模式最大倾斜角（度）
+	 * @param _param_mpc_manthr_min 手动模式最小油门值（0~1）
+	 * @param _param_mpc_thr_max 最大油门值（0~1）
+	 * @param _param_mpc_thr_hover 悬停油门值（0~1）
+	 * @param _param_mpc_thr_curve 油门曲线模式（线性/指数）
+	 * @param _param_com_spoolup_time 电机启动上电时间（arming后预转时间，秒）
+	 */
 	DEFINE_PARAMETERS(
 		(ParamInt<px4::params::MC_AIRMODE>)         _param_mc_airmode,
 		(ParamFloat<px4::params::MC_MAN_TILT_TAU>)  _param_mc_man_tilt_tau,

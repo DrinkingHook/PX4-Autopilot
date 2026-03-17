@@ -83,6 +83,16 @@ protected:
 	float _velocity_constraint_up{INFINITY};
 	float _velocity_constraint_down{INFINITY};
 
+	/**
+	 * @param _param_mpc_hold_max_z     位置保持模式下允许的最大垂直漂移/误差（m），超过此值可能触发重新定位或警报
+	 * @param _param_mpc_alt_mode       高度控制模式（0=使用气压计+GPS融合，1=仅气压计，2=仅视觉/激光等，具体取决于固件版本）
+	 * @param _param_mpc_hold_max_xy    位置保持模式下允许的最大水平漂移/误差（m），用于判定是否仍处于“保持”状态
+	 * @param _param_mpc_z_p            高度位置控制器比例增益 P（用于垂直方向位置到速度的控制，值越大响应越快但易振荡）
+	 * @param _param_mpc_land_alt1      降落第一阶段开始减速的高度（从巡航高度进入慢速下降的切换点，单位：m，通常 10~20 m）
+	 * @param _param_mpc_land_alt2      降落第二阶段使用 land_speed 的高度阈值（低于此高度采用 MPC_LAND_SPEED 控制，单位：m，通常 3~5 m）
+	 * @param _param_mpc_land_speed     接近地面时的目标下降速度（m/s，最后阶段的受控下降速率，通常 0.5~1.0 m/s）
+	 * @param _param_mpc_tko_speed      起飞时接近地面阶段的目标上升速度（m/s，从起飞到安全高度的爬升速率，通常 1.0~2.0 m/s）
+	 */
 	DEFINE_PARAMETERS_CUSTOM_PARENT(FlightTask,
 					(ParamFloat<px4::params::MPC_HOLD_MAX_Z>) _param_mpc_hold_max_z,
 					(ParamInt<px4::params::MPC_ALT_MODE>) _param_mpc_alt_mode,

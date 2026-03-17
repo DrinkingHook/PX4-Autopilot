@@ -230,6 +230,13 @@ private:
 	SlewRate<float> _slew_limited_ice_shedding_output;
 	hrt_abstime _last_ice_shedding_update{};
 
+	/**
+	 * @param _param_ca_airframe 控制分配机架类型选择
+	 * @param _param_ca_method 控制分配方法选择
+	 * @param _param_ca_failure_mode 控制分配故障处理模式
+	 * @param _param_r_rev 可反转电机位掩码（CA_R_REV，指示哪些电机支持反转）
+	 * @param _param_ice_shedding_period 冰脱落周期（秒）
+	 */
 	DEFINE_PARAMETERS(
 		(ParamInt<px4::params::CA_AIRFRAME>) _param_ca_airframe,
 		(ParamInt<px4::params::CA_METHOD>) _param_ca_method,

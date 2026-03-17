@@ -144,6 +144,21 @@ private:
 	bool _rotary_wing{false};
 	bool _vtol{false};
 
+	/**
+	 * @param _param_com_rc_in_mode     遥控器输入模式（0=联合模式（Joystick+开关），1=仅Joystick，2=仅开关，3=禁用RC等，用于定义RC信号如何被处理）
+	 * @param _param_com_rc_loss_t      遥控信号丢失后判定为失效的超时时间（秒，通常 1.0~3.0 s，超过此时间触发 failsafe）
+	 * @param _param_com_rc_stick_ov    遥控器摇杆超控阈值（归一化 -1~1，超过此值视为摇杆满偏，用于某些模式下的快速响应判断）
+	 * @param _param_man_arm_gesture    是否启用手动解锁手势（true=启用，通过特定摇杆动作解锁/上锁，通常前后推+左右推组合）
+	 * @param _param_man_kill_gest_t    手动杀机（紧急停桨）手势保持时间（秒，需持续保持该动作才触发 kill switch）
+	 * @param _param_com_arm_sw_isbtn   解锁开关是否视为按钮（true=按钮式，按下即解锁/上锁；false=开关式，位置决定状态）
+	 * @param _param_rc_map_pay_sw      遥控器上负载/挂载开关通道映射（通道号，用于控制云台、投放、相机等外部设备）
+	 * @param _param_fltmode_1          飞行模式开关位置1对应的模式（数值对应模式ID，如 0=Manual, 2=Altitude, 3=Position 等）
+	 * @param _param_fltmode_2          飞行模式开关位置2对应的模式
+	 * @param _param_fltmode_3          飞行模式开关位置3对应的模式
+	 * @param _param_fltmode_4          飞行模式开关位置4对应的模式
+	 * @param _param_fltmode_5          飞行模式开关位置5对应的模式（6档开关常用）
+	 * @param _param_fltmode_6          飞行模式开关位置6对应的模式
+	 */
 	DEFINE_PARAMETERS(
 		(ParamInt<px4::params::COM_RC_IN_MODE>) _param_com_rc_in_mode,
 		(ParamFloat<px4::params::COM_RC_LOSS_T>) _param_com_rc_loss_t,

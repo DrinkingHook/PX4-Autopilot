@@ -336,20 +336,15 @@ bool MixingOutput::updateSubscriptions(bool allow_wq_switch)
 					}
 				}
 
-				/**
-				 * 如果找到则复用已分配的 provider 实例
-				 * 若没有找到则创建一个新的 provider 实例
-				 */
+				// 如果找到则复用已分配的 provider 实例，若没有找到则创建一个新的 provider 实例
 				if (found_index >= 0) {
 					_functions[i] = _function_allocated[found_index];
 
 				} else {
+					// 新建实例
 					_function_allocated[next_provider] = all_function_providers[p].constructor(context);
 
-					/**
-					 * 判断是否构建成功
-					 * 若成功则分配给当前通道，并记录 provider 索引
-					 */
+					// 判断是否构建成功，若成功则分配给当前通道，并记录 provider 索引
 					if (_function_allocated[next_provider]) {
 						_functions[i] = _function_allocated[next_provider];
 						provider_indexes[next_provider++] = p;

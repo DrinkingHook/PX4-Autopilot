@@ -62,6 +62,11 @@ protected:
 
 	ManualVelocitySmoothingZ _smoothing; ///< Smoothing in z direction
 
+	/**
+	 * @param _param_mpc_jerk_max       最大 jerk（加加速度）限制（m/s³），用于平滑加速度变化，防止突变（手动高度模式下影响垂直控制平顺性）
+	 * @param _param_mpc_acc_up_max     垂直向上最大加速度（m/s²），限制爬升时的加速度（通常 2~5 m/s²）
+	 * @param _param_mpc_acc_down_max   垂直向下最大加速度（m/s²），限制下降时的加速度（通常比向上小，如 1~3 m/s²，以确保安全）
+	 */
 	DEFINE_PARAMETERS_CUSTOM_PARENT(FlightTaskManualAltitude,
 					(ParamFloat<px4::params::MPC_JERK_MAX>) _param_mpc_jerk_max,
 					(ParamFloat<px4::params::MPC_ACC_UP_MAX>) _param_mpc_acc_up_max,

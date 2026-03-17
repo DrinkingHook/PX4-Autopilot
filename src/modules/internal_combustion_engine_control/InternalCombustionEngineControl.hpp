@@ -151,6 +151,18 @@ private:
 	 */
 	bool isStartingPermitted(const hrt_abstime now);
 
+	/**
+	 * @param _param_ice_on_source      内燃机（ICE）启动信号来源（0=无，1=遥控器通道，2=任务/自动，3=专用开关等）
+	 * @param _param_ice_choke_st_dur   启动时冷车阻风门（choke）保持开启的持续时间（秒，用于富油启动）
+	 * @param _param_ice_strt_dur       单次启动尝试的最大持续时间（秒，超过此时间视为启动失败）
+	 * @param _param_ice_min_run_rpm    内燃机视为正常运行的最小转速阈值（RPM，低于此值可能判定为熄火或故障）
+	 * @param _param_ice_strt_attempts  最大启动尝试次数（失败后自动重试的次数，防止无限尝试损坏启动电机）
+	 * @param _param_ice_running_fault_detection 运行中故障检测使能（0=禁用，1=启用，检测转速异常、油门响应等）
+	 * @param _param_ice_strt_thr       启动过程中施加的油门值（归一化 0~1 或百分比，用于启动时提供足够动力）
+	 * @param _param_ice_stop_choke     停机时是否使用阻风门辅助熄火（0=不使用，1=使用，通常用于快速停机）
+	 * @param _param_ice_thr_slew       油门变化速率限制（slew rate，单位：%/s 或归一化/s，防止油门突变导致发动机失速）
+	 * @param _param_ice_ign_delay      点火延迟时间（秒，从启动信号到实际点火的延迟，用于某些发动机预热或安全要求）
+	 */
 	DEFINE_PARAMETERS(
 		(ParamInt<px4::params::ICE_ON_SOURCE>) _param_ice_on_source,
 		(ParamFloat<px4::params::ICE_CHOKE_ST_DUR>) _param_ice_choke_st_dur,

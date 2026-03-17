@@ -334,6 +334,27 @@ private:
 	param_t _param_mav_type{PARAM_INVALID};
 	param_t _param_rc_map_fltmode{PARAM_INVALID};
 
+	/**
+	 * @param _param_com_disarm_land 着陆后自动解除武装延迟（秒）
+	 * @param _param_com_disarm_prflt 预飞行自动解除武装延迟（秒）
+	 * @param _param_com_disarm_man 手动解除武装使能
+	 * @param _param_com_dl_loss_t 数据链路丢失超时时间（秒）
+	 * @param _param_com_hldl_loss_t 高级数据链路丢失超时时间（秒）
+	 * @param _param_com_hldl_reg_t 高级数据链路注册超时时间（秒）
+	 * @param _param_com_home_en 回家功能使能
+	 * @param _param_com_home_in_air 允许在空中设置回家点
+	 * @param _param_com_flt_profile 飞行配置文件选择
+	 * @param _param_com_force_safety 强制进入安全模式
+	 * @param _param_com_kill_disarm 杀死（kill）后自动解除武装延迟（秒）
+	 * @param _param_com_mot_test_en 电机测试使能
+	 * @param _param_com_obc_loss_t 机载计算机（OBC）丢失超时时间（秒）
+	 * @param _param_com_prearm_mode 预武装模式选择
+	 * @param _param_com_rc_override RC信号覆盖模式
+	 * @param _param_com_spoolup_time 电机/螺旋桨启动上电时间（秒）
+	 * @param _param_com_flight_uuid 当前飞行唯一ID
+	 * @param _param_com_takeoff_act 起飞动作模式
+	 * @param _param_com_cpu_max CPU最大允许负载（百分比）
+	 */
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::COM_DISARM_LAND>)  _param_com_disarm_land,
 		(ParamFloat<px4::params::COM_DISARM_PRFLT>) _param_com_disarm_prflt,

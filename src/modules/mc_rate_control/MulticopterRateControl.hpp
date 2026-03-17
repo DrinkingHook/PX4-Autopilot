@@ -134,6 +134,35 @@ private:
 
 	AlphaFilter<float> _output_lpf_yaw;
 
+	/**
+	 * @param _param_mc_rollrate_p 多旋翼滚转速率P增益
+	 * @param _param_mc_rollrate_i 多旋翼滚转速率I增益
+	 * @param _param_mc_rr_int_lim 滚转速率积分限幅
+	 * @param _param_mc_rollrate_d 多旋翼滚转速率D增益
+	 * @param _param_mc_rollrate_ff 多旋翼滚转速率前馈增益
+	 * @param _param_mc_rollrate_k 多旋翼滚转速率控制器增益缩放系数
+	 * @param _param_mc_pitchrate_p 多旋翼俯仰速率P增益
+	 * @param _param_mc_pitchrate_i 多旋翼俯仰速率I增益
+	 * @param _param_mc_pr_int_lim 俯仰速率积分限幅
+	 * @param _param_mc_pitchrate_d 多旋翼俯仰速率D增益
+	 * @param _param_mc_pitchrate_ff 多旋翼俯仰速率前馈增益
+	 * @param _param_mc_pitchrate_k 多旋翼俯仰速率控制器增益缩放系数
+	 * @param _param_mc_yawrate_p 多旋翼偏航速率P增益
+	 * @param _param_mc_yawrate_i 多旋翼偏航速率I增益
+	 * @param _param_mc_yr_int_lim 偏航速率积分限幅
+	 * @param _param_mc_yawrate_d 多旋翼偏航速率D增益
+	 * @param _param_mc_yawrate_ff 多旋翼偏航速率前馈增益
+	 * @param _param_mc_yawrate_k 多旋翼偏航速率控制器增益缩放系数
+	 * @param _param_mc_yaw_tq_cutoff 偏航扭矩低通滤波截止频率
+	 * @param _param_mc_acro_r_max 特技模式最大滚转速率（deg/s）
+	 * @param _param_mc_acro_p_max 特技模式最大俯仰速率（deg/s）
+	 * @param _param_mc_acro_y_max 特技模式最大偏航速率（deg/s）
+	 * @param _param_mc_acro_expo 特技模式摇杆曲线指数形状（滚转 & 俯仰）
+	 * @param _param_mc_acro_expo_y 特技模式摇杆曲线指数形状（偏航）
+	 * @param _param_mc_acro_supexpo 特技模式超级指数摇杆曲线形状（滚转 & 俯仰）
+	 * @param _param_mc_acro_supexpoy 特技模式超级指数摇杆曲线形状（偏航）
+	 * @param _param_mc_bat_scale_en 电池电压缩放使能（自动补偿电压下降）
+	 */
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::MC_ROLLRATE_P>) _param_mc_rollrate_p,
 		(ParamFloat<px4::params::MC_ROLLRATE_I>) _param_mc_rollrate_i,

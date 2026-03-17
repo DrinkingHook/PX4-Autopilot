@@ -244,6 +244,11 @@ protected:
 
 	landing_gear_s _gear{};
 
+	/**
+	 * @param _param_mpc_xy_vel_max     自动模式下水平方向（xy）的最大速度限制（m/s，通常用于位置控制、任务、Offboard等，防止过快移动）
+	 * @param _param_mpc_z_vel_max_dn   垂直向下最大速度（m/s，非降落时的下降速度上限，常设为 1.0~3.0 m/s）
+	 * @param _param_mpc_z_vel_max_up   垂直向上最大速度（m/s，爬升时的速度上限，常设为 1.0~5.0 m/s）
+	 */
 	DEFINE_PARAMETERS_CUSTOM_PARENT(ModuleParams,
 					(ParamFloat<px4::params::MPC_XY_VEL_MAX>) _param_mpc_xy_vel_max,
 					(ParamFloat<px4::params::MPC_Z_VEL_MAX_DN>) _param_mpc_z_vel_max_dn,

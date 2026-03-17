@@ -56,6 +56,11 @@ private:
 	StickTiltXY _stick_tilt_xy{this};
 	StickYaw _stick_yaw{this};
 
+	/**
+	 * @param _param_mpc_land_rc_help   是否允许遥控器在自动降落过程中进行辅助控制（0=禁用，1=允许）
+	 * @param _param_mpc_land_speed     自动降落时的控制下降速度（目标垂直下降速率，通常 0.5~1.0 m/s）
+	 * @param _param_mpc_thr_hover      悬停平衡时的油门推力值（用于计算中性油门基准，单位：归一化 0~1 或根据版本为百分比）
+	 */
 	DEFINE_PARAMETERS_CUSTOM_PARENT(FlightTask,
 					(ParamInt<px4::params::MPC_LAND_RC_HELP>) _param_mpc_land_rc_help,
 					(ParamFloat<px4::params::MPC_LAND_SPEED>) _param_mpc_land_speed, ///< velocity for controlled descend

@@ -77,6 +77,22 @@ private:
 	uORB::Subscription _takeoff_status_sub{ORB_ID(takeoff_status)};
 	bool haveTakenOff();
 
+	/**
+	 * @param _param_mc_slow_map_hvel   慢速模式下水平速度摇杆映射方式（0=线性，1=指数等，控制低速区灵敏度）
+	 * @param _param_mc_slow_map_vvel   慢速模式下垂直速度摇杆映射方式（影响油门/高度控制的响应曲线）
+	 * @param _param_mc_slow_map_yawr   慢速模式下偏航角速度摇杆映射方式
+	 * @param _param_mc_slow_min_hvel   慢速模式下水平方向的最小速度（摇杆轻推时的最低输出速度，单位：m/s）
+	 * @param _param_mc_slow_min_vvel   慢速模式下垂直方向的最小速度（最小爬升/下降速率）
+	 * @param _param_mc_slow_min_yawr   慢速模式下最小偏航角速度（单位：°/s 或 rad/s）
+	 * @param _param_mc_slow_def_hvel   慢速模式下水平方向的默认/参考速度（摇杆中位附近的目标速度）
+	 * @param _param_mc_slow_def_vvel   慢速模式下垂直方向的默认速度
+	 * @param _param_mc_slow_def_yawr   慢速模式下默认偏航角速度
+	 * @param _param_mpc_vel_manual     手动模式（位置/速度控制）下的最大水平速度（摇杆满偏时的目标速度，单位：m/s）
+	 * @param _param_mpc_z_vel_max_up   手动模式下垂直向上最大速度（m/s）
+	 * @param _param_mpc_z_vel_max_dn   手动模式下垂直向下最大速度（m/s）
+	 * @param _param_mpc_man_y_max      手动模式下最大偏航角速度（摇杆满偏时的 yaw 速率，单位：°/s）
+	 * @param _param_mc_slow_map_pitch  慢速模式下俯仰（pitch）摇杆映射方式（影响前/后倾控制曲线）
+	 */
 	DEFINE_PARAMETERS_CUSTOM_PARENT(FlightTaskManualAcceleration,
 					(ParamInt<px4::params::MC_SLOW_MAP_HVEL>) _param_mc_slow_map_hvel,
 					(ParamInt<px4::params::MC_SLOW_MAP_VVEL>) _param_mc_slow_map_vvel,

@@ -836,6 +836,60 @@ private:
 
 	float rollAngleToLateralAccel(float roll_body) const;
 
+	/**
+	 * @param _param_fw_r_lim 固定翼最大滚转角限制（度）
+	 * @param _param_npfg_period NPFG（非线性路径跟随引导）引导周期（秒）
+	 * @param _param_npfg_damping NPFG阻尼系数
+	 * @param _param_npfg_en_period_lb 是否启用NPFG周期下限
+	 * @param _param_npfg_en_period_ub 是否启用NPFG周期上限
+	 * @param _param_npfg_roll_time_const NPFG滚转时间常数（秒）
+	 * @param _param_npfg_switch_distance_multiplier NPFG路径切换距离倍数
+	 * @param _param_npfg_period_safety_factor NPFG周期安全因子
+	 * @param _param_fw_lnd_airspd 着陆目标空速（m/s）
+	 * @param _param_fw_lnd_ang 着陆坡道角（度）
+	 * @param _param_fw_lnd_fl_pmax 着陆滑翔段最大俯仰角（度）
+	 * @param _param_fw_lnd_fl_pmin 着陆滑翔段最小俯仰角（度）
+	 * @param _param_fw_lnd_flalt 着陆滑翔段开始高度（米，相对于着陆点）
+	 * @param _param_fw_lnd_earlycfg 是否提前配置着陆襟翼/扰流板
+	 * @param _param_fw_lnd_useter 着陆时是否使用地形跟随高度
+	 * @param _param_fw_p_lim_max 最大俯仰角限制（度）
+	 * @param _param_fw_p_lim_min 最小俯仰角限制（度，通常为负值）
+	 * @param _param_climbrate_target 目标爬升率（m/s）
+	 * @param _param_sinkrate_target 目标下降率（m/s）
+	 * @param _param_fw_thr_idle 怠速油门值（0~1）
+	 * @param _param_fw_thr_max 最大油门值（0~1）
+	 * @param _param_fw_thr_min 最小油门值（0~1）
+	 * @param _param_fw_flaps_lnd_scl 着陆襟翼缩放系数（0~1）
+	 * @param _param_fw_flaps_to_scl 起飞襟翼缩放系数（0~1）
+	 * @param _param_fw_spoilers_lnd 着陆时扰流板/空气刹车开度（0~1）
+	 * @param _param_fw_pos_stk_conf 位置杆控制配置（手动/自动混合等）
+	 * @param _param_nav_gpsf_lt GPS失效时的航向保持时间（秒）
+	 * @param _param_nav_gpsf_r GPS失效时的盘旋半径（米）
+	 * @param _param_t_spdweight 速度权重（用于能量控制中的速度-高度权衡）
+	// Launch detection parameters
+	 * @param _param_fw_laun_detcn_on 固定翼发射/起飞检测使能
+	 * @param _param_fw_laun_cs_lk_dy 发射检测空速锁定动态阈值（m/s）
+	// external parameters
+	 * @param _param_fw_use_airspd 是否使用空速传感器
+	 * @param _param_nav_loiter_rad 盘旋半径（米）
+	 * @param _takeoff_pitch_min 起飞最小俯仰角（度）
+	 * @param _param_nav_fw_alt_rad 固定翼高度接受半径（米）
+	 * @param _param_fw_wing_span 机翼展长（米，用于转向半径计算等）
+	 * @param _param_fw_wing_height 机翼高度/离地高度（米，用于地面效应等）
+	 * @param _param_rwto_nudge 跑道起飞（RWTO）时允许横向微调（nudge）
+	 * @param _param_fw_lnd_fl_time 着陆滑翔段持续时间（秒）
+	 * @param _param_fw_lnd_fl_sink 着陆滑翔段目标下降率（m/s）
+	 * @param _param_fw_lnd_td_time 触地后减速阶段时间（秒）
+	 * @param _param_fw_lnd_td_off 触地后油门关闭延迟（秒）
+	 * @param _param_fw_lnd_nudge 着陆时是否允许横向微调（nudge）
+	 * @param _param_fw_lnd_abort 着陆中止（go-around）使能配置
+	 * @param _param_fw_tko_airspd 起飞目标空速（m/s）
+	 * @param _param_rwto_psp 跑道起飞俯仰设定点（度）
+	 * @param _param_fw_airspd_max 最大允许空速（m/s）
+	 * @param _param_fw_airspd_min 最小允许空速（m/s）
+	 * @param _param_fw_airspd_trim 配平/巡航空速（m/s）
+	 * @param _param_fw_t_clmb_max 最大爬升率限制（m/s）
+	 */
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::FW_R_LIM>) _param_fw_r_lim,
 

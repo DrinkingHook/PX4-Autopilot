@@ -664,7 +664,7 @@ float RTL::computeReturnAltitude(const PositionYawSetpoint &rtl_position, Destin
 		// We choose the minimum height to be two times the distance from the land position in order to
 		// avoid the vehicle touching the ground while still moving horizontally.
 		// 翻译：当超出目标位置的水平接受半径时，使用的最小rtl高度。
-		// 我们选择最小高度为从着陆位置的距离的两倍，以避免车辆在水平移动时接触地面。
+		// 	我们选择最小高度为从着陆位置的距离的两倍，以避免车辆在水平移动时接触地面。
 		const float return_altitude_min_outside_acceptance_rad_amsl = rtl_position.alt + 2.0f * _param_nav_acc_rad.get();
 
 		const float max_return_altitude = rtl_position.alt + _param_rtl_return_alt.get();
@@ -835,7 +835,7 @@ land_approaches_s RTL::readVtolLandApproaches(PositionYawSetpoint rtl_position) 
 	// which is within MAX_DIST_FROM_HOME_FOR_LAND_APPROACHES of our current home position then treat ALL following mission items of type NAV_CMD_LOITER_TO_ALT which come
 	// BEFORE the next mission item of type NAV_CMD_RALLY_POINT as land approaches for the home position
 	// 翻译：遍历集合点存储中的所有任务项。如果我们发现一个 NAV_CMD_RALLY_POINT 类型的任务项位于当前起始位置的 MAX_DIST_FROM_HOME_FOR_LAND_APPROACHES 范围内，
-	// 则将下一个 NAV_CMD_RALLY_POINT 类型的任务项之前的所有 NAV_CMD_LOITER_TO_ALT 类型的任务项视为着陆接近起始位置。
+	// 	则将下一个 NAV_CMD_RALLY_POINT 类型的任务项之前的所有 NAV_CMD_LOITER_TO_ALT 类型的任务项视为着陆接近起始位置。
 	land_approaches_s vtol_land_approaches{};
 
 	if (!_safe_points_updated) {

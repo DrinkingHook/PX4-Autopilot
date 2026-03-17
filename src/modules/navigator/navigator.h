@@ -440,6 +440,26 @@ private:
 
 	bool geofence_allows_position(const vehicle_global_position_s &pos);
 
+	/**
+	 * @param _param_nav_loiter_rad 固定翼盘旋半径（米）
+	 * @param _param_nav_acc_rad 起飞接受半径（米）
+	 * @param _param_nav_fw_alt_rad 固定翼高度接受半径（米）
+	 * @param _param_nav_fw_altl_rad 着陆前固定翼高度接受半径（米）
+	 * @param _param_nav_mc_alt_rad 多旋翼高度接受半径（米）
+	 * @param _param_nav_force_vt 强制VTOL过渡模式
+	 * @param _param_nav_traff_avoid 空中交通避让使能
+	 * @param _param_nav_traff_a_hor_ct 避让水平交叉航迹距离（米）
+	 * @param _param_nav_traff_a_ver 避让垂直距离（米）
+	 * @param _param_nav_traff_collision_time 避让碰撞时间阈值（秒）
+	 * @param _param_min_ltr_alt 盘旋模式最小高度（米）
+	 * @param _param_nav_min_gnd_dist 地面最小距离（任务和RTL模式，米）
+	// 非导航器参数：任务（MIS_*）
+	 * @param _param_mis_takeoff_alt 任务起飞高度（米）
+	 * @param _param_mis_yaw_tmt 任务偏航超时时间（秒）
+	 * @param _param_mis_yaw_err 任务偏航误差容限（度）
+	 * @param _param_mis_lnd_abrt_alt 任务着陆中止高度（米）
+	 * @param _param_mis_command_tout 任务指令超时时间（秒）
+	 */
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::NAV_LOITER_RAD>)   _param_nav_loiter_rad,	/**< loiter radius for fixedwing */
 		(ParamFloat<px4::params::NAV_ACC_RAD>)      _param_nav_acc_rad,		/**< acceptance for takeoff */

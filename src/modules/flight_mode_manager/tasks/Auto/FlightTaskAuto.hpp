@@ -142,6 +142,31 @@ protected:
 	bool _is_emergency_braking_active{false};
 	bool _want_takeoff{false};
 
+	/**
+	 * @param _param_mpc_xy_cruise      自动模式（Mission/Offboard等）下的默认水平巡航速度（通常用于航点间飞行时的目标速度）
+	 * @param _param_nav_mc_alt_rad     垂直方向航点接受半径，到达该高度范围内视为到达航点并切换下一个航点
+	 * @param _param_mpc_yaw_mode       定义自动模式下航向（yaw）的控制方式（0=朝向航点、1=沿轨迹、2=固定航向、3=朝向下一个航点先转 yaw 等）
+	 * @param _param_mpc_yawrauto_acc   自动模式下 yaw 角加速度（决定 yaw 转动快慢的加速度）
+	 * @param _param_mpc_yawrauto_max   自动模式下最大 yaw 角速度（单位：°/s 或 rad/s，根据版本）
+	 * @param _param_mis_yaw_err        任务模式下航向误差阈值，超过此值可能触发某些行为或判定未对准
+	 * @param _param_mpc_acc_hor        水平方向（xy）的最大加速度（用于自动模式和部分手动位置控制）
+	 * @param _param_mpc_acc_up_max     垂直向上最大加速度（爬升时限制）
+	 * @param _param_mpc_acc_down_max   垂直向下最大加速度（下降时限制，通常比向上小以保护安全）
+	 * @param _param_mpc_jerk_auto      自动模式下 jerk（加加速度）限制，用于平滑轨迹规划（jerk-limited trajectory）
+	 * @param _param_mpc_xy_traj_p      水平轨迹位置控制 P 增益（用于轨迹跟踪的修正力度）
+	 * @param _param_mpc_xy_err_max     水平位置误差最大允许值，超过可能触发保护或切换行为
+	 * @param _param_mpc_land_speed     自动降落时的下降速度（最后阶段的目标下降速率，通常 0.6~1.0 m/s 左右）
+	 * @param _param_mpc_land_crwl      降落爬行（crawl）阶段的下降速度（接近地面时极低速阶段，配合 MPC_LAND_ALTx 使用）
+	 * @param _param_mpc_land_rc_help   是否允许遥控器在自动降落时辅助控制（0=禁用，1=允许）
+	 * @param _param_mpc_land_radius    降落接受半径（水平方向，认为进入该圆内开始执行降落逻辑）
+	 * @param _param_mpc_land_alt1      降落第一阶段切换高度（通常较高，进入慢速下降）
+	 * @param _param_mpc_land_alt2      降落第二阶段切换高度（更低，进入更慢下降或爬行阶段）
+	 * @param _param_mpc_land_alt3      降落第三阶段切换高度（非常接近地面，常配合激光雷达使用）
+	 * @param _param_mpc_z_v_auto_up    自动模式下垂直向上最大/目标速度（爬升速度）
+	 * @param _param_mpc_z_v_auto_dn    自动模式下垂直向下最大/目标速度（非降落时的下降速度）
+	 * @param _param_mpc_tko_speed      起飞时的爬升速度（垂直向上速度，从起飞到安全高度）
+	 * @param _param_mpc_tko_ramp_t     起飞油门斜坡时间（throttle ramp time），控制起飞时油门缓慢增加的时间，避免突然冲击
+	 */
 	DEFINE_PARAMETERS_CUSTOM_PARENT(FlightTask,
 					(ParamFloat<px4::params::MPC_XY_CRUISE>) _param_mpc_xy_cruise,
 					(ParamFloat<px4::params::NAV_MC_ALT_RAD>)

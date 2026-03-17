@@ -133,6 +133,58 @@ private:
 		.landed = true,
 	};
 
+	/**
+	 * @param _param_mpc_xy_p 多旋翼XY位置P增益
+	 * @param _param_mpc_z_p 多旋翼Z位置P增益
+	 * @param _param_mpc_xy_vel_p_acc 多旋翼XY速度P增益（加速度控制）
+	 * @param _param_mpc_xy_vel_i_acc 多旋翼XY速度I增益（加速度控制）
+	 * @param _param_mpc_xy_vel_d_acc 多旋翼XY速度D增益（加速度控制）
+	 * @param _param_mpc_z_vel_p_acc 多旋翼Z速度P增益（加速度控制）
+	 * @param _param_mpc_z_vel_i_acc 多旋翼Z速度I增益（加速度控制）
+	 * @param _param_mpc_z_vel_d_acc 多旋翼Z速度D增益（加速度控制）
+	 * @param _param_mpc_xy_vel_max 多旋翼XY最大速度（m/s）
+	 * @param _param_mpc_z_v_auto_up 多旋翼自动上升速度（m/s）
+	 * @param _param_mpc_z_vel_max_up 多旋翼最大上升速度（m/s）
+	 * @param _param_mpc_z_v_auto_dn 多旋翼自动下降速度（m/s）
+	 * @param _param_mpc_z_vel_max_dn 多旋翼最大下降速度（m/s）
+	 * @param _param_mpc_tiltmax_air 多旋翼空中最大倾斜角（度）
+	 * @param _param_mpc_thr_hover 多旋翼悬停油门值（0~1）
+	 * @param _param_mpc_acc_decouple 加速度解耦使能
+	 * @param _param_mpc_vel_lp 速度低通滤波时间常数（秒）
+	 * @param _param_mpc_vel_nf_frq 速度陷波滤波器频率（Hz）
+	 * @param _param_mpc_vel_nf_bw 速度陷波滤波器带宽（Hz）
+	 * @param _param_mpc_veld_lp 速度导数低通滤波时间常数（秒）
+	// Takeoff / Land
+	 * @param _param_com_spoolup_time 电机启动上电时间（arming后让电机预转时间，秒）
+	 * @param _param_com_throw_en 抛掷发射使能
+	 * @param _param_mpc_tko_ramp_t 平滑起飞斜坡时间常数（秒）
+	 * @param _param_mpc_tko_speed 起飞爬升速度（m/s）
+	 * @param _param_mpc_land_speed 着陆下降速度（m/s）
+	 * @param _param_mpc_vel_manual 手动模式最大速度（m/s）
+	 * @param _param_mpc_vel_man_back 手动后退速度（m/s）
+	 * @param _param_mpc_vel_man_side 手动侧向速度（m/s）
+	 * @param _param_mpc_xy_cruise XY巡航速度（m/s）
+	 * @param _param_mpc_land_alt2 着陆高度阈值2（下方速度限制高度，米）
+	 * @param _param_mpc_alt_mode 高度控制模式
+	 * @param _param_mpc_tiltmax_lnd 着陆和起飞最大倾斜角（度）
+	 * @param _param_mpc_thr_min 最小油门值（0~1）
+	 * @param _param_mpc_thr_max 最大油门值（0~1）
+	 * @param _param_mpc_thr_xy_marg XY方向油门裕度
+	 * @param _param_sys_vehicle_resp 系统车辆响应时间常数（秒）
+	 * @param _param_mpc_acc_hor 水平加速度（m/s²）
+	 * @param _param_mpc_acc_down_max 最大向下加速度（m/s²）
+	 * @param _param_mpc_acc_up_max 最大向上加速度（m/s²）
+	 * @param _param_mpc_acc_hor_max 最大水平加速度（m/s²）
+	 * @param _param_mpc_jerk_auto 自动模式加加速度（m/s³）
+	 * @param _param_mpc_jerk_max 最大加加速度（m/s³）
+	 * @param _param_mpc_man_y_max 手动偏航最大速率（deg/s）
+	 * @param _param_mpc_man_y_tau 手动偏航时间常数（秒）
+	 * @param _param_mpc_xy_vel_all XY速度（所有模式，m/s）
+	 * @param _param_mpc_z_vel_all Z速度（所有模式，m/s）
+	 * @param _param_mpc_xy_err_max XY位置误差最大容限（米）
+	 * @param _param_mpc_yawrauto_max 自动偏航速率最大值（deg/s）
+	 * @param _param_mpc_yawrauto_acc 自动偏航加速度（deg/s²）
+	 */
 	DEFINE_PARAMETERS(
 		// Position Control
 		(ParamFloat<px4::params::MPC_XY_P>)         _param_mpc_xy_p,

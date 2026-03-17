@@ -207,6 +207,44 @@ protected:
 	perf_counter_t _loop_interval_perf{perf_alloc(PC_INTERVAL, MODULE_NAME": cycle interval")};
 	perf_counter_t _valid_data_interval_perf{perf_alloc(PC_INTERVAL, MODULE_NAME": valid data interval")};
 
+	/**
+	 * @param _param_rc_map_roll RC通道映射 - 滚转（Roll）
+	 * @param _param_rc_map_pitch RC通道映射 - 俯仰（Pitch）
+	 * @param _param_rc_map_yaw RC通道映射 - 偏航（Yaw）
+	 * @param _param_rc_map_throttle RC通道映射 - 油门（Throttle）
+	 * @param _param_rc_map_failsafe RC通道映射 - 失控保护（Failsafe）
+	 * @param _param_rc_map_fltmode RC通道映射 - 飞行模式切换（Flight Mode）
+	 * @param _param_rc_map_flaps RC通道映射 - 襟翼（Flaps）
+	 * @param _param_rc_map_return_sw RC通道映射 - 返航开关（Return to Launch / RTL）
+	 * @param _param_rc_map_loiter_sw RC通道映射 - 盘旋开关（Loiter）
+	 * @param _param_rc_map_offb_sw RC通道映射 - 外部控制/Offboard模式开关
+	 * @param _param_rc_map_kill_sw RC通道映射 - 紧急杀死（Kill Switch）
+	 * @param _param_rc_map_term_sw RC通道映射 - 终止/安全终止开关（Terminate）
+	 * @param _param_rc_map_arm_sw RC通道映射 - 解锁/上锁开关（Arm/Disarm）
+	 * @param _param_rc_map_trans_sw RC通道映射 - VTOL过渡开关（Transition Fixed-wing ↔ Multirotor）
+	 * @param _param_rc_map_gear_sw RC通道映射 - 起落架开关（Gear/Landing Gear）
+	 * @param _param_rc_map_fltm_btn RC通道映射 - 飞行模式按钮（Flight Mode Button）
+	 * @param _param_rc_map_aux1 RC通道映射 - 辅助通道1（AUX1）
+	 * @param _param_rc_map_aux2 RC通道映射 - 辅助通道2（AUX2）
+	 * @param _param_rc_map_aux3 RC通道映射 - 辅助通道3（AUX3）
+	 * @param _param_rc_map_aux4 RC通道映射 - 辅助通道4（AUX4）
+	 * @param _param_rc_map_aux5 RC通道映射 - 辅助通道5（AUX5）
+	 * @param _param_rc_map_aux6 RC通道映射 - 辅助通道6（AUX6）
+	 * @param _param_rc_map_eng_mot RC通道映射 - 发动机/电机启动开关
+	 * @param _param_rc_fails_thr 失控保护油门值阈值（通常用于检测接收机失控）
+	 * @param _param_rc_map_pay_sw RC通道映射 - 挂载/载荷释放开关（Payload）
+	 * @param _param_rc_loiter_th 盘旋模式切换阈值（通道值百分比或PWM）
+	 * @param _param_rc_offb_th Offboard模式切换阈值
+	 * @param _param_rc_killswitch_th 杀死开关（Kill Switch）触发阈值
+	 * @param _param_rc_armswitch_th 解锁/上锁开关触发阈值
+	 * @param _param_rc_trans_th VTOL过渡开关触发阈值
+	 * @param _param_rc_gear_th 起落架开关触发阈值
+	 * @param _param_rc_return_th 返航开关触发阈值
+	 * @param _param_rc_eng_mot_th 发动机/电机启动开关触发阈值
+	 * @param _param_rc_payload_th 载荷释放/控制开关触发阈值
+	 * @param _param_rc_payload_midth 载荷中间位置阈值（用于三段开关等）
+	 * @param _param_rc_chan_cnt 检测到的RC通道总数（用于通道计数验证）
+	 */
 	DEFINE_PARAMETERS(
 
 		(ParamInt<px4::params::RC_MAP_ROLL>) _param_rc_map_roll,

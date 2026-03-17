@@ -291,6 +291,15 @@ protected:
 	// Variable to remember the home position (take-off point) z coordinate, where the follow height will be measured from
 	float _home_position_z;
 
+	/**
+	 * @param _param_mav_sys_id         MAVLink 系统 ID（System ID），用于标识本机在 MAVLink 网络中的唯一系统编号（通常 1~255，默认 1）
+	 * @param _param_mav_comp_id        MAVLink 组件 ID（Component ID），用于标识本机内的具体组件（自动驾驶仪通常为 1，其他如相机、云台可为其他值）
+	 * @param _param_flw_tgt_ht         Follow Me 模式下无人机相对于 home/起飞点的高度（固定高度，跟随目标时保持此高度，单位：米）
+	 * @param _param_flw_tgt_dst        Follow Me 模式下无人机与目标的水平距离（跟随距离，默认 8 米，从目标后方跟随）
+	 * @param _param_flw_tgt_fa         Follow Me 模式下跟随角度（单位：度，0°=正前方跟随目标运动方向，180°=正后方跟随，90°=右侧等）
+	 * @param _param_flw_tgt_alt_m      Follow Me 模式下高度模式（0=相对 home 高度固定跟随，1=尝试匹配目标高度等，具体取决于版本实现）
+	 * @param _param_flw_tgt_max_vel    Follow Me 模式下最大水平跟随速度（限制无人机追赶目标时的最大速度，单位：m/s，默认 5 m/s 左右）
+	 */
 	DEFINE_PARAMETERS_CUSTOM_PARENT(
 		FlightTask,
 		(ParamInt<px4::params::MAV_SYS_ID>) _param_mav_sys_id,

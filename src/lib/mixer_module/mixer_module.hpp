@@ -302,10 +302,12 @@ private:
 	uORB::SubscriptionCallbackWorkItem *_subscription_callback{nullptr}; ///< current scheduling callback
 
 
+	/**
+	 * @param _param_mc_airmode 多旋翼飞行器空中模式
+	 * @param _param_thr_mdl_fac 电机控制信号建模因子
+	 */
 	DEFINE_PARAMETERS(
-		// 翻译：多旋翼飞行器空中模式
 		(ParamInt<px4::params::MC_AIRMODE>) _param_mc_airmode,   ///< multicopter air-mode
-		// 翻译：电机控制信号建模因子
 		(ParamFloat<px4::params::THR_MDL_FAC>) _param_thr_mdl_fac ///< thrust to motor control signal modelling factor
 	)
 };
