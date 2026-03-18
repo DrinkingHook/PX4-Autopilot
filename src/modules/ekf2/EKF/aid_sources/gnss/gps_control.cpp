@@ -176,8 +176,7 @@ void Ekf::controlGnssVelFusion(estimator_aid_source3d_s &aid_src, const bool for
 			const bool do_reset = force_reset || !_control_status_prev.flags.yaw_align;
 
 			// Start fusing the data without reset if possible to avoid disturbing the filter
-			// 翻译：尽可能在不重置的情况下开始融合数据，以避免干扰滤波器
-			if (!do_reset && ((aid_src.test_ratio[0] + aid_src.test_ratio[1]) < sq(0.5f))) {
+			if (!do_reset && aid_src.test_ratio[0] < 1.f && aid_src.test_ratio[1] < 1.f) {
 				fused = fuseVelocity(aid_src);
 			}
 
@@ -244,7 +243,7 @@ void Ekf::controlGnssPosFusion(estimator_aid_source2d_s &aid_src, const bool for
 			// 翻译：开始融合数据，如果可能的话，不重置，以避免干扰滤波器
 			if (_local_origin_lat_lon.isInitialized()
 			    && !do_reset
-			    && ((aid_src.test_ratio[0] + aid_src.test_ratio[1]) < sq(0.5f))) {
+			    && aid_src.test_ratio[0] < 1.f && aid_src.test_ratio[1] < 1.f) {
 				fused = fuseHorizontalPosition(aid_src);
 			}
 
@@ -339,8 +338,7 @@ bool Ekf::isGnssPosResetAllowed() const
 void Ekf::updateGnssVel(const imuSample &imu_sample, const gnssSample &gnss_sample, estimator_aid_source3d_s &aid_src)
 {
 	// correct velocity for offset relative to IMU
-	// 翻译：纠正速度相对于IMU的偏移
-	const Vector3f pos_offset_body = _params.gps_pos_body - _params.imu_pos_body;
+	const Vector3f pos_offset_body = gnss_sample.pos_body - _params.imu_pos_body;
 
 	const Vector3f angular_velocity = imu_sample.delta_ang / imu_sample.delta_ang_dt - _state.gyro_bias;
 	const Vector3f vel_offset_body = angular_velocity % pos_offset_body;
@@ -384,8 +382,7 @@ void Ekf::updateGnssVel(const imuSample &imu_sample, const gnssSample &gnss_samp
 void Ekf::updateGnssPos(const gnssSample &gnss_sample, estimator_aid_source2d_s &aid_src)
 {
 	// correct position and height for offset relative to IMU
-	// 翻译：纠正位置和高度相对于IMU的偏移
-	const Vector3f pos_offset_body = _params.gps_pos_body - _params.imu_pos_body;
+	const Vector3f pos_offset_body = gnss_sample.pos_body - _params.imu_pos_body;
 	const Vector3f pos_offset_earth = Vector3f(_R_to_earth * pos_offset_body);
 	const LatLonAlt measurement(gnss_sample.lat, gnss_sample.lon, gnss_sample.alt);
 	const LatLonAlt measurement_corrected = measurement + (-pos_offset_earth);

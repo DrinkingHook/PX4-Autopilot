@@ -166,6 +166,10 @@ bool DatamanClient::syncHandler(const dataman_request_s &request, dataman_respon
  */
 bool DatamanClient::readSync(dm_item_t item, uint32_t index, uint8_t *buffer, uint32_t length, hrt_abstime timeout)
 {
+	if (_client_id == CLIENT_ID_NOT_SET) {
+		return false;
+	}
+
 	if (length > g_per_item_size[item]) {
 		PX4_ERR("Length  %" PRIu32 " can't fit in data size for item  %" PRIi8, length, static_cast<uint8_t>(item));
 		return false;
@@ -211,6 +215,10 @@ bool DatamanClient::readSync(dm_item_t item, uint32_t index, uint8_t *buffer, ui
  */
 bool DatamanClient::writeSync(dm_item_t item, uint32_t index, uint8_t *buffer, uint32_t length, hrt_abstime timeout)
 {
+	if (_client_id == CLIENT_ID_NOT_SET) {
+		return false;
+	}
+
 	if (length > g_per_item_size[item]) {
 		PX4_ERR("Length  %" PRIu32 " can't fit in data size for item  %" PRIi8, length, static_cast<uint8_t>(item));
 		return false;
@@ -252,6 +260,10 @@ bool DatamanClient::writeSync(dm_item_t item, uint32_t index, uint8_t *buffer, u
  */
 bool DatamanClient::clearSync(dm_item_t item, hrt_abstime timeout)
 {
+	if (_client_id == CLIENT_ID_NOT_SET) {
+		return false;
+	}
+
 	hrt_abstime timestamp = hrt_absolute_time();
 
 	dataman_request_s request;
@@ -286,6 +298,10 @@ bool DatamanClient::clearSync(dm_item_t item, hrt_abstime timeout)
  */
 bool DatamanClient::readAsync(dm_item_t item, uint32_t index, uint8_t *buffer, uint32_t length)
 {
+	if (_client_id == CLIENT_ID_NOT_SET) {
+		return false;
+	}
+
 	if (length > g_per_item_size[item]) {
 		PX4_ERR("Length  %" PRIu32 " can't fit in data size for item  %" PRIi8, length, static_cast<uint8_t>(item));
 		return false;
@@ -332,6 +348,10 @@ bool DatamanClient::readAsync(dm_item_t item, uint32_t index, uint8_t *buffer, u
  */
 bool DatamanClient::writeAsync(dm_item_t item, uint32_t index, uint8_t *buffer, uint32_t length)
 {
+	if (_client_id == CLIENT_ID_NOT_SET) {
+		return false;
+	}
+
 	if (length > g_per_item_size[item]) {
 		PX4_ERR("Length  %" PRIu32 " can't fit in data size for item  %" PRIi8, length, static_cast<uint8_t>(item));
 		return false;
@@ -377,6 +397,10 @@ bool DatamanClient::writeAsync(dm_item_t item, uint32_t index, uint8_t *buffer, 
  */
 bool DatamanClient::clearAsync(dm_item_t item)
 {
+	if (_client_id == CLIENT_ID_NOT_SET) {
+		return false;
+	}
+
 	bool success = false;
 
 	if (_state == State::Idle) {

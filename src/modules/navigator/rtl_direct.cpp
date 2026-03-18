@@ -127,13 +127,7 @@ void RtlDirect::on_inactive()
 	_vehicle_status_sub.update();
 }
 
-/**
- * @brief 设置RTL的起始位置和航向。
- *
- * @param rtl_position RTL的起始位置和航向。
- * @param loiter_pos RTL的起始位置和航向。
- */
-void RtlDirect::setRtlPosition(PositionYawSetpoint rtl_position, loiter_point_s loiter_pos)
+void RtlDirect::setRtlPosition(const PositionYawSetpoint &rtl_position, const loiter_point_s &loiter_pos)
 {
 	parameters_update();
 
@@ -589,11 +583,7 @@ void RtlDirect::parameters_update()
 	}
 }
 
-/**
- * @brief 对降落点进行校正
- * @param land_approach 降落点
- */
-loiter_point_s RtlDirect::sanitizeLandApproach(loiter_point_s land_approach) const
+loiter_point_s RtlDirect::sanitizeLandApproach(const loiter_point_s &land_approach) const
 {
 	loiter_point_s sanitized_land_approach{land_approach};
 

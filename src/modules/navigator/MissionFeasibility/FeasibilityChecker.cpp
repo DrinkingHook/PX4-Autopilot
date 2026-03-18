@@ -239,7 +239,7 @@ void FeasibilityChecker::doFixedWingChecks(mission_item_s &mission_item, const i
 	}
 
 	if (!_checks_failed.flags.fixed_wing_land_approach_failed) {
-		_checks_failed.flags.fixed_wing_land_approach_failed = !checkFixedWindLandApproach(mission_item, current_index);
+		_checks_failed.flags.fixed_wing_land_approach_failed = !checkFixedWingLandApproach(mission_item, current_index);
 	}
 
 }
@@ -415,13 +415,7 @@ bool FeasibilityChecker::checkTakeoff(mission_item_s &mission_item)
 	return true;
 }
 
-/**
- * @brief 检查固定风降落接近
- * @param mission_item 当前任务项
- * @param current_index 当前任务项索引
- * @return true 检查通过，false 检查失败
- */
-bool FeasibilityChecker::checkFixedWindLandApproach(mission_item_s &mission_item, const int current_index)
+bool FeasibilityChecker::checkFixedWingLandApproach(mission_item_s &mission_item, const int current_index)
 {
 	if (mission_item.nav_cmd == NAV_CMD_LAND && current_index > 0) {
 

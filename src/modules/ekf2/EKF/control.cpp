@@ -59,7 +59,7 @@ void Ekf::controlFusionModes(const imuSample &imu_delayed)
 			set_in_air_status(system_flags_delayed.in_air);
 
 			set_is_fixed_wing(system_flags_delayed.is_fixed_wing);
-			set_in_transition_to_fw(system_flags_delayed.in_transition_to_fw);
+			set_in_transition(system_flags_delayed.in_transition);
 
 			if (system_flags_delayed.gnd_effect) {
 				set_gnd_effect();
@@ -170,8 +170,6 @@ void Ekf::controlFusionModes(const imuSample &imu_delayed)
 	updateTerrainValidity();
 #endif // CONFIG_EKF2_TERRAIN
 
-	controlZeroInnovationHeadingUpdate();
-
 	_zero_velocity_update.update(*this, imu_delayed);
 
 	if (_params.ekf2_imu_ctrl & static_cast<int32_t>(ImuCtrl::GyroBias)) {
@@ -188,4 +186,8 @@ void Ekf::controlFusionModes(const imuSample &imu_delayed)
 	// check if we are no longer fusing measurements that directly constrain velocity drift
 	// 翻译：检查是否不再融合测量值而直接约束速度漂移
 	updateDeadReckoningStatus();
+
+	const bool yaw_aiding = _control_status.flags.mag_hdg || _control_status.flags.mag_3D
+				|| _control_status.flags.ev_yaw || _control_status.flags.gnss_yaw;
+	_control_status.flags.heading_observable = isNorthEastAidingActive() || yaw_aiding;
 }
