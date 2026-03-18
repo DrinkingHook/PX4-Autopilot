@@ -33,6 +33,7 @@
 
 #include "FixedWingModeManager.hpp"
 
+#include <cmath>
 #include <px4_platform_common/events.h>
 #include <uORB/topics/longitudinal_control_configuration.h>
 
@@ -139,7 +140,7 @@ FixedWingModeManager::vehicle_command_poll()
 
 		} else if (vehicle_command.command == vehicle_command_s::VEHICLE_CMD_DO_CHANGE_SPEED) {
 
-			if ((static_cast<uint8_t>(vehicle_command.param1 + .5f) == vehicle_command_s::SPEED_TYPE_AIRSPEED)) {
+			if ((static_cast<uint8_t>(lroundf(vehicle_command.param1)) == vehicle_command_s::SPEED_TYPE_AIRSPEED)) {
 				if (vehicle_command.param2 > FLT_EPSILON) {	// param2 is an equivalent airspeed setpoint
 					if (_control_mode_current == FW_POSCTRL_MODE_AUTO) {
 						_pos_sp_triplet.current.cruising_speed = vehicle_command.param2;
@@ -1028,7 +1029,7 @@ FixedWingModeManager::controlAutoFigureEight(const float control_interval, const
 	}
 }
 
-void FixedWingModeManager::publishFigureEightStatus(const position_setpoint_s pos_sp)
+void FixedWingModeManager::publishFigureEightStatus(const position_setpoint_s &pos_sp)
 {
 	figure_eight_status_s figure_eight_status{};
 	figure_eight_status.timestamp = hrt_absolute_time();
@@ -2548,7 +2549,7 @@ void FixedWingModeManager::publishLocalPositionSetpoint(const position_setpoint_
 	_local_pos_sp_pub.publish(local_position_setpoint);
 }
 
-void FixedWingModeManager::publishOrbitStatus(const position_setpoint_s pos_sp)
+void FixedWingModeManager::publishOrbitStatus(const position_setpoint_s &pos_sp)
 {
 	orbit_status_s orbit_status{};
 	orbit_status.timestamp = hrt_absolute_time();
