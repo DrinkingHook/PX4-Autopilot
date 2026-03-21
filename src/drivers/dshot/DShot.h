@@ -103,6 +103,8 @@ private:
 	void init_telemetry(const char *device, bool swap_rxtx);
 
 	// Map output channel to motor index [0..DSHOT_MAX_MOTORS-1], or -1 if not a motor
+	// 翻译:将输出通道映射到电机索引 [0..DSHOT_MAX_MOTORS-1]，如果不是电机则映射到 -1
+	// 如果对应通道配置的不为motor 那么idx则不会满足条件
 	int motor_index_from_output(int output_channel) const
 	{
 		if (!_mixing_output.isMotor(output_channel)) { return -1; }

@@ -52,6 +52,7 @@ DShot::DShot() :
 	_mixing_output.setAllFailsafeValues(UINT16_MAX);
 
 	// Advertise early to ensure we beat uavcan
+	// 翻译：尽早发布广告，确保我们抢在 uavcan 之前发布
 	_esc_status_pub.advertise();
 }
 
@@ -108,6 +109,7 @@ void DShot::Run()
 		update_params();
 	}
 
+	// 模块启动脚本指令没有指明串口号就不会执行这段(e.g dshot telemetry -d /dev/ttyS5 -x)
 	// Telemetry init hook
 	if (_request_telemetry_init.load()) {
 		init_telemetry(_serial_port_path, _telemetry_swap_rxtx);
@@ -117,6 +119,7 @@ void DShot::Run()
 	handle_vehicle_commands();
 
 	// check at end of cycle (updateSubscriptions() can potentially change to a different WorkQueue thread)
+	// 翻译：在周期结束时进行检查（updateSubscriptions() 可能会切换到不同的工作队列线程）
 	_mixing_output.updateSubscriptions(true);
 
 	perf_end(_cycle_perf);
@@ -203,15 +206,18 @@ void DShot::select_next_command()
 	_current_command.clear();
 
 	// EDT Request: use motor-order masks since needs_edt_request_mask is in motor order
+	// 翻译：EDT 请求：使用电机顺序掩码，因为 needs_edt_request_mask 按电机顺序排列
 	uint16_t edt_motors_to_request = _bdshot_motor_mask & needs_edt_request_mask;
 
 	if (_bdshot_edt_enabled && edt_motors_to_request != 0) {
 		// Find first motor that needs EDT request and has been online long enough
+		// 翻译：查找第一个需要 EDT 请求且已在线足够长时间的电机
 		hrt_abstime now = hrt_absolute_time();
 
 		for (int motor_index = 0; motor_index < DSHOT_MAX_MOTORS; motor_index++) {
 			if (edt_motors_to_request & (1 << motor_index)) {
 				// Wait 1 second after ESC comes online before sending EDT (ESC init sequence)
+				// 翻译：在 ESC 上线后等待 1 秒再发送 EDT（ESC 初始化序列）
 				if (_bdshot_telem_online_timestamps[motor_index] == 0
 				    || (now - _bdshot_telem_online_timestamps[motor_index]) < 1_s) {
 					continue;
@@ -228,6 +234,7 @@ void DShot::select_next_command()
 
 	} else if (_esc_type != 0 && _serial_telemetry_enabled && serial_telem_delay_elapsed && (_motor_mask & needs_settings_request_mask)) {
 		// Settings Request: use motor-order masks since needs_settings_request_mask is in motor order
+		// 翻译：设置请求：使用电机顺序掩码，因为 needs_settings_request_mask 按电机顺序排列
 		uint16_t settings_motors_to_request = _motor_mask & needs_settings_request_mask;
 
 		// Find first motor that needs settings request
@@ -246,6 +253,7 @@ void DShot::select_next_command()
 
 	} else if (_dshot_programming_active) {
 		// Motor mask for programming: all motors or single motor
+		// 翻译：用于编程的电机掩码：所有电机或单个电机
 		const uint16_t programming_motor_mask = _esc_eeprom_write.index == 255
 							? (uint16_t)((1u << DSHOT_MAX_MOTORS) - 1)
 							: (uint16_t)(1u << _esc_eeprom_write.index);
@@ -471,10 +479,12 @@ bool DShot::process_serial_telemetry()
 		case TelemetryStatus::Ready:
 
 			// Reset consecutive timeout counter on any successful response
+			// 翻译：在任何成功响应后重置连续超时计数器
 			_serial_telem_consecutive_timeouts[motor_index] = 0;
 			_serial_telem_skip_mask &= ~(1 << motor_index);
 
 			// Online mask is in motor order for consistency with BDShot
+			// 翻译：在线掩码按电机顺序排列，以与 BDShot 保持一致
 			if (_serial_telem_online_mask & (1 << motor_index)) {
 				consume_esc_data(esc);
 				all_telem_sampled = set_next_telemetry_index();
@@ -484,11 +494,13 @@ bool DShot::process_serial_telemetry()
 				hrt_abstime now = hrt_absolute_time();
 
 				// Timestamps are in actuator order to match _esc_status.esc[]
+				// 翻译：时间戳按执行器顺序排列，以匹配 _esc_status.esc[]
 				if (_serial_telem_online_timestamps[motor_index] == 0) {
 					_serial_telem_online_timestamps[motor_index] = now;
 				}
 
 				// Mark as online only after 100_ms without errors
+				// 翻译：仅在 100_ms 无错误后才标记为在线
 				if (now - _serial_telem_online_timestamps[motor_index] > 100_ms) {
 					_serial_telem_online_mask |= (1 << motor_index);
 				}
@@ -543,6 +555,7 @@ bool DShot::set_next_telemetry_index()
 	// _telemetry_motor_index and _telemetry_requested_mask are in motor-index domain.
 
 	// Active motors are those that exist and aren't being skipped
+	// 翻译：活动电机是指那些存在且未被跳过的电机
 	uint16_t active_motor_mask = _motor_mask & ~_serial_telem_skip_mask;
 
 	if (active_motor_mask == 0) {
@@ -580,10 +593,12 @@ bool DShot::process_bdshot_telemetry()
 	hrt_abstime now = hrt_absolute_time();
 
 	// Don't try to process any telem data until after ESCs have been given time to boot
+	// 翻译：在电调（ESC）完成启动之前，请勿尝试处理任何遥测数据。
 	if (now < ESC_INIT_TELEM_DELAY) {
 		return false;
 	}
 
+	// up_bdshot_get_ready_mask 是硬件级准备好的标志 
 	// We wait until all BDShot channels are ready.
 	if ((up_bdshot_get_ready_mask() & _bdshot_output_mask) != _bdshot_output_mask) {
 		return false;
@@ -596,6 +611,7 @@ bool DShot::process_bdshot_telemetry()
 
 		int motor_index = motor_index_from_output(output_channel);
 
+		// 与配置的通道功能不符合 进入下一循环
 		if (motor_index < 0) {
 			continue;
 		}
@@ -683,10 +699,14 @@ void DShot::consume_esc_data(const EscData &esc)
 	// Intentionally conservative: when both BDShot and serial telemetry are enabled,
 	// both must report online. A motor reporting offline on either source indicates
 	// a degraded setup that should be surfaced to the operator.
+	// 翻译：根据遥测源判断此电机是否在线。有意采取保守策略：
+	//      当同时启用 BDShot 和串行遥测时，两者都必须报告在线。
+	//      如果电机在任一遥测源上报告离线，则表示设置存在缺陷，应告知操作员。
 	uint16_t motor_bit = 1u << motor_index;
 	bool is_bdshot = _bdshot_motor_mask & motor_bit;
 
 	// Both sources must report online when enabled (conservative)
+	// 翻译：启用时，两个遥测源都必须报告在线（保守策略）
 	bool motor_online = (!is_bdshot || (_bdshot_telem_online_mask & motor_bit))
 			    && (!_serial_telemetry_enabled || (_serial_telem_online_mask & motor_bit));
 
@@ -733,6 +753,10 @@ uint16_t DShot::convert_output_to_3d_scaling(uint16_t output)
 	// This is in terms of DShot values, code below is in terms of actuator_output
 	// Direction 1) 48 is the slowest, 1047 is the fastest.
 	// Direction 2) 1049 is the slowest, 2047 is the fastest.
+	// 翻译：DShot 3D 将油门范围分为两部分。
+	//      这是基于 DShot 值，下面的代码是基于 actuator_output 的
+	//      方向 1) 48 最慢，1047 最快。
+	//      方向 2) 1049 最慢，2047 最快。
 	if (output >= _3d_dead_l && output < _3d_dead_h) {
 		return DSHOT_DISARM_VALUE;
 	}
@@ -899,12 +923,14 @@ void DShot::update_params()
 	_esc_type = _param_dshot_esc_type.get();
 
 	// Calculate minimum DShot output as percent of throttle and constrain.
+	// 翻译：计算最小 DShot 输出（以油门和约束的百分比表示）
 	float min_value = _dshot_min * (float)DSHOT_MAX_THROTTLE;
 	uint16_t dshot_min_value = math::constrain((uint16_t)min_value, DSHOT_MIN_THROTTLE, DSHOT_MAX_THROTTLE);
 
 	_mixing_output.setAllMinValues(dshot_min_value);
 
 	// Do not use the minimum parameter for reversible outputs
+	// 翻译：对于可逆输出，请勿使用最小参数
 	for (uint8_t i = 0; i < DSHOT_MAXIMUM_CHANNELS; i++) {
 		if (_mixing_output.reversibleOutputs() & (1 << i)) {
 			_mixing_output.minValue(i) = DSHOT_MIN_THROTTLE;
@@ -912,6 +938,7 @@ void DShot::update_params()
 	}
 
 	// Update per-motor pole count param handles and cached values
+	// 翻译：更新每个电机的极数参数句柄和缓存值
 	for (int i = 0; i < DSHOT_MAX_MOTORS; i++) {
 		char name[20];
 		snprintf(name, sizeof(name), "DSHOT_MOT_POL%d", i + 1);
@@ -930,9 +957,11 @@ void DShot::mixerChanged()
 	_esc_status.esc_connectiontype = esc_status_s::ESC_CONNECTION_TYPE_DSHOT;
 
 	// Build actuator-order and motor-order masks from actual motor assignments
+	// 翻译：根据实际的电机分配构建执行器顺序和电机顺序掩码
 	uint32_t new_output_mask = 0;
 	uint32_t new_motor_mask = 0;
 
+	// 映射输出通道
 	for (int actuator_channel = 0; actuator_channel < DSHOT_MAXIMUM_CHANNELS; actuator_channel++) {
 		int motor_index = motor_index_from_output(actuator_channel);
 
@@ -952,11 +981,13 @@ void DShot::mixerChanged()
 		_motor_mask = new_motor_mask;
 		_motor_count = __builtin_popcount(_output_mask);
 
+		// _bdshot_timer_channels(用户配置) 在此模块初始化时完成定义 _output_mask(驱动注册为motor) 此处再次&运算以确保安全
 		uint32_t new_bdshot_output_mask = _bdshot_timer_channels & _output_mask;
 		PX4_DEBUG("BDShot Output mask changed: 0x%" PRIx32 " -> 0x%" PRIx32, _bdshot_output_mask, new_bdshot_output_mask);
 		_bdshot_output_mask = new_bdshot_output_mask;
 
 		// Compute motor-order BDShot mask
+		// 翻译：计算电机指令 BDShot 掩码
 		uint32_t new_bdshot_motor_mask = 0;
 
 		for (int actuator_channel = 0; actuator_channel < DSHOT_MAXIMUM_CHANNELS; actuator_channel++) {
@@ -981,9 +1012,11 @@ bool DShot::initialize_dshot()
 	uint32_t dshot_timer_channels = 0;  // Channels on DShot-enabled timers
 
 	// Iterate through timers to determine DShot frequency and BDShot channels
+	// 翻译：遍历定时器以确定 DShot 频率和 BDShot 通道
 	for (uint8_t timer_index = 0; timer_index < MAX_IO_TIMERS; timer_index++) {
 
 		// Get mask of actuator channels associated with this timer group
+		// 翻译：获取与此定时器组关联的执行器通道掩码
 		uint32_t timer_channels = io_timer_get_group(timer_index);
 
 		if (timer_channels == 0) {
@@ -998,6 +1031,7 @@ bool DShot::initialize_dshot()
 		param_get(handle, &tim_config);
 
 		// Map timer config to DShot frequency and BDShot flag
+		// 翻译：将定时器配置映射到 DShot 频率和 BDShot 标志
 		uint32_t freq = 0;
 		bool is_bdshot = false;
 
@@ -1018,6 +1052,7 @@ bool DShot::initialize_dshot()
 		}
 
 		if (freq > 0) {
+			// 一个定时器的不同通道配置的频率不同 不合法
 			if (_dshot_frequency != 0 && _dshot_frequency != freq) {
 				PX4_WARN("Mixed DShot frequencies across timers, using freq: %lu", freq);
 			}
@@ -1051,9 +1086,11 @@ void DShot::init_telemetry(const char *device, bool swap_rxtx)
 	}
 
 	// Enable serial telemetry now that we've successfully initialized
+	// 翻译：既然我们已经成功初始化，现在启用串口遥测
 	_serial_telemetry_enabled = true;
 
 	// Initialize ESC settings handlers based on ESC type
+	// 翻译：根据 ESC 类型初始化 ESC 设置处理程序
 	ESCType esc_type = static_cast<ESCType>(_param_dshot_esc_type.get());
 	_telemetry.initSettingsHandlers(esc_type, _motor_mask);
 }
@@ -1216,6 +1253,7 @@ int DShot::custom_command(int argc, char *argv[])
 	if (!strcmp(verb, "telemetry")) {
 		if (device_name) {
 			// telemetry can be requested before the module is started
+			// 翻译：可以在模块启动前请求遥测数据
 			strncpy(_serial_port_path, device_name, sizeof(_serial_port_path) - 1);
 			_serial_port_path[sizeof(_serial_port_path) - 1] = '\0';
 			_telemetry_swap_rxtx = swap_rxtx;

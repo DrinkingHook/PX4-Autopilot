@@ -195,6 +195,7 @@ TelemetryStatus DShotTelemetry::parseTelemetryPacket(EscData *esc_data)
 	hrt_abstime elapsed = hrt_elapsed_time(&_telemetry_request_start);
 
 	// At 115200 baud the 10-byte response takes ~868us. Skip polling until data could have arrived.
+	// 翻译：波特率为 115200 时，10 字节的响应大约需要 868 微秒。跳过轮询，直到数据到达
 	if (elapsed < 800) {
 		return TelemetryStatus::NotReady;
 	}
