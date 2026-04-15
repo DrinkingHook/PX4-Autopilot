@@ -90,8 +90,7 @@ RCInput::init()
 
 	// dsm_init sets some file static variables and returns a file descriptor
 	// it also powers on the radio if needed
-	// 翻译：dsm_init 设置某些文件的静态变量，返回一个文件描述符，并且
-	// 如果需要的话，还能让无线电机器开机。
+	// 翻译：dsm_init 设置某些文件的静态变量，返回一个文件描述符，并且如果需要的话，还能让无线电机器开机。
 	_rcs_fd = dsm_init(_device);
 
 	if (_rcs_fd < 0) {
@@ -107,6 +106,7 @@ RCInput::init()
 	// assume SBUS input and immediately switch it to
 	// so that if Single wire mode on TX there will be only
 	// a short contention
+	// 翻译：假设输入为 SBUS，并立即切换到该模式，以便在发射机 (TX) 为单线模式时，只会发生短暂的冲突
 	sbus_config(_rcs_fd, board_rc_singlewire(_device));
 
 #ifdef GPIO_PPM_IN
@@ -118,8 +118,7 @@ RCInput::init()
 	// If we use the same STM32 pin for PPM input as well as serial input, we
 	// need to configure the serial port, as long as we're actually using that
 	// serial device.
-	// 翻译：如果我们使用同一个STM32 pins来输入 PPM 信息和同时也用作序
-	// 列输入，那么我们就需要配置序列端口，至少是当我们实际使用这个序列设备的时候。
+	// 翻译：如果我们使用同一个 STM32 引脚作为 PPM 输入和串行输入，则需要配置串行端口，前提是我们实际正在使用该串行设备
 	if (strcmp(_device, RC_SERIAL_PORT) == 0) {
 		px4_arch_configgpio(RC_SERIAL_PORT_SHARED_PPM_PIN_GPIO_RX);
 	}
@@ -493,6 +492,7 @@ void RCInput::Run()
 
 		const bool rc_scan_locked = _rc_scan_locked;
 
+		//即使设置为auto  _rc_scan_state 也初始化为sbus 利用 set_rc_scan_state 函数循环判断
 		switch (_rc_scan_state) {
 		case RC_SCAN_NONE:
 			// do nothing

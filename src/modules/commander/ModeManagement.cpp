@@ -439,6 +439,7 @@ void ModeManagement::onUserIntendedNavStateChange(ModeChangeSource source, uint8
 	}
 }
 
+// 获取导航状态替换（如果有效）
 uint8_t ModeManagement::getNavStateReplacementIfValid(uint8_t nav_state, bool report_error)
 {
 	for (int i = Modes::FIRST_EXTERNAL_NAV_STATE; i <= Modes::LAST_EXTERNAL_NAV_STATE; ++i) {

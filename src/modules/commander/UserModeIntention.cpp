@@ -71,7 +71,7 @@ bool UserModeIntention::change(uint8_t user_intended_nav_state, ModeChangeSource
 	bool always_allow = force || !isArmed();
 	bool allow_change = true;
 
-	// 如果满足切换的基本条件则判断是否可以切换模式
+	// 若是非强制(force为false)且已武装
 	if (!always_allow) {
 		// 是否可以切换到指定的导航模式
 		allow_change = _health_and_arming_checks.canRun(user_intended_nav_state);

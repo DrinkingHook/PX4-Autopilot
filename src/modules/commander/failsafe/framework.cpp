@@ -141,9 +141,9 @@ void FailsafeBase::updateFailsafeDeferState(const hrt_abstime &time_us, bool def
 void FailsafeBase::updateStartDelay(const hrt_abstime &dt, bool delay_active)
 {
 	// Ensure that even with a toggling state the delayed action is executed at some point.
-	// 翻译：确保即使在状态切换的情况下，延迟的操作最终也能执行。
 	// This is done by increasing the delay slower than reducing it.
-	// 翻译：这是通过增加延迟的速度比减少延迟的速度慢来实现的。
+	// 翻译：确保即使在状态切换的情况下，延迟的操作最终也能执行。
+	// 	这是通过增加延迟的速度比减少延迟的速度慢来实现的。
 	if (delay_active) {
 		if (dt < _current_start_delay) {
 			_current_start_delay -= dt;
@@ -543,6 +543,7 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 {
 	// 保底设置避免故障
 	returned_state.updated_user_intended_mode = state.user_intended_mode;
+	// 故障原因
 	returned_state.cause = Cause::Generic;
 
 	// 处理终止情况：如果用户意图为终止或已选择终止，直接返回终止动作
@@ -600,7 +601,7 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 
 	// Check if we should enter delayed Hold
 	// 翻译：检查是否应进入延迟保持状态。
-	// e.g. 当rc连接断开，不应该立即触发保护，而是超过一段时间还没有恢复才执行保护.
+	// e.g. 当rc连接断开，不应立即触发保护，而是若超过一段时间还没有恢复则执行保护.
 	const bool action_can_be_delayed = selected_action != Action::None &&
 					   selected_action != Action::Warn &&
 					   selected_action != Action::Disarm &&
@@ -618,6 +619,8 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 
 	// User takeover interrupting a failsafe is triggered by a change of the user-intended mode
 	// (only if a failsafe action is already active otherwise there can be immediate takeover when entering a failsafe) or by stick movement
+	// 翻译：用户接管中断安全机制的触发条件是用户预期模式的改变
+	//	(仅当安全机制操作已激活时才会触发，否则进入安全机制时可能会立即发生接管)或摇杆移动
 	bool want_user_takeover_mode_switch = user_intended_mode_updated && (_selected_action > Action::Warn);
 	bool want_user_takeover = want_user_takeover_mode_switch || rc_sticks_takeover_request;
 	bool takeover_allowed =
@@ -735,13 +738,10 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 		break;
 	}
 
+	// 下方的作用是,如果在用户期望的模式为特殊模式如(LAND,RTL等)，但是由于安全故障导致action为其他任务,而导致的不安全行为，提前预防
 	// UX improvement (this is optional for safety): change failsafe to a warning in certain situations.
 	// If already landing, do not go into RTL
 
-	/**
-	 * @brief 下方的作用是,如果在用户期望的模式为特殊模式如(LAND,RTL等)，但是由于安全故障导致action为其他任务,而导致的不安全行为
-	 * @param updated_user_intended_mode 在此函数中,只可能赋值为 NAVIGATION_STATE_POSCTL 切换为手动控制。否则不改变值。
-	 */
 	// 翻译：用户体验改进（出于安全考虑，此项为可选）：在某些情况下将故障保护更改为警告。
 	// 	如果已在着陆，则不要进入返航状态
 	if (returned_state.updated_user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_LAND) {
@@ -753,6 +753,8 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 	}
 
 	// If already in RTL, do not go into RTL again (would cause a Hold delay first, then re-start RTL)
+	// 翻译：如果已处于 RTL 模式，请勿再次进入 RTL 模式（这将导致先进入锁定延迟，然后再重新启动 RTL 模式）
+	// 这样做是因为触发RTL后通常伴随着先爬升到指定高度，若已经触发RTL再次因故障保护触发RTL会导致不必要的爬升出现
 	if (returned_state.updated_user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_RTL) {
 		if ((selected_action == Action::RTL || returned_state.delayed_action == Action::RTL)
 		    && modeCanRun(status_flags, vehicle_status_s::NAVIGATION_STATE_AUTO_RTL)) {
@@ -780,7 +782,6 @@ bool FailsafeBase::actionAllowsUserTakeover(Action action) const
 
 /**
  * @brief 如果需要,删除延迟
- *
  * @param state
  * @param status_flags
  */
@@ -835,9 +836,9 @@ bool FailsafeBase::modeCanRun(const failsafe_flags_s &status_flags, uint8_t mode
 {
 	uint32_t mode_mask = 1u << mode;
 	// mode_req_wind_and_flight_time_compliance: does not need to be handled here (these are separate failsafe triggers)
-	// 翻译：mode_req_wind_and_flight_time_comliance：不需要在此处处理（这些是单独的故障安全触发器）
 	// mode_req_manual_control: is handled separately
-	// 翻译：MODE_REQ_MANUAL_CONTROL：单独处理
+	// 翻译：mode_req_wind_and_flight_time_compliance：不需要在此处处理（这些是单独的故障安全触发器）
+	//	MODE_REQ_MANUAL_CONTROL：单独处理
 	return
 		(!status_flags.angular_velocity_invalid || ((status_flags.mode_req_angular_velocity & mode_mask) == 0)) &&
 		(!status_flags.attitude_invalid || ((status_flags.mode_req_attitude & mode_mask) == 0)) &&

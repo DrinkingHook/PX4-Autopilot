@@ -986,6 +986,7 @@ Commander::handle_command(const vehicle_command_s &cmd)
 				// Special handling for LAND mode: always allow to switch into it such that if used
 				// as emergency mode it is always available. When triggering it the user generally wants
 				// the vehicle to descend immediately, and if that means to switch to DESCEND it is fine.
+				// 翻译：陆地模式的特殊处理：始终允许切换到该模式，以便在用作紧急模式时始终可用。触发该模式时，用户通常希望车辆立即下降，如果这意味着切换到下降模式，则没有问题。
 
 				const bool force = desired_nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_LAND;
 
@@ -1174,6 +1175,7 @@ Commander::handle_command(const vehicle_command_s &cmd)
 			// Special handling for LAND mode: always allow to switch into it such that if used
 			// as emergency mode it is always available. When triggering it the user generally wants
 			// the vehicle to descend immediately, and if that means to switch to DESCEND it is fine.
+			// 翻译：陆地模式的特殊处理：始终允许切换到该模式，以便在用作紧急模式时始终可用。触发该模式时，用户通常希望车辆立即下降，如果这意味着切换到“下降”模式，则没有问题。
 			const bool force = true;
 
 			if (_user_mode_intention.change(vehicle_status_s::NAVIGATION_STATE_AUTO_LAND, getSourceFromCommand(cmd), false,

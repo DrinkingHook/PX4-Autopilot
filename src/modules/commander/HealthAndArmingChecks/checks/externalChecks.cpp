@@ -140,6 +140,9 @@ void ExternalChecks::checkAndReport(const Context &context, Report &reporter)
 			// We distinguish between two cases:
 			// - external navigation mode: in that case we set the single arming can_run bit for the mode
 			// - generic external arming check: set all arming bits
+			// 翻译：我们区分两种情况：
+			// 	- 外部导航模式：在这种情况下，我们为单个解锁 can_run 位设置模式
+			// 	- 通用外部布防检查：设置所有布防位
 			if (nav_mode_id == -1) {
 				modes = NavModes::All;
 
@@ -153,6 +156,8 @@ void ExternalChecks::checkAndReport(const Context &context, Report &reporter)
 					// Also clear the arming bits for the replaced mode, as the user intention is always set to the
 					// replaced mode.
 					// We only have to clear the bits, as for the internal/replaced mode, the bits are not cleared yet.
+					// 翻译：同时清除已替换模式的布防位，因为用户意图始终设置为已替换模式
+					// 	我们只需清除这些位，因为对于内部/已替换模式，这些位尚未清除
 				}
 
 				if (!reply.can_arm_and_run) {
@@ -161,6 +166,7 @@ void ExternalChecks::checkAndReport(const Context &context, Report &reporter)
 
 				// Mode requirements
 				// A replacement mode will also replace the mode requirements of the internal/replaced mode
+				// 翻译：模式要求：替换模式也会替换内部/替换模式的模式要求。
 				setOrClearRequirementBits(reply.mode_req_angular_velocity, nav_mode_id, replaces_nav_state,
 							  reporter.failsafeFlags().mode_req_angular_velocity);
 				setOrClearRequirementBits(reply.mode_req_attitude, nav_mode_id, replaces_nav_state,

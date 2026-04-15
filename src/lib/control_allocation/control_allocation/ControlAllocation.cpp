@@ -127,12 +127,20 @@ void ControlAllocation::applySlewRateLimit(float dt)
 	// therefore for the purpose of slew limiting we need to consider NaN
 	// equivalent to zero. But after the slew limiting, we again replace by
 	// NaN.
+	// 翻译：对于电机而言，执行器设定值为 NaN 表示关闭电机（使其失去 PWM 功能）。
+	// 	从物理角度来看，这会导致推力为零，因此，为了限制回转速率，我们需要将 NaN 视为零。
+	// 	但在回转速率限制之后，我们再次将其替换为 NaN。
 
 	// We want the slew rate to behave like this on different input transitions:
 	//  - between 0 and NaN: immediately match input
 	//  - nonzero to NaN: sink to zero with slew rate, then replace zero by NaN
 	//  - NaN to nonzero: replace NaN by zero, then rise with slew rate to input
 	//  - between nonzero and 0: slew limit, then match input
+	// 翻译：我们希望转换速率在不同的输入转换情况下表现如下：
+	// 	- 0 到 NaN 之间：立即匹配输入
+	//	- 非零到 NaN：以转换速率降至零，然后将零替换为 NaN
+	//	- NaN 到非零：将 NaN 替换为零，然后以转换速率升至输入
+	//	- 非零到 0 之间：转换速率达到限制值，然后匹配输入
 
 	for (int i = 0; i < _num_actuators; i++) {
 		if (_actuator_slew_rate_limit(i) > FLT_EPSILON) {
@@ -141,6 +149,7 @@ void ControlAllocation::applySlewRateLimit(float dt)
 			float previous = _prev_actuator_sp(i);
 
 			// Before slew limiting, transform NaN to 0, but remember if the input was NaN
+			// 翻译：在转换速率限制之前，将 NaN 转换为 0，但要记住输入是否为 NaN
 			const bool input_is_nan = !PX4_ISFINITE(input);
 
 			if (input_is_nan) {
