@@ -48,6 +48,8 @@ ActuatorEffectivenessTandem::ActuatorEffectivenessTandem(ModuleParams *parent)
 		_param_handles.swash_plate_servos[i].arm_length = param_find(buffer);
 		snprintf(buffer, sizeof(buffer), "CA_SV_CS%u_TRIM", i);
 		_param_handles.swash_plate_servos[i].trim = param_find(buffer);
+		snprintf(buffer, sizeof(buffer), "C1_SV_CS%u_TRIM", i);
+		_param_handles_1.swash1_plate_servos[i].trim = param_find(buffer);
 	}
 
 	_param_handles.num_swash_plate_servos = param_find("CA_SP0_COUNT");
@@ -69,12 +71,12 @@ ActuatorEffectivenessTandem::ActuatorEffectivenessTandem(ModuleParams *parent)
 	_param_handles.spoolup_time = param_find("COM_SPOOLUP_TIME");
         _param_handles.max_servo_throw = param_find("CA_MAX_SVO_THROW");
 
-        // _param_handles_1.yaw_collective_pitch_scale = param_find("CA_HELI_YAW_CP_S");
-	// _param_handles_1.yaw_collective_pitch_offset = param_find("CA_HELI_YAW_CP_O");
-	// _param_handles_1.yaw_throttle_scale = param_find("CA_HELI_YAW_TH_S");
-	// _param_handles_1.yaw_ccw = param_find("CA_HELI_YAW_CCW");
-	// _param_handles_1.spoolup_time = param_find("COM_SPOOLUP_TIME");
-        // _param_handles_1.max_servo_throw = param_find("CA_MAX_SVO_THROW");
+        _param_handles_1.yaw_collective_pitch_scale = param_find("CA_HELI_YAW_CP_S");
+	_param_handles_1.yaw_collective_pitch_offset = param_find("CA_HELI_YAW_CP_O");
+	_param_handles_1.yaw_throttle_scale = param_find("CA_HELI_YAW_TH_S");
+	_param_handles_1.yaw_ccw = param_find("CA_HELI_YAW_CCW");
+	_param_handles_1.spoolup_time = param_find("COM_SPOOLUP_TIME");
+        _param_handles_1.max_servo_throw = param_find("CA_MAX_SVO_THROW");
 
         updateParams();
 }
@@ -101,12 +103,15 @@ void ActuatorEffectivenessTandem::updateParams()
 		param_get(_param_handles.swash_plate_servos[i].arm_length, &_geometry.swash_plate_servos[i].arm_length);
 		param_get(_param_handles.swash_plate_servos[i].trim, &_geometry.swash_plate_servos[i].trim);
 
-                // param_get(_param_handles_1.swash_plate_servos[i].angle, &angle_deg);
-		// _geometry_1.swash_plate_servos[i].angle = math::radians(angle_deg);
-		// param_get(_param_handles_1.swash_plate_servos[i].arm_length, &_geometry_1.swash_plate_servos[i].arm_length);
-		// param_get(_param_handles_1.swash_plate_servos[i].trim, &_geometry_1.swash_plate_servos[i].trim);
 	}
 
+	for (int i = 0; i < _geometry_1.num_swash_plate_servos; ++i) {
+		float angle_deg{};
+                param_get(_param_handles_1.swash_plate_servos[i].angle, &angle_deg);
+		_geometry_1.swash_plate_servos[i].angle = math::radians(angle_deg);
+		param_get(_param_handles_1.swash_plate_servos[i].arm_length, &_geometry_1.swash_plate_servos[i].arm_length);
+		param_get(_param_handles_1.swash1_plate_servos[i].trim, &_geometry_1.swash1_plate_servos[i].trim);
+	}
 
 
 	param_get(_param_handles.yaw_collective_pitch_scale, &_geometry.yaw_collective_pitch_scale);
@@ -114,20 +119,20 @@ void ActuatorEffectivenessTandem::updateParams()
 	param_get(_param_handles.yaw_throttle_scale, &_geometry.yaw_throttle_scale);
         param_get(_param_handles.spoolup_time, &_geometry.spoolup_time);
 
-        // param_get(_param_handles_1.yaw_collective_pitch_scale, &_geometry_1.yaw_collective_pitch_scale);
-	// param_get(_param_handles_1.yaw_collective_pitch_offset, &_geometry_1.yaw_collective_pitch_offset);
-	// param_get(_param_handles_1.yaw_throttle_scale, &_geometry_1.yaw_throttle_scale);
-	// param_get(_param_handles_1.spoolup_time, &_geometry_1.spoolup_time);
+        param_get(_param_handles_1.yaw_collective_pitch_scale, &_geometry_1.yaw_collective_pitch_scale);
+	param_get(_param_handles_1.yaw_collective_pitch_offset, &_geometry_1.yaw_collective_pitch_offset);
+	param_get(_param_handles_1.yaw_throttle_scale, &_geometry_1.yaw_throttle_scale);
+	param_get(_param_handles_1.spoolup_time, &_geometry_1.spoolup_time);
 	int32_t yaw_ccw = 0;
 	param_get(_param_handles.yaw_ccw, &yaw_ccw);
         _geometry.yaw_sign = (yaw_ccw == 1) ? -1.f : 1.f;
 
-        // param_get(_param_handles_1.yaw_ccw, &yaw_ccw);
-        // _geometry_1.yaw_sign = (yaw_ccw == 1) ? -1.f : 1.f;
+        param_get(_param_handles_1.yaw_ccw, &yaw_ccw);
+        _geometry_1.yaw_sign = (yaw_ccw == 1) ? -1.f : 1.f;
 
 	float max_servo_throw_deg = 0.f;
         param_get(_param_handles.max_servo_throw, &max_servo_throw_deg);
-        // param_get(_param_handles_1.max_servo_throw, &max_servo_throw_deg);
+        param_get(_param_handles_1.max_servo_throw, &max_servo_throw_deg);
 
 	if (max_servo_throw_deg > 0.f) {
 		// linearization feature enabled
@@ -142,7 +147,7 @@ void ActuatorEffectivenessTandem::updateParams()
 		_geometry.max_servo_height = _geometry.inverse_max_servo_throw = 0.f;
         }
 
-	_geometry_1 = _geometry;
+	// _geometry_1 = _geometry;
         for (int i = 0; i < NUM_CURVE_POINTS; ++i) {
 		param_get(_param_handles.throttle_curve[i], &_geometry.throttle_curve[i]);
 		param_get(_param_handles.pitch_curve[i], &_geometry.pitch_curve[i]);
@@ -176,8 +181,7 @@ bool ActuatorEffectivenessTandem::getEffectivenessMatrix(Configuration &configur
 
         for(int i = 0; i < _geometry_1.num_swash_plate_servos; ++i) {
 		configuration.addActuator(ActuatorType::SERVOS, Vector3f{}, Vector3f{});
-		// configuration.addActuator(ActuatorType::SERVOS, Vector3f{}, Vector3f{});
-		configuration.trim[configuration.selected_matrix](i) = _geometry_1.swash_plate_servos[i].trim;
+		configuration.trim[configuration.selected_matrix](i) = _geometry_1.swash1_plate_servos[i].trim;
 	}
 	return true;
 }
@@ -229,16 +233,9 @@ void ActuatorEffectivenessTandem::updateSetpoint(const matrix::Vector<float, NUM
 				+ (control_sp(ControlAxis::YAW) * -roll_coeff) * 0.3f
 				+ _geometry.swash_plate_servos[i].trim;
 
-		actuator_sp(_first_swash_plate_servo_index + _geometry.num_swash_plate_servos + i) = collective2_pitch
-				- control_sp(ControlAxis::PITCH) * 0.9f
-				- control_sp(ControlAxis::ROLL) * roll_coeff * 0.9f
-				+ (control_sp(ControlAxis::YAW) * roll_coeff) * 0.3f
-				+ _geometry_1.swash_plate_servos[i].trim;
-
 		// Apply linearization to the actuator setpoint if enabled
 		if (_geometry.linearize_servos) {
 			actuator_sp(_first_swash_plate_servo_index + i) = getLinearServoOutput(actuator_sp(_first_swash_plate_servo_index + i));
-			actuator_sp(_first_swash_plate_servo_index + _geometry.num_swash_plate_servos + i) = getLinearServoOutput(actuator_sp(_first_swash_plate_servo_index + _geometry.num_swash_plate_servos + i));
 		}
 
 		// Saturation check for roll & pitch
@@ -250,8 +247,22 @@ void ActuatorEffectivenessTandem::updateSetpoint(const matrix::Vector<float, NUM
 			setSaturationFlag(roll_coeff, _saturation_flags.roll_neg, _saturation_flags.roll_pos);
 			setSaturationFlag(pitch_coeff, _saturation_flags.pitch_pos, _saturation_flags.pitch_neg);
                 }
+	}
+	for (int i = 0; i < _geometry_1.num_swash_plate_servos; i++) {
+		float roll_coeff = sinf(_geometry.swash_plate_servos[i].angle) * _geometry.swash_plate_servos[i].arm_length;
+		float pitch_coeff = cosf(_geometry.swash_plate_servos[i].angle) * _geometry.swash_plate_servos[i].arm_length;
+		actuator_sp(_first_swash_plate_servo_index + _geometry.num_swash_plate_servos + i) = collective2_pitch
+				- control_sp(ControlAxis::PITCH) * 0.9f
+				- control_sp(ControlAxis::ROLL) * roll_coeff * 0.9f
+				+ (control_sp(ControlAxis::YAW) * roll_coeff) * 0.3f
+				+ _geometry_1.swash1_plate_servos[i].trim;
 
-                if (actuator_sp(_first_swash_plate_servo_index + _geometry.num_swash_plate_servos + i) < actuator_min(_first_swash_plate_servo_index * 3 + i)) {
+		// Apply linearization to the actuator setpoint if enabled
+		if (_geometry_1.linearize_servos) {
+			actuator_sp(_first_swash_plate_servo_index + _geometry.num_swash_plate_servos + i) = getLinearServoOutput(actuator_sp(_first_swash_plate_servo_index + _geometry.num_swash_plate_servos + i));
+		}
+
+		if (actuator_sp(_first_swash_plate_servo_index + _geometry.num_swash_plate_servos + i) < actuator_min(_first_swash_plate_servo_index * 3 + i)) {
 			setSaturationFlag(roll_coeff, _saturation_flags.roll_pos, _saturation_flags.roll_neg);
 			setSaturationFlag(pitch_coeff, _saturation_flags.pitch_neg, _saturation_flags.pitch_pos);
 

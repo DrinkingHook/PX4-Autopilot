@@ -58,6 +58,7 @@ public:
 
 	struct Geometry {
 		SwashPlateGeometry swash_plate_servos[NUM_SWASH_PLATE_SERVOS_MAX];
+		SwashPlateGeometry swash1_plate_servos[NUM_SWASH_PLATE_SERVOS_MAX];
 		int32_t num_swash_plate_servos{0};
 		float throttle_curve[NUM_CURVE_POINTS];
 		float pitch_curve[NUM_CURVE_POINTS];
@@ -112,6 +113,7 @@ private:
 	};
 	struct ParamHandles {
 		ParamHandlesSwashPlate swash_plate_servos[NUM_SWASH_PLATE_SERVOS_MAX];
+		ParamHandlesSwashPlate swash1_plate_servos[NUM_SWASH_PLATE_SERVOS_MAX];
 		param_t num_swash_plate_servos;
 		param_t throttle_curve[NUM_CURVE_POINTS];
 		param_t pitch_curve[NUM_CURVE_POINTS];
