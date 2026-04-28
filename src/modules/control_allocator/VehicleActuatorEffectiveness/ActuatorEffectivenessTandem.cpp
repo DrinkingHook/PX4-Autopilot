@@ -30,16 +30,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-
+// ActuatorEffectivenessTandem.cpp
 #include "ActuatorEffectivenessTandem.hpp"
 #include <lib/mathlib/mathlib.h>
 
 using namespace matrix;
-using namespace time_literals;
 
 ActuatorEffectivenessTandem::ActuatorEffectivenessTandem(ModuleParams *parent)
-	: ModuleParams(parent)
+	: ModuleParams(parent),
+	  _rotor_front(_geo_front),
+	  _rotor_rear(_geo_rear)
 {
+	// ── 前/后旋翼共用角度、臂长（可以扩展为独立参数）──
 	for (int i = 0; i < NUM_SWASH_PLATE_SERVOS_MAX; ++i) {
 		char buffer[17];
 		snprintf(buffer, sizeof(buffer), "CA_SP0_ANG%u", i);
@@ -47,328 +49,221 @@ ActuatorEffectivenessTandem::ActuatorEffectivenessTandem(ModuleParams *parent)
 		snprintf(buffer, sizeof(buffer), "CA_SP0_ARM_L%u", i);
 		_param_handles.swash_plate_servos[i].arm_length = param_find(buffer);
 		snprintf(buffer, sizeof(buffer), "CA_SV_CS%u_TRIM", i);
-		_param_handles.swash_plate_servos[i].trim = param_find(buffer);
+		_param_handles.swash_plate_servos[i].trim_front = param_find(buffer);
 		snprintf(buffer, sizeof(buffer), "C1_SV_CS%u_TRIM", i);
-		_param_handles_1.swash1_plate_servos[i].trim = param_find(buffer);
+		_param_handles.swash_plate_servos[i].trim_rear = param_find(buffer);
 	}
 
 	_param_handles.num_swash_plate_servos = param_find("CA_SP0_COUNT");
 
+	// 曲线设定
 	for (int i = 0; i < NUM_CURVE_POINTS; ++i) {
 		char buffer[17];
 		snprintf(buffer, sizeof(buffer), "CA_HELI_THR_C%u", i);
 		_param_handles.throttle_curve[i] = param_find(buffer);
 		snprintf(buffer, sizeof(buffer), "CA_HELI_PITCH_C%u", i);
-                _param_handles.pitch_curve[i] = param_find(buffer);
-                snprintf(buffer, sizeof(buffer), "CA2_HLP_C%u", i);
-		_param_handles_1.pitch_curve[i] = param_find(buffer);
+		_param_handles.pitch_curve_front[i] = param_find(buffer);
+		snprintf(buffer, sizeof(buffer), "CA_HELI_PITCH_C%u", i);
+		_param_handles.pitch_curve_rear[i] = param_find(buffer);
 	}
 
-	_param_handles.yaw_collective_pitch_scale = param_find("CA_HELI_YAW_CP_S");
-	_param_handles.yaw_collective_pitch_offset = param_find("CA_HELI_YAW_CP_O");
-	_param_handles.yaw_throttle_scale = param_find("CA_HELI_YAW_TH_S");
-	_param_handles.yaw_ccw = param_find("CA_HELI_YAW_CCW");
-	_param_handles.spoolup_time = param_find("COM_SPOOLUP_TIME");
-        _param_handles.max_servo_throw = param_find("CA_MAX_SVO_THROW");
+	// 其它单一参数
+	_param_handles.spoolup_time   = param_find("COM_SPOOLUP_TIME");
+	_param_handles.max_servo_throw = param_find("CA_MAX_SVO_THROW");
+	_param_handles.pitch_scale = param_find("CA_TDM_PT_S");
+	_param_handles.roll_scale  = param_find("CA_TDM_RL_S");
+	_param_handles.yaw_scale   = param_find("CA_TDM_YW_S");
 
-        _param_handles_1.yaw_collective_pitch_scale = param_find("CA_HELI_YAW_CP_S");
-	_param_handles_1.yaw_collective_pitch_offset = param_find("CA_HELI_YAW_CP_O");
-	_param_handles_1.yaw_throttle_scale = param_find("CA_HELI_YAW_TH_S");
-	_param_handles_1.yaw_ccw = param_find("CA_HELI_YAW_CCW");
-	_param_handles_1.spoolup_time = param_find("COM_SPOOLUP_TIME");
-        _param_handles_1.max_servo_throw = param_find("CA_MAX_SVO_THROW");
-
-        updateParams();
+	updateParams();
 }
 
 void ActuatorEffectivenessTandem::updateParams()
 {
 	ModuleParams::updateParams();
 
-	if (param_get(_param_handles.num_swash_plate_servos, &_geometry.num_swash_plate_servos) != PX4_OK) {
-		PX4_ERR("param_get failed");
-		return;
-	}
+	// ── 舵机数量 ──
+	int32_t n = 3;
+	param_get(_param_handles.num_swash_plate_servos, &n);
+	n = math::constrain(n, (int32_t)2, (int32_t)NUM_SWASH_PLATE_SERVOS_MAX);
+	_geo_front.num_swash_plate_servos = n;
+	_geo_rear.num_swash_plate_servos  = n;  // 前后舵机数量相同
 
-	_geometry.num_swash_plate_servos = math::constrain(_geometry.num_swash_plate_servos,
-					   (int32_t)2, (int32_t)NUM_SWASH_PLATE_SERVOS_MAX);
-
-	_geometry_1.num_swash_plate_servos = math::constrain(_geometry.num_swash_plate_servos,
-					(int32_t)2, (int32_t)NUM_SWASH_PLATE_SERVOS_MAX);
-
-	for (int i = 0; i < _geometry.num_swash_plate_servos; ++i) {
-		float angle_deg{};
+	// ── 舵机几何（前后共用角度/臂长，trim 独立）──
+	for (int i = 0; i < n; ++i) {
+		float angle_deg = 0.f;
 		param_get(_param_handles.swash_plate_servos[i].angle, &angle_deg);
-		_geometry.swash_plate_servos[i].angle = math::radians(angle_deg);
-		param_get(_param_handles.swash_plate_servos[i].arm_length, &_geometry.swash_plate_servos[i].arm_length);
-		param_get(_param_handles.swash_plate_servos[i].trim, &_geometry.swash_plate_servos[i].trim);
+		const float angle = math::radians(angle_deg);
 
+		float arm = 1.f;
+		param_get(_param_handles.swash_plate_servos[i].arm_length, &arm);
+
+		_geo_front.swash_plate_servos[i].angle      = angle;
+		_geo_front.swash_plate_servos[i].arm_length = arm;
+		param_get(_param_handles.swash_plate_servos[i].trim_front,
+			  &_geo_front.swash_plate_servos[i].trim);
+
+		_geo_rear.swash_plate_servos[i].angle      = angle;
+		_geo_rear.swash_plate_servos[i].arm_length = arm;
+		param_get(_param_handles.swash_plate_servos[i].trim_rear,
+			  &_geo_rear.swash_plate_servos[i].trim);
 	}
 
-	for (int i = 0; i < _geometry_1.num_swash_plate_servos; ++i) {
-		float angle_deg{};
-                param_get(_param_handles_1.swash_plate_servos[i].angle, &angle_deg);
-		_geometry_1.swash_plate_servos[i].angle = math::radians(angle_deg);
-		param_get(_param_handles_1.swash_plate_servos[i].arm_length, &_geometry_1.swash_plate_servos[i].arm_length);
-		param_get(_param_handles_1.swash1_plate_servos[i].trim, &_geometry_1.swash1_plate_servos[i].trim);
+	// ── 曲线 ──
+	for (int i = 0; i < NUM_CURVE_POINTS; ++i) {
+		param_get(_param_handles.throttle_curve[i],   &_geo_front.throttle_curve[i]);
+		param_get(_param_handles.pitch_curve_front[i], &_geo_front.pitch_curve[i]);
+		param_get(_param_handles.pitch_curve_rear[i],  &_geo_rear.pitch_curve[i]);
+		// 后旋翼共用前旋翼油门曲线（只有一个主电机）
+		_geo_rear.throttle_curve[i] = _geo_front.throttle_curve[i];
 	}
 
+	// ── spoolup ──
+	param_get(_param_handles.spoolup_time, &_geo_front.spoolup_time);
+	_geo_rear.spoolup_time = _geo_front.spoolup_time;
 
-	param_get(_param_handles.yaw_collective_pitch_scale, &_geometry.yaw_collective_pitch_scale);
-	param_get(_param_handles.yaw_collective_pitch_offset, &_geometry.yaw_collective_pitch_offset);
-	param_get(_param_handles.yaw_throttle_scale, &_geometry.yaw_throttle_scale);
-        param_get(_param_handles.spoolup_time, &_geometry.spoolup_time);
-
-        param_get(_param_handles_1.yaw_collective_pitch_scale, &_geometry_1.yaw_collective_pitch_scale);
-	param_get(_param_handles_1.yaw_collective_pitch_offset, &_geometry_1.yaw_collective_pitch_offset);
-	param_get(_param_handles_1.yaw_throttle_scale, &_geometry_1.yaw_throttle_scale);
-	param_get(_param_handles_1.spoolup_time, &_geometry_1.spoolup_time);
-	int32_t yaw_ccw = 0;
-	param_get(_param_handles.yaw_ccw, &yaw_ccw);
-        _geometry.yaw_sign = (yaw_ccw == 1) ? -1.f : 1.f;
-
-        param_get(_param_handles_1.yaw_ccw, &yaw_ccw);
-        _geometry_1.yaw_sign = (yaw_ccw == 1) ? -1.f : 1.f;
-
+	// ── 线性化（前后一致）──
 	float max_servo_throw_deg = 0.f;
-        param_get(_param_handles.max_servo_throw, &max_servo_throw_deg);
-        param_get(_param_handles_1.max_servo_throw, &max_servo_throw_deg);
+	param_get(_param_handles.max_servo_throw, &max_servo_throw_deg);
 
 	if (max_servo_throw_deg > 0.f) {
-		// linearization feature enabled
-		_geometry.linearize_servos = 1;
-		const float max_servo_throw = math::radians(max_servo_throw_deg);
-		_geometry.max_servo_height = sinf(max_servo_throw);
-		_geometry.inverse_max_servo_throw = 1.f / max_servo_throw;
+		const float max_throw = math::radians(max_servo_throw_deg);
+		_geo_front.linearize_servos       = 1;
+		_geo_front.max_servo_height       = sinf(max_throw);
+		_geo_front.inverse_max_servo_throw = 1.f / max_throw;
 
 	} else {
-		// handle any undefined behaviour if disabled
-		_geometry.linearize_servos = 0;
-		_geometry.max_servo_height = _geometry.inverse_max_servo_throw = 0.f;
-        }
-
-	// _geometry_1 = _geometry;
-        for (int i = 0; i < NUM_CURVE_POINTS; ++i) {
-		param_get(_param_handles.throttle_curve[i], &_geometry.throttle_curve[i]);
-		param_get(_param_handles.pitch_curve[i], &_geometry.pitch_curve[i]);
-
-                param_get(_param_handles_1.throttle_curve[i], &_geometry_1.throttle_curve[i]);
-		param_get(_param_handles_1.pitch_curve[i], &_geometry_1.pitch_curve[i]);
+		_geo_front.linearize_servos        = 0;
+		_geo_front.max_servo_height        = 0.f;
+		_geo_front.inverse_max_servo_throw = 0.f;
 	}
+
+	// 后旋翼同步
+	_geo_rear.linearize_servos        = _geo_front.linearize_servos;
+	_geo_rear.max_servo_height        = _geo_front.max_servo_height;
+	_geo_rear.inverse_max_servo_throw = _geo_front.inverse_max_servo_throw;
+
+	// ── 可调增益 ──
+	param_get(_param_handles.pitch_scale, &_pitch_scale);
+	param_get(_param_handles.roll_scale,  &_roll_scale);
+	param_get(_param_handles.yaw_scale,   &_yaw_scale);
+
+	// 同步到 RotorHead
+	_rotor_front.setGeometry(_geo_front);
+	_rotor_rear.setGeometry(_geo_rear);
 }
 
-bool ActuatorEffectivenessTandem::getEffectivenessMatrix(Configuration &configuration,
-		EffectivenessUpdateReason external_update)
+bool ActuatorEffectivenessTandem::getEffectivenessMatrix(
+	Configuration &configuration, EffectivenessUpdateReason external_update)
 {
 	if (external_update == EffectivenessUpdateReason::NO_EXTERNAL_UPDATE) {
 		return false;
 	}
 
-	// As the allocation is non-linear, we use updateSetpoint() instead of the matrix
+	// 主电机
 	configuration.addActuator(ActuatorType::MOTORS, Vector3f{}, Vector3f{});
 
-	// // Tail (yaw) (either ESC or Servo)
-	// configuration.addActuator(_tail_actuator_type, Vector3f{}, Vector3f{});
+	// 前旋翼舵机
+	_first_swash_servo_index = configuration.num_actuators_matrix[0];
 
-	// N swash plate servos
-	_first_swash_plate_servo_index = configuration.num_actuators_matrix[0];
-
-	for (int i = 0; i < _geometry.num_swash_plate_servos; ++i) {
+	for (int i = 0; i < _geo_front.num_swash_plate_servos; ++i) {
 		configuration.addActuator(ActuatorType::SERVOS, Vector3f{}, Vector3f{});
-		configuration.trim[configuration.selected_matrix](i) = _geometry.swash_plate_servos[i].trim;
+		configuration.trim[configuration.selected_matrix](
+			_first_swash_servo_index + i) = _geo_front.swash_plate_servos[i].trim;
 	}
 
+	// 后旋翼舵机（trim 索引必须偏移）
+	const int rear_start = _first_swash_servo_index + _geo_front.num_swash_plate_servos;
 
-        for(int i = 0; i < _geometry_1.num_swash_plate_servos; ++i) {
+	for (int i = 0; i < _geo_rear.num_swash_plate_servos; ++i) {
 		configuration.addActuator(ActuatorType::SERVOS, Vector3f{}, Vector3f{});
-		configuration.trim[configuration.selected_matrix](i) = _geometry_1.swash1_plate_servos[i].trim;
+		configuration.trim[configuration.selected_matrix](
+			rear_start + i) = _geo_rear.swash_plate_servos[i].trim;
 	}
+
 	return true;
 }
 
-void ActuatorEffectivenessTandem::updateSetpoint(const matrix::Vector<float, NUM_AXES> &control_sp,
-		int matrix_index, ActuatorVector &actuator_sp, const ActuatorVector &actuator_min, const ActuatorVector &actuator_max)
+void ActuatorEffectivenessTandem::updateSetpoint(
+	const matrix::Vector<float, NUM_AXES> &control_sp,
+	int matrix_index,
+	ActuatorVector &actuator_sp,
+	const ActuatorVector &actuator_min,
+	const ActuatorVector &actuator_max)
 {
-	_saturation_flags = {};
+	_sat_front = {};
+	_sat_rear  = {};
 
-	const float spoolup_progress = throttleSpoolupProgress();
-	float rpm_control_output = 0;
-#if CONTROL_ALLOCATOR_RPM_CONTROL
-	_rpm_control.setSpoolupProgress(spoolup_progress);
-	rpm_control_output = _rpm_control.getActuatorCorrection();
-#endif // CONTROL_ALLOCATOR_RPM_CONTROL
+	const float spoolup = throttleSpoolupProgress();
+	const float throttle = math::interpolateN(
+				       -control_sp(ControlAxis::THRUST_Z), _geo_front.throttle_curve) * spoolup;
 
-	// throttle/collective pitch curve
-	const float throttle = (math::interpolateN(-control_sp(ControlAxis::THRUST_Z), _geometry.throttle_curve)
-				+ rpm_control_output) * spoolup_progress;
-	const float collective_pitch = math::interpolateN(-control_sp(ControlAxis::THRUST_Z), _geometry.pitch_curve);
-	const float collective2_pitch = math::interpolateN(-control_sp(ControlAxis::THRUST_Z), _geometry_1.pitch_curve);
-	// actuator mapping
-	actuator_sp(0) = mainMotorEnaged() ? throttle : NAN;
+	const float collective_front = math::interpolateN(
+					       -control_sp(ControlAxis::THRUST_Z), _geo_front.pitch_curve);
+	const float collective_rear  = math::interpolateN(
+					       -control_sp(ControlAxis::THRUST_Z), _geo_rear.pitch_curve);
 
-	// actuator_sp(1) = control_sp(ControlAxis::YAW) * _geometry.yaw_sign
-	// 		 + fabsf(collective_pitch - _geometry.yaw_collective_pitch_offset) * _geometry.yaw_collective_pitch_scale
-	// 		 + throttle * _geometry.yaw_throttle_scale;
+	// 主电机
+	actuator_sp(0) = mainMotorEngaged() ? throttle : NAN;
 
-	// Saturation check for yaw
-	// if (actuator_sp(1) < actuator_min(1)) {
-	// 	setSaturationFlag(_geometry.yaw_sign, _saturation_flags.yaw_neg, _saturation_flags.yaw_pos);
+	const float roll_sp  = control_sp(ControlAxis::ROLL)  * _roll_scale;
+	const float pitch_sp = control_sp(ControlAxis::PITCH) * _pitch_scale;
+	const float yaw_sp   = control_sp(ControlAxis::YAW)   * _yaw_scale;
 
-	// } else if (actuator_sp(1) > actuator_max(1)) {
-	// 	setSaturationFlag(_geometry.yaw_sign, _saturation_flags.yaw_pos, _saturation_flags.yaw_neg);
-	// }
-
-        /**
-         * cosf(90) = 0
-         * sin(90) = 1
-         * i = 0 roll_coeff = 1 pitch_coeff = 0
-	 * i = 1 roll_coeff = -1 pitch_coeff = 0
-         */
-	for (int i = 0; i < _geometry.num_swash_plate_servos; i++) {
-		float roll_coeff = sinf(_geometry.swash_plate_servos[i].angle) * _geometry.swash_plate_servos[i].arm_length;
-		float pitch_coeff = cosf(_geometry.swash_plate_servos[i].angle) * _geometry.swash_plate_servos[i].arm_length;
-		actuator_sp(_first_swash_plate_servo_index + i) = collective_pitch
-				+ control_sp(ControlAxis::PITCH) * 0.9f
-				- control_sp(ControlAxis::ROLL) * roll_coeff * 0.9f
-				+ (control_sp(ControlAxis::YAW) * -roll_coeff) * 0.3f
-				+ _geometry.swash_plate_servos[i].trim;
-
-		// Apply linearization to the actuator setpoint if enabled
-		if (_geometry.linearize_servos) {
-			actuator_sp(_first_swash_plate_servo_index + i) = getLinearServoOutput(actuator_sp(_first_swash_plate_servo_index + i));
-		}
-
-		// Saturation check for roll & pitch
-		if (actuator_sp(_first_swash_plate_servo_index + i) < actuator_min(_first_swash_plate_servo_index + i)) {
-			setSaturationFlag(roll_coeff, _saturation_flags.roll_pos, _saturation_flags.roll_neg);
-			setSaturationFlag(pitch_coeff, _saturation_flags.pitch_neg, _saturation_flags.pitch_pos);
-
-		} else if (actuator_sp(_first_swash_plate_servo_index + i) > actuator_max(_first_swash_plate_servo_index + i)) {
-			setSaturationFlag(roll_coeff, _saturation_flags.roll_neg, _saturation_flags.roll_pos);
-			setSaturationFlag(pitch_coeff, _saturation_flags.pitch_pos, _saturation_flags.pitch_neg);
-                }
-	}
-	for (int i = 0; i < _geometry_1.num_swash_plate_servos; i++) {
-		float roll_coeff = sinf(_geometry.swash_plate_servos[i].angle) * _geometry.swash_plate_servos[i].arm_length;
-		float pitch_coeff = cosf(_geometry.swash_plate_servos[i].angle) * _geometry.swash_plate_servos[i].arm_length;
-		actuator_sp(_first_swash_plate_servo_index + _geometry.num_swash_plate_servos + i) = collective2_pitch
-				- control_sp(ControlAxis::PITCH) * 0.9f
-				- control_sp(ControlAxis::ROLL) * roll_coeff * 0.9f
-				+ (control_sp(ControlAxis::YAW) * roll_coeff) * 0.3f
-				+ _geometry_1.swash1_plate_servos[i].trim;
-
-		// Apply linearization to the actuator setpoint if enabled
-		if (_geometry_1.linearize_servos) {
-			actuator_sp(_first_swash_plate_servo_index + _geometry.num_swash_plate_servos + i) = getLinearServoOutput(actuator_sp(_first_swash_plate_servo_index + _geometry.num_swash_plate_servos + i));
-		}
-
-		if (actuator_sp(_first_swash_plate_servo_index + _geometry.num_swash_plate_servos + i) < actuator_min(_first_swash_plate_servo_index * 3 + i)) {
-			setSaturationFlag(roll_coeff, _saturation_flags.roll_pos, _saturation_flags.roll_neg);
-			setSaturationFlag(pitch_coeff, _saturation_flags.pitch_neg, _saturation_flags.pitch_pos);
-
-		} else if (actuator_sp(_first_swash_plate_servo_index + _geometry.num_swash_plate_servos + i) > actuator_max(_first_swash_plate_servo_index * 3  + i)) {
-			setSaturationFlag(roll_coeff, _saturation_flags.roll_neg, _saturation_flags.roll_pos);
-			setSaturationFlag(pitch_coeff, _saturation_flags.pitch_pos, _saturation_flags.pitch_neg);
-		}
-	}
+	// 前旋翼：collective + pitch抬头分量
+	_sat_front = _rotor_front.computeSetpoints(
+			     collective_front + pitch_sp,   // 直接加到总距
+			     roll_sp,
+			     0.f,                           // pitch_coeff无效，传0
+			     +yaw_sp,
+			     _first_swash_servo_index,
+			     actuator_sp, actuator_min, actuator_max);
+	const int rear_start = _first_swash_servo_index + _geo_front.num_swash_plate_servos;
+	// 后旋翼：collective - pitch抬头分量
+	_sat_rear = _rotor_rear.computeSetpoints(
+			    collective_rear - pitch_sp,    // 后旋翼反向
+			    roll_sp,
+			    0.f,
+			    -yaw_sp,
+			    rear_start,
+			    actuator_sp, actuator_min, actuator_max);
 }
 
-float ActuatorEffectivenessTandem::getLinearServoOutput(float input) const
+void ActuatorEffectivenessTandem::getUnallocatedControl(
+	int matrix_index, control_allocator_status_s &status)
 {
-	input = math::constrain(input, -1.f, 1.f);
+	// 先清零，再合并两个旋翼头
+	status.unallocated_torque[0] = 0.f;
+	status.unallocated_torque[1] = 0.f;
+	status.unallocated_torque[2] = 0.f;
+	status.unallocated_thrust[2] = 0.f;
 
-	// make sure a the maximal input of [-1,1] maps to the maximal vertical deflection the servo can reach of sin(CA_MAX_SVO_THROW)
-	float servo_height = _geometry.max_servo_height * input;
-
-	// mulitply by 1 over max arm roation in radians to normalise
-	return _geometry.inverse_max_servo_throw * asinf(servo_height);
-}
-
-bool ActuatorEffectivenessTandem::mainMotorEnaged()
-{
-	manual_control_switches_s manual_control_switches;
-
-	if (_manual_control_switches_sub.update(&manual_control_switches)) {
-		_main_motor_engaged = manual_control_switches.engage_main_motor_switch == manual_control_switches_s::SWITCH_POS_NONE
-				      || manual_control_switches.engage_main_motor_switch == manual_control_switches_s::SWITCH_POS_ON;
-	}
-
-	return _main_motor_engaged;
+	HelicopterRotorHead::mergeUnallocatedControl(_sat_front, status);
+	HelicopterRotorHead::mergeUnallocatedControl(_sat_rear,  status);
 }
 
 float ActuatorEffectivenessTandem::throttleSpoolupProgress()
 {
-	vehicle_status_s vehicle_status;
+	vehicle_status_s vs;
 
-	if (_vehicle_status_sub.update(&vehicle_status)) {
-		_armed = vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_ARMED;
-		_armed_time = vehicle_status.armed_time;
+	if (_vehicle_status_sub.update(&vs)) {
+		_armed      = vs.arming_state == vehicle_status_s::ARMING_STATE_ARMED;
+		_armed_time = vs.armed_time;
 	}
 
-	const float time_since_arming = (hrt_absolute_time() - _armed_time) / 1e6f;
-	const float spoolup_progress = time_since_arming / _geometry.spoolup_time;
-
-	if (_armed && spoolup_progress < 1.f) {
-		return spoolup_progress;
-	}
-
-	return 1.f;
+	const float elapsed  = (hrt_absolute_time() - _armed_time) / 1e6f;
+	const float progress = elapsed / _geo_front.spoolup_time;
+	return (_armed && progress < 1.f) ? progress : 1.f;
 }
 
-
-void ActuatorEffectivenessTandem::setSaturationFlag(float coeff, bool &positive_flag, bool &negative_flag)
+bool ActuatorEffectivenessTandem::mainMotorEngaged()
 {
-	if (coeff > 0.f) {
-		// A positive change in given axis will increase saturation
-		positive_flag = true;
+	manual_control_switches_s sw;
 
-	} else if (coeff < 0.f) {
-		// A negative change in given axis will increase saturation
-		negative_flag = true;
-	}
-}
-
-void ActuatorEffectivenessTandem::getUnallocatedControl(int matrix_index, control_allocator_status_s &status)
-{
-	// Note: the values '-1', '1' and '0' are just to indicate a negative,
-	// positive or no saturation to the rate controller. The actual magnitude is not used.
-	if (_saturation_flags.roll_pos) {
-		status.unallocated_torque[0] = 1.f;
-
-	} else if (_saturation_flags.roll_neg) {
-		status.unallocated_torque[0] = -1.f;
-
-	} else {
-		status.unallocated_torque[0] = 0.f;
+	if (_manual_control_switches_sub.update(&sw)) {
+		_main_motor_engaged =
+			sw.engage_main_motor_switch == manual_control_switches_s::SWITCH_POS_NONE
+			|| sw.engage_main_motor_switch == manual_control_switches_s::SWITCH_POS_ON;
 	}
 
-	if (_saturation_flags.pitch_pos) {
-		status.unallocated_torque[1] = 1.f;
-
-	} else if (_saturation_flags.pitch_neg) {
-		status.unallocated_torque[1] = -1.f;
-
-	} else {
-		status.unallocated_torque[1] = 0.f;
-	}
-
-	if (_saturation_flags.yaw_pos) {
-		status.unallocated_torque[2] = 1.f;
-
-	} else if (_saturation_flags.yaw_neg) {
-		status.unallocated_torque[2] = -1.f;
-
-	} else {
-		status.unallocated_torque[2] = 0.f;
-	}
-
-	if (_saturation_flags.thrust_pos) {
-		status.unallocated_thrust[2] = 1.f;
-
-	} else if (_saturation_flags.thrust_neg) {
-		status.unallocated_thrust[2] = -1.f;
-
-	} else {
-		status.unallocated_thrust[2] = 0.f;
-	}
+	return _main_motor_engaged;
 }

@@ -31,118 +31,87 @@
  *
  ****************************************************************************/
 
+// ActuatorEffectivenessTandem.hpp
 #pragma once
 
-#include "control_allocation/actuator_effectiveness/ActuatorEffectiveness.hpp"
+#include "ActuatorEffectiveness.hpp"
+#include "HelicopterRotorHead.hpp"
+#include "HelicopterGeometry.hpp"
 
 #include <px4_platform_common/module_params.h>
-
 #include <uORB/Subscription.hpp>
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/topics/manual_control_switches.h>
 
-#include "RpmControl.hpp"
-
 class ActuatorEffectivenessTandem : public ModuleParams, public ActuatorEffectiveness
 {
 public:
+	static constexpr int NUM_ROTORS = 2;  // 前旋翼 + 后旋翼
 
-	static constexpr int NUM_SWASH_PLATE_SERVOS_MAX = 4;
-	static constexpr int NUM_CURVE_POINTS = 5;
-
-	struct SwashPlateGeometry {
-		float angle;
-		float arm_length;
-		float trim;
-	};
-
-	struct Geometry {
-		SwashPlateGeometry swash_plate_servos[NUM_SWASH_PLATE_SERVOS_MAX];
-		SwashPlateGeometry swash1_plate_servos[NUM_SWASH_PLATE_SERVOS_MAX];
-		int32_t num_swash_plate_servos{0};
-		float throttle_curve[NUM_CURVE_POINTS];
-		float pitch_curve[NUM_CURVE_POINTS];
-		float yaw_collective_pitch_scale;
-		float yaw_collective_pitch_offset;
-		float yaw_throttle_scale;
-		float yaw_sign;
-		float spoolup_time;
-		int linearize_servos;
-		float max_servo_height;
-		float inverse_max_servo_throw;
-	};
-
-	ActuatorEffectivenessTandem(ModuleParams *parent);
+	explicit ActuatorEffectivenessTandem(ModuleParams *parent);
 	virtual ~ActuatorEffectivenessTandem() = default;
 
-	bool getEffectivenessMatrix(Configuration &configuration, EffectivenessUpdateReason external_update) override;
+	bool getEffectivenessMatrix(Configuration &configuration,
+				    EffectivenessUpdateReason external_update) override;
 
-	const char *name() const override { return "Helicopter"; }
+	void updateSetpoint(const matrix::Vector<float, NUM_AXES> &control_sp,
+			    int matrix_index, ActuatorVector &actuator_sp,
+			    const ActuatorVector &actuator_min,
+			    const ActuatorVector &actuator_max) override;
 
+	void getUnallocatedControl(int matrix_index,
+				   control_allocator_status_s &status) override;
 
-	const Geometry &geometry() const { return _geometry; }
+	const char *name() const override { return "Tandem Helicopter"; }
 
-	void updateSetpoint(const matrix::Vector<float, NUM_AXES> &control_sp, int matrix_index, ActuatorVector &actuator_sp,
-			    const ActuatorVector &actuator_min, const ActuatorVector &actuator_max) override;
-
-	void getUnallocatedControl(int matrix_index, control_allocator_status_s &status) override;
 private:
-	float throttleSpoolupProgress();
-	bool mainMotorEnaged();
-	float getLinearServoOutput(float input) const;
-
 	void updateParams() override;
+	float throttleSpoolupProgress();
+	bool  mainMotorEngaged();
 
-	struct SaturationFlags {
-		bool roll_pos;
-		bool roll_neg;
-		bool pitch_pos;
-		bool pitch_neg;
-		bool yaw_pos;
-		bool yaw_neg;
-		bool thrust_pos;
-		bool thrust_neg;
-        };
-
-	static void setSaturationFlag(float coeff, bool &positive_flag, bool &negative_flag);
-
+	// ── 参数句柄 ────────────────────────────────────────────────
 	struct ParamHandlesSwashPlate {
 		param_t angle;
 		param_t arm_length;
-		param_t trim;
+		param_t trim_front;   // CA_SV_CS%u_TRIM
+		param_t trim_rear;    // C1_SV_CS%u_TRIM  (后旋翼独立 trim)
 	};
+
 	struct ParamHandles {
 		ParamHandlesSwashPlate swash_plate_servos[NUM_SWASH_PLATE_SERVOS_MAX];
-		ParamHandlesSwashPlate swash1_plate_servos[NUM_SWASH_PLATE_SERVOS_MAX];
 		param_t num_swash_plate_servos;
 		param_t throttle_curve[NUM_CURVE_POINTS];
-		param_t pitch_curve[NUM_CURVE_POINTS];
-		param_t yaw_collective_pitch_scale;
-		param_t yaw_collective_pitch_offset;
-		param_t yaw_throttle_scale;
-		param_t yaw_ccw;
+		param_t pitch_curve_front[NUM_CURVE_POINTS];  // CA_HELI_PITCH_C%u
+		param_t pitch_curve_rear[NUM_CURVE_POINTS];   // CA2_HLP_C%u
 		param_t spoolup_time;
 		param_t max_servo_throw;
-	};
-        ParamHandles _param_handles{};
-        ParamHandles _param_handles_1{};
+		// 偏航/横滚增益（建议独立注册）
+		param_t pitch_scale;  // CA_TANDEM_PTCH_S
+		param_t roll_scale;   // CA_TANDEM_ROLL_S
+		param_t yaw_scale;    // CA_TANDEM_YAW_S
+	} _param_handles{};
 
-        Geometry _geometry{};
-        Geometry _geometry_1{};
+	// ── 两个旋翼头 ───────────────────────────────────────────────
+	RotorGeometry      _geo_front{};
+	RotorGeometry      _geo_rear{};
+	HelicopterRotorHead _rotor_front{_geo_front};
+	HelicopterRotorHead _rotor_rear{_geo_rear};
 
-	int _first_swash_plate_servo_index{};
-	SaturationFlags _saturation_flags;
+	// 可调增益（替代硬编码的 0.5f / 0.9f）
+	float _pitch_scale{0.9f};
+	float _roll_scale{0.9f};
+	float _yaw_scale{0.5f};
 
-	// Throttle spoolup state
+	int _first_swash_servo_index{0};
+
+	// 两个旋翼头各自的饱和标志
+	RotorSaturationFlags _sat_front{};
+	RotorSaturationFlags _sat_rear{};
+
+	// spoolup / arm 状态
 	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};
-	bool _armed{false};
-	uint64_t _armed_time{0};
-
 	uORB::Subscription _manual_control_switches_sub{ORB_ID(manual_control_switches)};
-	bool _main_motor_engaged{true};
-
-
-#if CONTROL_ALLOCATOR_RPM_CONTROL
-	RpmControl _rpm_control {this};
-#endif // CONTROL_ALLOCATOR_RPM_CONTROL
+	bool     _armed{false};
+	uint64_t _armed_time{0};
+	bool     _main_motor_engaged{true};
 };

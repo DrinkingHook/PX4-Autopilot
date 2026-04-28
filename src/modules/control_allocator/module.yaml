@@ -477,6 +477,32 @@ parameters:
                 3: '3'
                 4: '4'
             default: 3
+        CA_TDM_PT_S:
+          description:
+            short: Tandem pitch scale
+            long: Pitch control scale factor for tandem helicopter front and rear rotors.
+          type: float
+          default: 0.9
+          min: 0.0
+          max: 1.0
+        
+        CA_TDM_RL_S:
+          description:
+            short: Tandem roll scale
+            long: Roll control scale factor for tandem helicopter swashplate servos.
+          type: float
+          default: 0.9
+          min: 0.0
+          max: 1.0
+        
+        CA_TDM_YW_S:
+          description:
+            short: Tandem yaw scale
+            long: Yaw control scale factor applied via differential collective pitch.
+          type: float
+          default: 0.5
+          min: 0.0
+          max: 1.0
         CA_SP0_ANG${i}:
             description:
                 short: Angle for swash plate servo ${i}
@@ -515,20 +541,6 @@ parameters:
             max: 1
             default: [1, 1, 1, 1, 1]
         CA_HELI_PITCH_C${i}:
-            description:
-                short: Collective pitch curve at position ${i}
-                long: |
-                  Defines the collective pitch at the interval position ${i} for a given thrust setpoint.
-
-                  Use negative values if the swash plate needs to move down to provide upwards thrust.
-            type: float
-            decimal: 3
-            increment: 0.1
-            num_instances: 5
-            min: -1
-            max: 1
-            default: [-0.05, 0.0725, 0.2, 0.325, 0.45]
-        CA2_HLP_C${i}:
             description:
                 short: Collective pitch curve at position ${i}
                 long: |
