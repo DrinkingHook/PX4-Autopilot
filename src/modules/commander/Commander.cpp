@@ -249,8 +249,30 @@ int Commander::custom_command(int argc, char *argv[])
 
 			} else if (!strcmp(argv[1], "mag")) {
 				if (argc > 2 && (strcmp(argv[2], "quick") == 0)) {
-					// magnetometer quick calibration: VEHICLE_CMD_FIXED_MAG_CAL_YAW
-					send_vehicle_command(vehicle_command_s::VEHICLE_CMD_FIXED_MAG_CAL_YAW);
+					// Magnetometer quick calibration with optional heading
+					float heading_deg = 0.0f;
+
+					if (argc > 3) {
+						char *end;
+						heading_deg = strtof(argv[3], &end);
+
+						if (*end != '\0') { // Check if parsing failed
+							PX4_ERR("Invalid heading value: %s", argv[3]);
+							return 1;
+						}
+
+						heading_deg = matrix::wrap(roundf(heading_deg), 0.f, 360.f);
+					}
+
+					// Send command with heading (param1), other params zeroed (use GPS)
+					send_vehicle_command(vehicle_command_s::VEHICLE_CMD_FIXED_MAG_CAL_YAW,
+							     heading_deg,  // param1: Yaw of vehicle in earth frame (deg)
+							     0.0f,         // param2: CompassMask, 0 for all
+							     0.0f,         // param3: latitude (deg) If Latitude and longitude are both zero then use the current vehicle location
+							     0.0f,         // param4: longitude (deg)
+							     0.0,          // param5: unused
+							     0.0,          // param6: unused
+							     0.0f);        // param7: unused
 
 				} else {
 					// magnetometer calibration: param2 = 1
@@ -608,27 +630,29 @@ transition_result_t Commander::arm(arm_disarm_reason_t calling_reason, bool run_
 	if (run_preflight_checks) {
 		if (_vehicle_control_mode.flag_control_manual_enabled) {
 
-			if (_vehicle_control_mode.flag_control_climb_rate_enabled &&
-			    !_failsafe_flags.manual_control_signal_lost && _is_throttle_above_center) {
+			if (!_failsafe_flags.manual_control_signal_lost) {
+				bool throttle_safe;
 
-				mavlink_log_critical(&_mavlink_log_pub, "Arming denied: throttle above center\t");
-				events::send(events::ID("commander_arm_denied_throttle_center"), {events::Log::Critical, events::LogInternal::Info},
-					     "Arming denied: throttle above center");
-				tune_negative(true);
-				return TRANSITION_DENIED;
-			}
+				if (_vehicle_status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROVER) {
+					// Rovers: center stick = stop, safe to arm near center
+					throttle_safe = (fabsf(_last_manual_throttle) < 0.2f);
 
-			if (!_vehicle_control_mode.flag_control_climb_rate_enabled &&
-			    !_failsafe_flags.manual_control_signal_lost && !_is_throttle_low
-			    && ((_vehicle_status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING)
-				|| (_vehicle_status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING))
-			   ) {
+				} else if (_vehicle_control_mode.flag_control_climb_rate_enabled) {
+					// Climb-rate modes (AltCtl, PosCtl, etc.): center = hover, safe at or below center
+					throttle_safe = (_last_manual_throttle <= 0.2f);
 
-				mavlink_log_critical(&_mavlink_log_pub, "Arming denied: high throttle\t");
-				events::send(events::ID("commander_arm_denied_throttle_high"), {events::Log::Critical, events::LogInternal::Info},
-					     "Arming denied: high throttle");
-				tune_negative(true);
-				return TRANSITION_DENIED;
+				} else {
+					// Manual/Stab/Acro on MC/FW: bottom = no thrust, safe at bottom
+					throttle_safe = (_last_manual_throttle < -0.8f);
+				}
+
+				if (!throttle_safe) {
+					mavlink_log_critical(&_mavlink_log_pub, "Arming denied: throttle not in safe position\t");
+					events::send(events::ID("commander_arm_denied_throttle_unsafe"), {events::Log::Critical, events::LogInternal::Info},
+						     "Arming denied: throttle not in safe position");
+					tune_negative(true);
+					return TRANSITION_DENIED;
+				}
 			}
 
 		} else if (calling_reason == arm_disarm_reason_t::stick_gesture
@@ -1341,6 +1365,13 @@ Commander::handle_command(const vehicle_command_s &cmd)
 				// reject if armed or shutting down
 				answer_command(cmd, vehicle_command_ack_s::VEHICLE_CMD_RESULT_TEMPORARILY_REJECTED);
 
+			} else if (_vehicle_status.hil_state == vehicle_status_s::HIL_STATE_ON) {
+				// reject calibration in SIH mode — simulated sensors cannot be calibrated
+				answer_command(cmd, vehicle_command_ack_s::VEHICLE_CMD_RESULT_DENIED);
+				mavlink_log_critical(&_mavlink_log_pub, "Calibration denied: not supported in SIH mode\t");
+				events::send(events::ID("commander_calib_denied_sih"), events::Log::Critical,
+					     "Calibration denied: not supported in SIH mode");
+
 			} else {
 
 				if ((int)(cmd.param1) == 1) {
@@ -1453,6 +1484,13 @@ Commander::handle_command(const vehicle_command_s &cmd)
 
 				// reject if armed or shutting down
 				answer_command(cmd, vehicle_command_ack_s::VEHICLE_CMD_RESULT_TEMPORARILY_REJECTED);
+
+			} else if (_vehicle_status.hil_state == vehicle_status_s::HIL_STATE_ON) {
+				// reject calibration in SIH mode — simulated sensors cannot be calibrated
+				answer_command(cmd, vehicle_command_ack_s::VEHICLE_CMD_RESULT_DENIED);
+				mavlink_log_critical(&_mavlink_log_pub, "Calibration denied: not supported in SIH mode\t");
+				events::send(events::ID("commander_mag_yaw_calib_denied_sih"), events::Log::Critical,
+					     "Calibration denied: not supported in SIH mode");
 
 			} else {
 				answer_command(cmd, vehicle_command_ack_s::VEHICLE_CMD_RESULT_ACCEPTED);
@@ -1611,6 +1649,7 @@ Commander::handle_command(const vehicle_command_s &cmd)
 	case vehicle_command_s::VEHICLE_CMD_REQUEST_CAMERA_INFORMATION:
 	case vehicle_command_s::VEHICLE_CMD_EXTERNAL_ATTITUDE_ESTIMATE:
 	case vehicle_command_s::VEHICLE_CMD_DO_AUTOTUNE_ENABLE:
+	case vehicle_command_s::VEHICLE_CMD_ESTIMATOR_SENSOR_ENABLE:
 		/* ignore commands that are handled by other parts of the system */
 		break;
 
@@ -1868,6 +1907,7 @@ void Commander::run()
 #endif // BOARD_HAS_POWER_CONTROL
 
 	_boot_timestamp = hrt_absolute_time();
+	_arm_on_boot_requested = _param_com_arm_on_boot.get();
 
 	arm_auth_init(&_mavlink_log_pub, &_vehicle_status.system_id);
 
@@ -1923,7 +1963,6 @@ void Commander::run()
 
 		// Check for failure detector status
 		if (_failure_detector.update(_vehicle_status, _vehicle_control_mode)) {
-			_vehicle_status.failure_detector_status = _failure_detector.getStatus().value;
 			_status_changed = true;
 		}
 
@@ -1948,6 +1987,20 @@ void Commander::run()
 
 			perf_end(_preflight_check_perf);
 			checkAndInformReadyForTakeoff();
+
+			// Arm automatically on boot once preflight checks pass
+			// _arm_on_boot_done prevents re-arming after disarming
+			const bool should_arm_on_boot = _arm_on_boot_requested
+							&& !_arm_on_boot_done
+							&& !isArmed()
+							&& hrt_elapsed_time(&_boot_timestamp) > 5_s
+							&& pre_flight_checks_pass;
+
+			if (should_arm_on_boot) {
+				if (arm(arm_disarm_reason_t::mission_start, false) != TRANSITION_DENIED) {
+					_arm_on_boot_done = true;
+				}
+			}
 		}
 
 		// handle commands last, as the system needs to be updated to handle them
@@ -1996,7 +2049,7 @@ void Commander::run()
 			send_parachute_command();
 		}
 
-		// publish states (armed, control_mode, vehicle_status, failure_detector_status) at 2 Hz or immediately when changed
+		// publish states (armed, control_mode, vehicle_status) at 2 Hz or immediately when changed
 		if ((now >= _vehicle_status.timestamp + 500_ms) || _status_changed || nav_state_or_failsafe_changed
 		    || !(_actuator_armed == actuator_armed_prev)) {
 
@@ -2009,6 +2062,7 @@ void Commander::run()
 
 			// vehicle_status publish (after prearm/preflight updates above)
 			_mode_management.getModeStatus(_vehicle_status.valid_nav_states_mask, _vehicle_status.can_set_nav_states_mask);
+			_vehicle_status.accepts_offboard_setpoints = _mode_management.currentModeAcceptsOffboardSetpoints(_vehicle_status.nav_state);
 			_vehicle_status.timestamp = hrt_absolute_time();
 			_vehicle_status_pub.publish(_vehicle_status);
 
@@ -2784,10 +2838,7 @@ void Commander::dataLinkCheck()
 			_high_latency_datalink_regained = _high_latency_datalink_timestamp;
 		}
 
-		if (_vehicle_status.high_latency_data_link_lost &&
-		    (_high_latency_datalink_regained != 0) &&
-		    (hrt_elapsed_time(&_high_latency_datalink_regained) > (_param_com_hldl_reg_t.get() * 1_s))
-		   ) {
+		if (_vehicle_status.high_latency_data_link_lost && (_high_latency_datalink_regained != 0)) {
 			_vehicle_status.high_latency_data_link_lost = false;
 			_status_changed = true;
 		}
@@ -2937,7 +2988,7 @@ void Commander::dataLinkCheck()
 	// Parachute system
 	if ((hrt_elapsed_time(&_datalink_last_heartbeat_parachute_system) > 3_s)
 	    && !_parachute_system_lost) {
-		mavlink_log_critical(&_mavlink_log_pub, "Parachute system lost");
+		mavlink_log_critical(&_mavlink_log_pub, "Parachute system lost\t");
 		_vehicle_status.parachute_system_present = false;
 		_vehicle_status.parachute_system_healthy = false;
 		_parachute_system_lost = true;
@@ -2947,7 +2998,7 @@ void Commander::dataLinkCheck()
 	// Remote ID system
 	if ((hrt_elapsed_time(&_datalink_last_heartbeat_open_drone_id_system) > 3_s)
 	    && !_open_drone_id_system_lost) {
-		mavlink_log_critical(&_mavlink_log_pub, "Remote ID system lost");
+		mavlink_log_critical(&_mavlink_log_pub, "Remote ID system lost\t");
 		events::send(events::ID("commander_remote_id_lost"), events::Log::Critical, "Remote ID system lost");
 		_vehicle_status.open_drone_id_system_present = false;
 		_vehicle_status.open_drone_id_system_healthy = false;
@@ -2956,9 +3007,9 @@ void Commander::dataLinkCheck()
 	}
 
 	// Traffic avoidance system (ADSB/FLARM)
-	if ((hrt_elapsed_time(&_datalink_last_heartbeat_traffic_avoidance_system) > 3_s)
+	if ((_param_com_arm_traff.get() > 0) && (hrt_elapsed_time(&_datalink_last_heartbeat_traffic_avoidance_system) > 3_s)
 	    && !_traffic_avoidance_system_lost) {
-		mavlink_log_critical(&_mavlink_log_pub, "Traffic avoidance system lost");
+		mavlink_log_critical(&_mavlink_log_pub, "Traffic avoidance system lost\t");
 		events::send(events::ID("commander_traffic_avoidance_lost"), events::Log::Critical, "Traffic avoidance system lost");
 		_vehicle_status.traffic_avoidance_system_present = false;
 		_traffic_avoidance_system_lost = true;
@@ -3004,8 +3055,7 @@ void Commander::manualControlCheck()
 
 	if (manual_control_updated && manual_control_setpoint.valid) {
 
-		_is_throttle_above_center = (manual_control_setpoint.throttle > 0.2f);
-		_is_throttle_low = (manual_control_setpoint.throttle < -0.8f);
+		_last_manual_throttle = manual_control_setpoint.throttle;
 
 		if (isArmed()) {
 			// Abort autonomous mode and switch to position mode if sticks are moved significantly
