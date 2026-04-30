@@ -146,8 +146,7 @@ bool PWMOut::updateOutputs(float outputs[MAX_ACTUATORS], unsigned num_outputs, u
 	/* Trigger all timer's channels in Oneshot mode to fire
 	 * the oneshots with updated values.
 	 */
-	// 翻译：以单次触发模式触发所有定时器通道，以
-	// 使用更新后的值触发单次触发信号。
+	// 翻译：以单次触发模式触发所有定时器通道，以使用更新后的值执行单次触发。
 	if (num_control_groups_updated > 0) {
 		up_pwm_update(_pwm_mask);
 	}

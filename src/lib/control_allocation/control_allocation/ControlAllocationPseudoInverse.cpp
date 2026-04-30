@@ -123,6 +123,7 @@ ControlAllocationPseudoInverse::updateControlAllocationMatrixScale()
 
 	// Scale thrust by the sum of the individual thrust axes, and use the scaling for the Z axis if there's no actuators
 	// (for tilted actuators)
+	// 翻译：按各个推力轴之和缩放推力，如果没有执行器（对于倾斜执行器），则使用 Z 轴的缩放比例
 	_control_allocation_scale(THRUST_Z) = 1.f;
 
 	for (int axis_idx = 2; axis_idx >= 0; --axis_idx) {
@@ -180,6 +181,7 @@ void
 ControlAllocationPseudoInverse::allocate()
 {
 	//Compute new gains if needed
+	// 翻译：如果需要,计算新的增益
 	updatePseudoInverse();
 
 	_prev_actuator_sp = _actuator_sp;

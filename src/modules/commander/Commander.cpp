@@ -134,7 +134,7 @@ static int power_button_state_notification_cb(board_power_button_state_notificat
 {
 	// Note: this can be called from IRQ handlers, so we publish a message that will be handled
 	// on the main thread of commander.
-	// 翻译：Note：这可以从 IRQ 处理程序中调用，因此我们发布一条消息，该消息将在指挥官的主线程上处理。
+	// 翻译：Note：这可以从 IRQ 处理程序中调用，因此我们发布一条消息，该消息将在指挥官的主线程上处理
 	power_button_state_s button_state{};
 	button_state.timestamp = hrt_absolute_time();
 	const int ret = PWR_BUTTON_RESPONSE_SHUT_DOWN_PENDING;

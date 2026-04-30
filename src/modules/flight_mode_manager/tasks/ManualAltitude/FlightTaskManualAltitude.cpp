@@ -53,6 +53,7 @@ bool FlightTaskManualAltitude::updateInitialize()
 	}
 
 	// in addition to manual require valid position and velocity in D-direction and valid yaw
+	// 翻译：除了手动操作外，还需要 D 方向的有效位置和速度以及有效的偏航角
 	return ret && PX4_ISFINITE(_position(2)) && PX4_ISFINITE(_velocity(2)) && PX4_ISFINITE(_yaw);
 }
 
@@ -89,6 +90,7 @@ void FlightTaskManualAltitude::_updateConstraintsFromEstimator()
 void FlightTaskManualAltitude::_scaleSticks()
 {
 	// Use sticks input with deadzone and exponential curve for vertical velocity
+	// 翻译：使用带有死区和指数曲线的摇杆输入来计算垂直速度
 	const float vel_max_up = fminf(_param_mpc_z_vel_max_up.get(), _velocity_constraint_up);
 	const float vel_max_down = fminf(_param_mpc_z_vel_max_dn.get(), _velocity_constraint_down);
 	const float vel_max_z = (_sticks.getThrottleZeroCentered() < 0.f) ? vel_max_down : vel_max_up;
@@ -99,6 +101,8 @@ void FlightTaskManualAltitude::_updateAltitudeLock()
 {
 	// Depending on stick inputs and velocity, position is locked.
 	// If not locked, altitude setpoint is set to NAN.
+	// 翻译：根据摇杆输入和速度，锁定位置。
+	// 	如果未锁定，则将高度设定值设置为NAN。
 
 	// Check if user wants to break
 	const bool apply_brake = fabsf(_sticks.getThrottleZeroCenteredExpo()) <= FLT_EPSILON;
@@ -108,11 +112,13 @@ void FlightTaskManualAltitude::_updateAltitudeLock()
 
 	// Manage transition between use of distance to ground and distance to local origin
 	// when terrain hold behaviour has been selected.
+	// 翻译：当选择地形保持行为时，管理使用到地面的距离和到本地原点的距离之间的转换。
 	if (_param_mpc_alt_mode.get() == 2) {
 		// Use horizontal speed as a transition criteria
 		float spd_xy = Vector2f(_velocity).length();
 
 		// Use presence of horizontal stick inputs as a transition criteria
+		// 翻译：使用水平摇杆输入的存在作为转换条件
 		float stick_xy = Vector2f(_sticks.getPitchRollExpo()).length();
 		bool stick_input = stick_xy > 0.001f;
 
@@ -124,6 +130,7 @@ void FlightTaskManualAltitude::_updateAltitudeLock()
 				_terrain_hold = false;
 
 				// Adjust the setpoint to maintain the same height error to reduce control transients
+				// 翻译：调整设定值以保持相同的高度误差，从而减少控制瞬态
 				if (PX4_ISFINITE(_dist_to_ground_lock) && PX4_ISFINITE(_dist_to_bottom)) {
 					_position_setpoint(2) = _position(2) - (_dist_to_ground_lock - _dist_to_bottom);
 
@@ -141,6 +148,7 @@ void FlightTaskManualAltitude::_updateAltitudeLock()
 				_terrain_hold = true;
 
 				// Adjust the setpoint to maintain the same height error to reduce control transients
+				// 翻译：调整设定值以保持相同的高度误差，从而减少控制瞬态
 				if (PX4_ISFINITE(_position_setpoint(2))) {
 					_dist_to_ground_lock = _dist_to_bottom - (_position_setpoint(2) - _position(2));
 				}

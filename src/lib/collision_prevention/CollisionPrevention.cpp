@@ -52,6 +52,7 @@ CollisionPrevention::CollisionPrevention(ModuleParams *parent) :
 	static_assert(360 % BIN_SIZE == 0, "BIN_SIZE must divide 360 evenly");
 
 	// initialize internal obstacle map
+	// 翻译：初始化内部障碍物地图
 	_obstacle_map_body_frame.frame = obstacle_distance_s::MAV_FRAME_BODY_FRD;
 	_obstacle_map_body_frame.increment = BIN_SIZE;
 	_obstacle_map_body_frame.min_distance = UINT16_MAX;
@@ -272,6 +273,8 @@ void CollisionPrevention::_addObstacleSensorData(const obstacle_distance_s &obst
 	if (obstacle.frame == obstacle.MAV_FRAME_GLOBAL || obstacle.frame == obstacle.MAV_FRAME_LOCAL_NED) {
 		// Obstacle message arrives in local_origin frame (north aligned)
 		// corresponding data index (convert to world frame and shift by msg offset)
+		// 翻译：障碍物消息以本地原点坐标系（北向对齐）到达
+		// 	对应的数据索引（转换为世界坐标系并按消息偏移量平移）
 		for (int i = 0; i < BIN_COUNT; i++) {
 			for (int j = 0; (j < 360 / obstacle.increment) && (j < BIN_COUNT); j++) {
 				float bin_lower_angle = ObstacleMath::get_lower_bound_angle(i, _obstacle_map_body_frame.increment,
@@ -324,6 +327,7 @@ void CollisionPrevention::_addObstacleSensorData(const obstacle_distance_s &obst
 				float msg_upper_angle = ObstacleMath::get_lower_bound_angle(j + 1, obstacle.increment, obstacle.angle_offset);
 
 				// if a bin stretches over the 0/360 degree line, adjust the angles
+				// 翻译：如果数据箱跨越 0/360 度线，则调整角度
 				if (bin_lower_angle > bin_upper_angle) {
 					bin_lower_angle -= 360;
 				}
@@ -367,6 +371,11 @@ CollisionPrevention::_enterData(int map_index, float sensor_range, float sensor_
 	//2. this sensor data is in range, and the last reading was out of range
 	//3. this sensor data is out of range, the last reading was as well and this is the sensor with longest range
 	//4. this sensor data is out of range, the last reading was valid and coming from the same sensor
+	// 翻译：如果满足以下条件，则使用此传感器的数据：
+	//	1. 此传感器数据在有效范围内，数据箱中已包含有效数据，且此数据来自相同或更短距离的传感器
+	//	2. 此传感器数据在有效范围内，但上次读数超出范围
+	//	3. 此传感器数据超出范围，上次读数也超出范围，且此传感器是距离最长的传感器
+	//	4. 此传感器数据超出范围，上次读数有效且来自同一传感器
 
 	uint16_t sensor_range_cm = static_cast<uint16_t>(lroundf(100.0f * sensor_range)); //convert to cm
 
@@ -402,7 +411,7 @@ CollisionPrevention::_checkSetpointDirectionFeasability()
 
 	for (int i = 0; i < BIN_COUNT; i++) {
 		// check if our setpoint is either pointing in a direction where data exists, or if not, wether we are allowed to go where there is no data
-		// 翻译：检查你的设定点是否指向有数据的方向，或者，如果没有数据，我们是否被允许指向没有数据的方向。
+		// 翻译：检查你的设定点是否指向有数据的方向，或者，如果没有数据，我们是否被允许指向没有数据的方向
 		if ((_obstacle_map_body_frame.distances[i] == UINT16_MAX && i == _setpoint_index) && (!_param_cp_go_no_data.get()
 				|| (_param_cp_go_no_data.get() && _data_fov[i]))) {
 			setpoint_feasible =  false;
@@ -425,7 +434,7 @@ CollisionPrevention::_transformSetpoint(const Vector2f &setpoint)
 					       _obstacle_map_body_frame.angle_offset);
 	_setpoint_index = floor(sp_angle_with_offset_deg / BIN_SIZE);
 	// change setpoint direction slightly (max by _param_cp_guide_ang degrees) to help guide through narrow gaps
-	// 翻译：改变设定点的方向，使其稍微偏离当前方向，以帮助穿越狭窄的缝隙。
+	// 翻译：改变设定点的方向，使其稍微偏离当前方向，以帮助穿越狭窄的缝隙
 	_setpoint_dir = setpoint.unit_or_zero();
 	_adaptSetpointDirection(_setpoint_dir, _setpoint_index, _vehicle_yaw);
 }
@@ -439,23 +448,24 @@ void
 CollisionPrevention::_addDistanceSensorData(distance_sensor_s &distance_sensor, const Quatf &vehicle_attitude)
 {
 	// clamp at maximum sensor range
-	// 翻译：将距离读数限制在最大传感器范围内。
+	// 翻译：将距离读数限制在最大传感器范围内
 	float distance_reading = math::min(distance_sensor.current_distance, distance_sensor.max_distance);
 
 	// negative values indicate out of range but valid measurements.
+	// 翻译：负值表示超出范围但测量值有效
 	if (fabsf(distance_sensor.current_distance - -1.f) < FLT_EPSILON && distance_sensor.signal_quality == 0) {
 		distance_reading = distance_sensor.max_distance;
 	}
 
 	// discard values below min range
-	// 翻译：丢弃小于最小范围的值。
+	// 翻译：丢弃小于最小范围的值
 	if (distance_reading > distance_sensor.min_distance) {
 		float sensor_yaw_body_rad = ObstacleMath::sensor_orientation_to_yaw_offset(static_cast<ObstacleMath::SensorOrientation>
 					    (distance_sensor.orientation), distance_sensor.q);
 		float sensor_yaw_body_deg = math::degrees(wrap_2pi(sensor_yaw_body_rad));
 
 		// calculate the field of view boundary bin indices
-		// 翻译：计算视野边界bin索引。
+		// 翻译：计算视野边界bin索引
 		int lower_bound = (int)round((sensor_yaw_body_deg  - math::degrees(distance_sensor.h_fov / 2.0f)) / BIN_SIZE);
 		int upper_bound = (int)round((sensor_yaw_body_deg  + math::degrees(distance_sensor.h_fov / 2.0f)) / BIN_SIZE);
 
@@ -495,7 +505,7 @@ CollisionPrevention::_adaptSetpointDirection(Vector2f &setpoint_dir, int &setpoi
 	for (int i = sp_index_original - guidance_bins; i <= sp_index_original + guidance_bins; i++) {
 
 		// apply moving average filter to the distance array to be able to center in larger gaps
-		// 翻译：应用移动平均滤波器到距离数组，以便在较大的间隙中居中。
+		// 翻译：应用移动平均滤波器到距离数组，以便在较大的间隙中居中
 		const int filter_size = 1;
 		float mean_dist = 0;
 
@@ -574,6 +584,7 @@ CollisionPrevention::_constrainAccelerationSetpoint(const float &setpoint_length
 
 
 	// only scale accelerations towards the obstacle
+	// 翻译：仅缩放朝向障碍物的加速度
 	if (_closest_dist_dir.dot(_setpoint_dir) > 0) {
 		new_setpoint = (tangential_component * tangential_scale + normal_component * normal_scale) * setpoint_length;
 

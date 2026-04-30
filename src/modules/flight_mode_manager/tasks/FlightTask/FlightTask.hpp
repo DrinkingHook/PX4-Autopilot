@@ -217,6 +217,14 @@ protected:
 	 * _velocity_setpoint and _acceleration_setpoint are used as feedforward.
 	 * _jerk_setpoint does not executed but just serves as internal state.
 	 */
+	/**
+	 * 翻译：位置控制器必须执行的设定值。
+	 * 设置为NAN的设定值不受控制。并非所有设定值都可以同时设置。
+	 * 如果设置了多个类型的设定点，则控制顺序如下：位置、速度、
+	 * 加速度、推力。例外情况是同时设置了 _position_setpoint 和 _velocity_setpoint，其中
+	 * _velocity_setpoint 和 _acceleration_setpoint 用作前馈。
+	 * _jerk_setpoint 不执行，仅用作内部状态。
+	 */
 	matrix::Vector3f _position_setpoint;
 	matrix::Vector3f _velocity_setpoint;
 	matrix::Vector3f _velocity_setpoint_feedback;

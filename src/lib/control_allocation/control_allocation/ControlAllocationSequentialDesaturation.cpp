@@ -177,6 +177,7 @@ void
 ControlAllocationSequentialDesaturation::mixAirmodeDisabled()
 {
 	// Airmode disabled: never allow to increase the thrust to unsaturate a motor
+	// 翻译：空中模式已禁用：绝不允许增加推力以使电机去饱和。
 
 	// Mix without yaw
 	ActuatorVector thrust_z;

@@ -78,6 +78,7 @@ protected:
 	StickYaw _stick_yaw{this};
 
 	bool _sticks_data_required = true; ///< let inherited task-class define if it depends on stick data
+				   // 当车辆控制高于静止地面的高度时为真
 	bool _terrain_hold{false}; /**< true when vehicle is controlling height above a static ground position */
 
 	float _velocity_constraint_up{INFINITY};
@@ -85,7 +86,7 @@ protected:
 
 	/**
 	 * @param _param_mpc_hold_max_z     位置保持模式下允许的最大垂直漂移/误差（m），超过此值可能触发重新定位或警报
-	 * @param _param_mpc_alt_mode       高度控制模式（0=使用气压计+GPS融合，1=仅气压计，2=仅视觉/激光等，具体取决于固件版本）
+	 * @param _param_mpc_alt_mode       高度控制模式（0=使用气压计+GPS->融合离起飞参考点，1=依靠距离传感器->保持距离与地面，2=静止时相对于地面（需要距离传感器），水平移动时相对于地面参考系）
 	 * @param _param_mpc_hold_max_xy    位置保持模式下允许的最大水平漂移/误差（m），用于判定是否仍处于“保持”状态
 	 * @param _param_mpc_z_p            高度位置控制器比例增益 P（用于垂直方向位置到速度的控制，值越大响应越快但易振荡）
 	 * @param _param_mpc_land_alt1      降落第一阶段开始减速的高度（从巡航高度进入慢速下降的切换点，单位：m，通常 10~20 m）

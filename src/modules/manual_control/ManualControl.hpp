@@ -150,7 +150,7 @@ private:
 	 * @param _param_com_rc_stick_ov    遥控器摇杆超控阈值（归一化 -1~1，超过此值视为摇杆满偏，用于某些模式下的快速响应判断）
 	 * @param _param_man_arm_gesture    是否启用手动解锁手势（true=启用，通过特定摇杆动作解锁/上锁，通常前后推+左右推组合）
 	 * @param _param_man_kill_gest_t    手动杀机（紧急停桨）手势保持时间（秒，需持续保持该动作才触发 kill switch）
-	 * @param _param_com_arm_sw_isbtn   解锁开关是否视为按钮（true=按钮式，按下即解锁/上锁；false=开关式，位置决定状态）
+	 * @param _param_com_arm_swisbtn    解锁开关是否视为按钮（true=按钮式，按下即解锁/上锁；false=开关式，位置决定状态）
 	 * @param _param_rc_map_pay_sw      遥控器上负载/挂载开关通道映射（通道号，用于控制云台、投放、相机等外部设备）
 	 * @param _param_fltmode_1          飞行模式开关位置1对应的模式（数值对应模式ID，如 0=Manual, 2=Altitude, 3=Position 等）
 	 * @param _param_fltmode_2          飞行模式开关位置2对应的模式

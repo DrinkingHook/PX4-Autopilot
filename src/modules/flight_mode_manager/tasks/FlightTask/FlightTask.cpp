@@ -207,9 +207,9 @@ void FlightTask::_evaluateVehicleLocalPositionSetpoint()
 	if (_vehicle_local_position_setpoint_sub.copy(&vehicle_local_position_setpoint)
 	    && (_time_stamp_current - vehicle_local_position_setpoint.timestamp) < _timeout) {
 		// Inform about the input and output of the velocity controller
-		// 翻译：提供速度控制器的输入和输出信息
 		// This is used to properly initialize the velocity setpoint when onpening the position loop (position unlock)
-		// 翻译：这用于在开启位置环路（位置解锁）时正确初始化速度设定值。
+ 		// 翻译：提供速度控制器的输入和输出信息
+		// 	这用于在开启位置环路（位置解锁）时正确初始化速度设定值。
 		_velocity_setpoint_feedback = matrix::Vector3f(vehicle_local_position_setpoint.vx, vehicle_local_position_setpoint.vy,
 					      vehicle_local_position_setpoint.vz);
 		_acceleration_setpoint_feedback = matrix::Vector3f(vehicle_local_position_setpoint.acceleration);

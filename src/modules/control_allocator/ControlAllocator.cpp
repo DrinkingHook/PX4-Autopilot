@@ -756,6 +756,7 @@ ControlAllocator::get_ice_shedding_output(hrt_abstime now)
 	// If any stopped motor has failed, the feature will create much more
 	// torque than in the nominal case, and becomes pointless anyway as we
 	// cannot go back to multicopter
+	// 翻译：如果任何停止的电机发生故障，该功能将产生比正常情况下大得多的扭矩，并且由于我们无法恢复到多旋翼飞行模式，因此该功能将变得毫无意义。
 	const bool apply_shedding = _is_vtol && in_forward_flight;
 
 	if (feature_disabled_by_param || !apply_shedding) {
