@@ -125,7 +125,10 @@ void Ekf::controlFusionModes(const imuSample &imu_delayed)
 	controlGpsFusion(imu_delayed);
 #endif // CONFIG_EKF2_GNSS
 
-// 辅助全局定位融合(外部视觉定位系统或运动捕捉系统)
+#if defined(CONFIG_EKF2_RANGING_BEACON)
+	controlRangingBeaconFusion(imu_delayed);
+#endif // CONFIG_EKF2_RANGING_BEACON
+
 #if defined(CONFIG_EKF2_AUX_GLOBAL_POSITION) && defined(MODULE_NAME)
 	_aux_global_position.update(*this, imu_delayed);
 	_control_status.flags.aux_gpos = _aux_global_position.anySourceFusing();

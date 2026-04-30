@@ -994,8 +994,8 @@ void Ekf::updateHorizontalDeadReckoningstatus()
 	}
 
 	// position aiding active
-	// 翻译：位置辅助激活
-	if ((_control_status.flags.gnss_pos || _control_status.flags.ev_pos || _control_status.flags.aux_gpos)
+	if ((_control_status.flags.gnss_pos || _control_status.flags.ev_pos
+	     || _control_status.flags.aux_gpos || _control_status.flags.rngbcn_fusion)
 	    && isRecent(_time_last_hor_pos_fuse, _params.no_aid_timeout_max)
 	   ) {
 		inertial_dead_reckoning = false;
@@ -1011,7 +1011,7 @@ void Ekf::updateHorizontalDeadReckoningstatus()
 		inertial_dead_reckoning = false;
 
 	} else {
-		if (!_control_status.flags.in_air && (_params.ekf2_of_ctrl == 1)
+		if (!_control_status.flags.in_air && _fc.of.intended()
 		    && isRecent(_aid_src_optical_flow.timestamp_sample, _params.no_aid_timeout_max)
 		   ) {
 			// currently landed, but optical flow aiding should be possible once in air
@@ -1042,7 +1042,7 @@ void Ekf::updateHorizontalDeadReckoningstatus()
 
 		if (!_control_status.flags.in_air && _control_status.flags.fixed_wing
 		    && (_params.ekf2_fuse_beta == 1)
-		    && (_params.ekf2_arsp_thr > 0.f) && isRecent(_aid_src_airspeed.timestamp_sample, _params.no_aid_timeout_max)
+		    && _fc.aspd.intended() && isRecent(_aid_src_airspeed.timestamp_sample, _params.no_aid_timeout_max)
 		   ) {
 			// currently landed, but air data aiding should be possible once in air
 			// 翻译：目前着陆，但空气数据辅助应该在空中可用
@@ -1280,32 +1280,8 @@ void Ekf::updateIMUBiasInhibit(const imuSample &imu_delayed)
 	}
 }
 
-/**
- * @brief 融合直接状态测量的标量更新（约瑟夫形式，针对状态向量单一分量直接观测）
- *
- * 此函数专用于测量直接对应状态向量中某个单一分量的情况（即测量模型 z = x[state_index] + v），
- * 执行卡尔曼滤波测量更新步骤，使用约瑟夫公式（Joseph stabilized form）更新协方差以保证数值稳定性。
- * 与通用标量测量更新不同，本函数无需显式传入测量矩阵H（隐式为单位向量第state_index行）。
- *
- * @param[in] innov         创新值（标量），即 measurement - predicted_state[state_index]
- * @param[in] innov_var     创新方差（标量），即预测状态的不确定性 P[state_index][state_index]
- * @param[in] R             测量噪声的方差（标量），即测量不确定性
- * @param[in] state_index   要融合的状态分量索引（对应状态向量中的具体维度）
- *
- * @return void             无返回值（更新失败时通常直接返回，不修改状态）
- *
- * @note 此函数会就地修改成员变量（若更新通过创新门限检查）：
- *       1. 状态估计: x += K * innov
- *          其中 K 为状态维度×1 的卡尔曼增益向量，只有第state_index行为非零（K = P_row[state_index] / (innov_var + R)）
- *       2. 协方差估计: P = (I - K*H) * P * (I - K*H)^T + K*R*K^T （约瑟夫形式）
- *
- * @note 函数内部通常包含创新门限检查（innovation gating），若 |innov| 过大（相对于 sqrt(innov_var + R)），
- *       将拒绝本次更新以提高鲁棒性。
- *
- * @see 通用标量测量更新：measurementUpdate()（适用于任意H矩阵的线性测量）
- * @see 向量测量更新版本（处理多维观测）
- */
-void Ekf::fuseDirectStateMeasurement(const float innov, const float innov_var, const float R, const int state_index)
+void Ekf::fuseDirectStateMeasurement(const float innov, const float innov_var, const float R, const int state_index,
+				     bool constrain_variances)
 {
 	VectorState K;  // Kalman gain vector for any single observation - sequential fusion is used.
 
@@ -1359,7 +1335,9 @@ void Ekf::fuseDirectStateMeasurement(const float innov, const float innov_var, c
 
 #endif
 
-	constrainStateVariances();
+	if (constrain_variances) {
+		constrainStateVariances();
+	}
 
 	// apply the state corrections
 	// 翻译：应用状态修正

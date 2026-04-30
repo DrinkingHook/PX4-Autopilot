@@ -45,7 +45,9 @@
  */
 void Ekf::controlGpsFusion(const imuSample &imu_delayed)
 {
-	if (!_gps_buffer || (_params.ekf2_gps_ctrl == 0)) {
+	_fc.gps.available = (_params.ekf2_gps_ctrl != 0);
+
+	if (!_gps_buffer || !_fc.gps.intended()) {
 		stopGnssFusion();
 		return;
 	}
@@ -423,13 +425,14 @@ void Ekf::controlGnssYawEstimator(estimator_aid_source3d_s &aid_src_vel)
 	// update yaw estimator velocity (basic sanity check on GNSS velocity data)
 	// 翻译：更新GNSS航向估计器的航速（基本检查GNSS航速数据的合理性）
 	const float vel_var = aid_src_vel.observation_variance[0];
+	const float vel_accuracy = sqrtf(vel_var);
 	const Vector2f vel_xy(aid_src_vel.observation);
 
 	if ((vel_var > 0.f)
-	    && (vel_var < _params.ekf2_req_sacc)
+	    && (vel_accuracy < _params.ekf2_req_sacc)
 	    && vel_xy.isAllFinite()) {
 
-		_yawEstimator.fuseVelocity(vel_xy, vel_var, _control_status.flags.in_air);
+		_yawEstimator.fuseVelocity(vel_xy, vel_accuracy, _control_status.flags.in_air);
 
 		// Try to align yaw using estimate if available
 		// 翻译：如有估算值，尝试使用估算值校准偏航角

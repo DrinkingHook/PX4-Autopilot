@@ -280,14 +280,15 @@ void VehicleAirData::Run()
 		}
 	}
 
-	// 判断相对校准数否完成
-	if (!_relative_calibration_done) {
-		_relative_calibration_done = UpdateRelativeCalibrations(time_now_us);
+	estimator_status_flags_s latest_estimator_status_flags;
 
-		// 在启用GNSS高度气压自动校准的情况判断是否校准完成
+	if (_estimator_status_flags_sub.copy(&latest_estimator_status_flags) && !latest_estimator_status_flags.cs_in_air) {
+		if (!_relative_calibration_done) {
+			_relative_calibration_done = UpdateRelativeCalibrations(time_now_us);
 
-	} else if (!_baro_gnss_calibration_done && _param_sens_baro_autocal.get()) {
-		_baro_gnss_calibration_done = BaroGNSSAltitudeOffset();
+		} else if (!_baro_gnss_calibration_done && _param_sens_baro_autocal.get() && latest_estimator_status_flags.cs_gps_hgt) {
+			_baro_gnss_calibration_done = BaroGNSSAltitudeOffset();
+		}
 	}
 
 	// Publish
@@ -299,7 +300,7 @@ void VehicleAirData::Run()
 
 				const hrt_abstime timestamp_sample = _timestamp_sample_sum[instance] / _data_sum_count[instance];
 
-				if (time_now_us >= _last_publication_timestamp[instance] + interval_us) {
+				if (timestamp_sample >= _last_publication_timestamp[instance] + interval_us) {
 
 					bool publish = (time_now_us <= timestamp_sample + 1_s);
 
@@ -337,7 +338,12 @@ void VehicleAirData::Run()
 						_vehicle_air_data_pub.publish(out);
 					}
 
-					_last_publication_timestamp[instance] = time_now_us;
+					// epoch-advance to prevent aliasing; catch up if more than one interval behind
+					_last_publication_timestamp[instance] += interval_us;
+
+					if (timestamp_sample > _last_publication_timestamp[instance] + interval_us) {
+						_last_publication_timestamp[instance] = timestamp_sample;
+					}
 
 					// reset
 					_timestamp_sample_sum[instance] = 0;

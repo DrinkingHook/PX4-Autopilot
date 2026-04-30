@@ -415,7 +415,7 @@ void RTL::setRtlTypeAndDestination()
 		}
 	}
 
-	const float rtl_alt = computeReturnAltitude(destination, destination_type, (float)_param_rtl_cone_ang.get());
+	const float rtl_alt = computeReturnAltitude(destination);
 	_rtl_direct.setRtlAlt(rtl_alt);
 	_rtl_direct.setRtlPosition(destination, landing_loiter);
 
@@ -604,12 +604,14 @@ void RTL::setSafepointAsDestination(PositionYawSetpoint &rtl_position, const mis
 	// 	TODO：处理所有可能的 mission_safe_point.frame 情况
 	switch (mission_safe_point.frame) {
 	case 0: // MAV_FRAME_GLOBAL
+	case 5: // MAV_FRAME_GLOBAL_INT
 		rtl_position.lat = mission_safe_point.lat;
 		rtl_position.lon = mission_safe_point.lon;
-		rtl_position.alt = mission_safe_point.altitude;
+		rtl_position.alt = mission_safe_point.altitude;	// alt of safe point is relative to MSL
 		break;
 
 	case 3: // MAV_FRAME_GLOBAL_RELATIVE_ALT
+	case 6: // MAV_FRAME_GLOBAL_RELATIVE_ALT_INT
 		rtl_position.lat = mission_safe_point.lat;
 		rtl_position.lon = mission_safe_point.lon;
 		rtl_position.alt = mission_safe_point.altitude + _home_pos_sub.get().alt; // alt of safe point is rel to home
@@ -623,14 +625,7 @@ void RTL::setSafepointAsDestination(PositionYawSetpoint &rtl_position, const mis
 	}
 }
 
-/**
- * @brief 计算返回高度：
- * @param rtl_position 返回位置
- * @param destination_type 目的地类型
- * @param cone_half_angle_deg 锥形半角角度
- * @return 返回高度
- */
-float RTL::computeReturnAltitude(const PositionYawSetpoint &rtl_position, DestinationType destination_type, float cone_half_angle_deg) const
+float RTL::computeReturnAltitude(const PositionYawSetpoint &rtl_position) const
 {
 	if (_param_rtl_cone_ang.get() > 0 && _vehicle_status_sub.get().vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
 		// horizontal distance to destination
@@ -656,8 +651,7 @@ float RTL::computeReturnAltitude(const PositionYawSetpoint &rtl_position, Destin
 			if (destination_dist <= _param_rtl_min_dist.get()) {
 
 				// constrain cone half angle to meaningful values. All other cases are already handled above.
-				// 翻译：将锥形半角限制在有意义的值范围内。所有其他情况已经在上面处理过了。
-				const float cone_half_angle_rad = radians(constrain(cone_half_angle_deg, 1.0f, 89.0f));
+				const float cone_half_angle_rad = radians(constrain((float)_param_rtl_cone_ang.get(), 1.0f, 89.0f));
 
 				// minimum altitude we need in order to be within the user defined cone
 				// 翻译：我们需要的最小高度，以便在用户定义的锥形内。
