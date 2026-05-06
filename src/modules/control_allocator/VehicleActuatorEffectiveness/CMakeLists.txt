@@ -31,6 +31,8 @@ px4_add_library(VehicleActuatorEffectiveness
 	RpmControl.cpp
 	HelicopterRotorHead.cpp
 	HelicopterRotorHead.hpp
+	ActuatorEffectivenessTandem.cpp
+	ActuatorEffectivenessTandem.hpp
 )
 
 target_compile_options(VehicleActuatorEffectiveness PRIVATE ${MAX_CUSTOM_OPT_LEVEL})

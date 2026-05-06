@@ -32,7 +32,7 @@ parameters:
                 12: Helicopter (Coaxial)
                 13: Rover (Mecanum)
                 14: Spacecraft 2D
-                15: Spacecraft 3D
+                15: Tandem
             default: 0
 
         CA_METHOD:
@@ -1262,73 +1262,34 @@ mixer:
                       - label: 'Throttle spoolup time'
                         name: COM_SPOOLUP_TIME
 
-            # 11: # Helicopter (tail Servo)
-            #   actuators:
-            #     - actuator_type: 'motor'
-            #       count: 1
-            #       item_label_prefix: ['Rotor']
-            #     - actuator_type: 'servo'
-            #       item_label_prefix: ['Yaw tail Servo']
-            #       count: 1
-            #     - actuator_type: 'servo'
-            #       group_label: 'Swash plate servos'
-            #       count: 'CA_SP0_COUNT'
-            #       per_item_parameters:
-            #         extra:
-            #           - name: 'CA_SP0_ANG${i}'
-            #             label: 'Angle'
-            #           - name: 'CA_SP0_ARM_L${i}'
-            #             label: 'Arm Length (relative)'
-            #           - name: 'CA_SV_CS${i}_TRIM'
-            #             label: 'Trim'
-            #       parameters:
-            #         - label: 'Yaw compensation scale based on collective pitch'
-            #           name: CA_HELI_YAW_CP_S
-            #         - label: 'Yaw compensation scale based on throttle'
-            #           name: CA_HELI_YAW_TH_S
-            #         - label: 'Main rotor turns counter-clockwise'
-            #           name: CA_HELI_YAW_CCW
-            #         - label: 'Throttle spoolup time'
-            #           name: COM_SPOOLUP_TIME
-
-            11: # Tandem
-                actuators:
-                  - actuator_type: 'motor'
-                    count: 1
-                    item_label_prefix: ['Rotor']
-                  - actuator_type: 'servo'
-                    group_label: 'Swash plate servos'
-                    count: 'CA_SP0_COUNT'
-                    per_item_parameters:
-                        extra:
-                          - name: 'CA_SP0_ANG${i}'
-                            label: 'Angle'
-                          - name: 'CA_SP0_ARM_L${i}'
-                            label: 'Arm Length (relative)'
-                          - name: 'CA_SV_CS${i}_TRIM'
-                            label: 'Trim'
-                  - actuator_type: 'servo'
-                    group_label: 'Swash2 plate servos'
-                    count: 'CA_SP0_COUNT'
-                    per_item_parameters:
-                        extra:
-                          - name: 'CA_SP0_ANG${i}'
-                            label: 'Angle'
-                          - name: 'CA_SP0_ARM_L${i}'
-                            label: 'Arm Length (relative)'
-                          - name: 'C1_SV_CS${i}_TRIM'
-                            label: 'Trim'
-                    parameters:
-                      - label: 'Collective pitch offset to align least amount of rotor drag'
-                        name: CA_HELI_YAW_CP_O
-                      - label: 'Yaw compensation scale based on collective pitch'
-                        name: CA_HELI_YAW_CP_S
-                      - label: 'Yaw compensation scale based on throttle'
-                        name: CA_HELI_YAW_TH_S
-                      - label: 'Main rotor turns counter-clockwise'
-                        name: CA_HELI_YAW_CCW
-                      - label: 'Throttle spoolup time'
-                        name: COM_SPOOLUP_TIME
+            11: # Helicopter (tail Servo)
+              actuators:
+                - actuator_type: 'motor'
+                  count: 1
+                  item_label_prefix: ['Rotor']
+                - actuator_type: 'servo'
+                  item_label_prefix: ['Yaw tail Servo']
+                  count: 1
+                - actuator_type: 'servo'
+                  group_label: 'Swash plate servos'
+                  count: 'CA_SP0_COUNT'
+                  per_item_parameters:
+                    extra:
+                      - name: 'CA_SP0_ANG${i}'
+                        label: 'Angle'
+                      - name: 'CA_SP0_ARM_L${i}'
+                        label: 'Arm Length (relative)'
+                      - name: 'CA_SV_CS${i}_TRIM'
+                        label: 'Trim'
+                  parameters:
+                    - label: 'Yaw compensation scale based on collective pitch'
+                      name: CA_HELI_YAW_CP_S
+                    - label: 'Yaw compensation scale based on throttle'
+                      name: CA_HELI_YAW_TH_S
+                    - label: 'Main rotor turns counter-clockwise'
+                      name: CA_HELI_YAW_CCW
+                    - label: 'Throttle spoolup time'
+                      name: COM_SPOOLUP_TIME
 
             12: # Helicopter (Coaxial)
                 actuators:
@@ -1384,3 +1345,42 @@ mixer:
                             function: 'axisz'
                           - name: 'CA_ROTOR${i}_CT'
                             label: "Thrust\nCoefficient"
+
+            15: # Tandem
+                actuators:
+                  - actuator_type: 'motor'
+                    count: 1
+                    item_label_prefix: ['Rotor']
+                  - actuator_type: 'servo'
+                    group_label: 'Swash plate servos'
+                    count: 'CA_SP0_COUNT'
+                    per_item_parameters:
+                        extra:
+                          - name: 'CA_SP0_ANG${i}'
+                            label: 'Angle'
+                          - name: 'CA_SP0_ARM_L${i}'
+                            label: 'Arm Length (relative)'
+                          - name: 'CA_SV_CS${i}_TRIM'
+                            label: 'Trim'
+                  - actuator_type: 'servo'
+                    group_label: 'Swash2 plate servos'
+                    count: 'CA_SP0_COUNT'
+                    per_item_parameters:
+                        extra:
+                          - name: 'CA_SP0_ANG${i}'
+                            label: 'Angle'
+                          - name: 'CA_SP0_ARM_L${i}'
+                            label: 'Arm Length (relative)'
+                          - name: 'C1_SV_CS${i}_TRIM'
+                            label: 'Trim'
+                    parameters:
+                      - label: 'Collective pitch offset to align least amount of rotor drag'
+                        name: CA_HELI_YAW_CP_O
+                      - label: 'Yaw compensation scale based on collective pitch'
+                        name: CA_HELI_YAW_CP_S
+                      - label: 'Yaw compensation scale based on throttle'
+                        name: CA_HELI_YAW_TH_S
+                      - label: 'Main rotor turns counter-clockwise'
+                        name: CA_HELI_YAW_CCW
+                      - label: 'Throttle spoolup time'
+                        name: COM_SPOOLUP_TIME

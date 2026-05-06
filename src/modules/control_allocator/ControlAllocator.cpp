@@ -252,9 +252,9 @@ ControlAllocator::update_effectiveness_source()
 			tmp = new ActuatorEffectivenessHelicopter(this, ActuatorType::MOTORS);
 			break;
 
-		// case EffectivenessSource::HELICOPTER_TAIL_SERVO:
-		// 	tmp = new ActuatorEffectivenessHelicopter(this, ActuatorType::SERVOS);
-		// 	break;
+		case EffectivenessSource::HELICOPTER_TAIL_SERVO:
+			tmp = new ActuatorEffectivenessHelicopter(this, ActuatorType::SERVOS);
+			break;
 
 		case EffectivenessSource::HELICOPTER_COAXIAL:
 			tmp = new ActuatorEffectivenessHelicopterCoaxial(this);
@@ -262,6 +262,10 @@ ControlAllocator::update_effectiveness_source()
 
 		case EffectivenessSource::SPACECRAFT_2D:
 			tmp = new ActuatorEffectivenessSpacecraft(this);
+			break;
+
+		case EffectivenessSource::TANDEM:
+			tmp = new ActuatorEffectivenessTandem(this);
 			break;
 
 		case EffectivenessSource::ROVER_ACKERMANN: // Unreachable: Rover startup scripts don't load control_allocator. Controllers publish actuator_outputs directly.
