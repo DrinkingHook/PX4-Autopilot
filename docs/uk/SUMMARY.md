@@ -313,6 +313,7 @@
       - [DroneCAN ESCs](dronecan/escs.md)
         - [PX4 Sapog ESC Firmware](dronecan/sapog.md)
       - [ARK 4IN1 ESC](esc/ark_4in1_esc.md)
+      - [Hiwonder 4Ch Encoder Motor Module](peripherals/hiwonder_emm.md)
       - [Holybro Kotleta](dronecan/holybro_kotleta.md)
       - [Vertiq Motor/ESC Modules](peripherals/vertiq.md)
       - [VESC Project ESCs](peripherals/vesc.md)
@@ -425,6 +426,8 @@
   - [PX4 Ethernet Setup](advanced_config/ethernet_setup.md)
 
   - [Стандартна конфігурація](config/index.md)
+
+  - [OEM Configuration](advanced_config/oem.md)
 
   - [Розширені налаштування](advanced_config/index.md)
     - [Using PX4's Navigation Filter (EKF2)](advanced_config/tuning_the_ecl_ekf.md)

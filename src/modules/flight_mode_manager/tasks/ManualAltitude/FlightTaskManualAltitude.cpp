@@ -104,6 +104,9 @@ void FlightTaskManualAltitude::_updateAltitudeLock()
 	// 翻译：根据摇杆输入和速度，锁定位置。
 	// 	如果未锁定，则将高度设定值设置为NAN。
 
+	// Reset every iteration; _terrainFollowing() re-sets it true when it drives the setpoint
+	_z_setpoint_from_terrain = false;
+
 	// Check if user wants to break
 	const bool apply_brake = fabsf(_sticks.getThrottleZeroCenteredExpo()) <= FLT_EPSILON;
 
@@ -228,6 +231,8 @@ void FlightTaskManualAltitude::_terrainFollowing(bool apply_brake, bool stopped)
 		// user demands velocity change in D-direction
 		_dist_to_ground_lock = _position_setpoint(2) = NAN;
 	}
+
+	_z_setpoint_from_terrain = PX4_ISFINITE(_position_setpoint(2));
 }
 
 void FlightTaskManualAltitude::_respectMaxAltitude()

@@ -466,6 +466,10 @@ bool Ekf::tryYawEmergencyReset()
 		// GPS 偏航角紧急重置
 		ECL_WARN("GPS emergency yaw reset");
 
+		// in-flight yaw rescue is a signal that gyro_bias_z could be wrong
+		// bump its variance so new observations will correct it faster
+		resetGyroBiasZCov();
+
 		if (_control_status.flags.mag_hdg || _control_status.flags.mag_3D) {
 			// stop using the magnetometer in the main EKF otherwise its fusion could drag the yaw around
 			// and cause another navigation failure
