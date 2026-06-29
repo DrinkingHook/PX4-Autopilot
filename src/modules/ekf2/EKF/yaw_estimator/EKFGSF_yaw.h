@@ -128,6 +128,7 @@ private:
 		matrix::Vector2f innov{};                   // Velocity N,E innovation (m/s)
 	} _ekf_gsf[N_MODELS_EKFGSF] {};
 
+	// 当扩展卡尔曼滤波器 (EKF) 开始融合速度数据且预测和更新处理处于活动状态时，此结论成立。
 	bool _ekf_gsf_vel_fuse_started{}; // true when the EKF's have started fusing velocity data and the prediction and update processing is active
 
 	// initialise states and covariance data for the GSF and EKF filters

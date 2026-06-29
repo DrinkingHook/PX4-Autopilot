@@ -97,11 +97,11 @@ void PositionControl::updateHoverThrust(const float hover_thrust_new)
 	// so a_sp' = (a_sp - g) * Th / Th' + g
 	// we can then add a_sp' - a_sp to the current integrator to absorb the effect of changing Th by Th'
 	// 翻译：鉴于推力的方程为 T = a_sp * Th / g - Th
-	// 其中 a_sp = 期望加速度, Th = 悬停推力, g = 重力常数,
-	// 我们希望找到需要添加到积分器中的加速度，以在用新的悬停推力替换当前悬停推力后获得相同的推力。
-	// T' = T => a_sp' * Th' / g - Th' = a_sp * Th / g - Th
-	// 因此 a_sp' = (a_sp - g) * Th / Th' + g
-	// 然后，我们可以将 a_sp' - a_sp 添加到当前积分器中，以吸收 Th 变为 Th' 的影响
+	// 	其中 a_sp = 期望加速度, Th = 悬停推力, g = 重力常数,
+	// 	我们希望找到需要添加到积分器中的加速度，以在用新的悬停推力替换当前悬停推力后获得相同的推力。
+	// 	T' = T => a_sp' * Th' / g - Th' = a_sp * Th / g - Th
+	// 	因此 a_sp' = (a_sp - g) * Th / Th' + g
+	// 	然后，我们可以将 a_sp' - a_sp 添加到当前积分器中，以吸收 Th 变为 Th' 的影响
 	const float previous_hover_thrust = _hover_thrust;
 	setHoverThrust(hover_thrust_new);
 
@@ -168,10 +168,10 @@ void PositionControl::_positionControl()
 
 	// Constrain horizontal velocity by prioritizing the velocity component along the
 	// the desired position setpoint over the feed-forward term.
-	// 翻译：水平速度约束优先考虑沿所需位置设定点的速度分量，而不是前馈项。
+	// 翻译：水平速度约束优先考虑沿所需位置设定点的速度分量，而不是前馈项
 	_vel_sp.xy() = ControlMath::constrainXY(vel_sp_position.xy(), (_vel_sp - vel_sp_position).xy(), _lim_vel_horizontal);
 	// Constrain velocity in z-direction.
-	// 翻译：约束垂直速度方向。
+	// 翻译：约束垂直速度方向
 	_vel_sp(2) = math::constrain(_vel_sp(2), -_lim_vel_up, _lim_vel_down);
 }
 
@@ -181,16 +181,16 @@ void PositionControl::_positionControl()
 void PositionControl::_velocityControl(const float dt)
 {
 	// Constrain vertical velocity integral
-	// 翻译：约束垂直速度积分。
+	// 翻译：约束垂直速度积分
 	_vel_int(2) = math::constrain(_vel_int(2), -CONSTANTS_ONE_G, CONSTANTS_ONE_G);
 
 	// PID velocity control
-	// 翻译：PID速度控制。
+	// 翻译：PID速度控制
 	Vector3f vel_error = _vel_sp - _vel;
 	Vector3f acc_sp_velocity = vel_error.emult(_gain_vel_p) + _vel_int - _vel_dot.emult(_gain_vel_d);
 
 	// No control input from setpoints or corresponding states which are NAN
-	// 翻译：没有来自设置点或相应状态的控制输入，如果它们是NAN。
+	// 翻译：没有来自设置点或相应状态的控制输入，如果它们是NAN
 	ControlMath::addIfNotNanVector3f(_acc_sp, acc_sp_velocity);
 
 	// 加速度控制
@@ -215,11 +215,11 @@ void PositionControl::_velocityControl(const float dt)
 	const float thrust_z_max_squared = thrust_max_squared - math::sq(allocated_horizontal_thrust);
 
 	// Saturate maximal vertical thrust
-	// 翻译：饱和最大垂直推力。
+	// 翻译：饱和最大垂直推力
 	_thr_sp(2) = math::max(_thr_sp(2), -sqrtf(thrust_z_max_squared));
 
 	// Determine how much horizontal thrust is left after prioritizing vertical control
-	// 翻译：确定水平推力，优先垂直控制。
+	// 翻译：确定水平推力，优先垂直控制
 	const float thrust_max_xy_squared = thrust_max_squared - math::sq(_thr_sp(2));
 	float thrust_max_xy = 0.f;
 
@@ -234,15 +234,13 @@ void PositionControl::_velocityControl(const float dt)
 	}
 
 	// Use tracking Anti-Windup for horizontal direction: during saturation, the integrator is used to unsaturate the output
-	// 翻译：使用跟踪反风动器，当饱和时，积分器用于取消输出。
 	// see Anti-Reset Windup for PID controllers, L.Rundqwist, 1990
-	// 翻译：见PID控制器的反重置风动，L.Rundqwist，1990
+	// 翻译：对水平方向使用跟踪抗饱和：在饱和期间，使用积分器来消除输出饱和。参见 L. Rundqwist 于 1990 年发表的《PID 控制器的抗复位饱和》
 	const Vector2f acc_sp_xy_produced = Vector2f(_thr_sp) * (CONSTANTS_ONE_G / _hover_thrust);
 
 	// The produced acceleration can be greater or smaller than the desired acceleration due to the saturations and the actual vertical thrust (computed independently).
-	// 翻译：对水平方向使用跟踪Anti-Windup：在饱和期间，积分器用于使输出不饱和
 	// The ARW loop needs to run if the signal is saturated only.
-	// 翻译：仅当信号饱和时才需要运行 ARW 循环。
+	// 翻译：由于饱和和实际垂直推力（独立计算），产生的加速度可能大于或小于期望加速度。仅当信号饱和时才需要运行 ARW 回路
 	if (_acc_sp.xy().norm_squared() > acc_sp_xy_produced.norm_squared()) {
 		const float arw_gain = 2.f / _gain_vel_p(0);
 		const Vector2f acc_sp_xy = _acc_sp.xy();
@@ -287,7 +285,7 @@ void PositionControl::_accelerationControl()
 	// 限制倾斜角，防止侧翻
 	ControlMath::limitTilt(body_z, Vector3f(0, 0, 1), _lim_tilt);
 	// Convert to thrust assuming hover thrust produces standard gravity
-	// 翻译：假设悬停推力产生标准重力。
+	// 翻译：假设悬停推力产生标准重力
 	// collective_thrust_normalized = ( _acc_sp(2) / g ) × hover_thrust  -  hover_thrust
 	//                              = hover_thrust × ( _acc_sp(2)/g  -  1 )
 	// 这里是真正的推力计算， body_z只是期望的机体坐标系用作推力映射
@@ -310,19 +308,19 @@ bool PositionControl::_inputValid()
 	bool valid = true;
 
 	// Every axis x, y, z needs to have some setpoint
-	// 翻译：每个轴x、y、z都需要有某些设定点。
+	// 翻译：每个轴x、y、z都需要有某些设定点
 	for (int i = 0; i <= 2; i++) {
 		valid = valid && (PX4_ISFINITE(_pos_sp(i)) || PX4_ISFINITE(_vel_sp(i)) || PX4_ISFINITE(_acc_sp(i)));
 	}
 
 	// x and y input setpoints always have to come in pairs
-	// 翻译：x和y输入设定点总是成对出现。
+	// 翻译：x和y输入设定点总是成对出现
 	valid = valid && (PX4_ISFINITE(_pos_sp(0)) == PX4_ISFINITE(_pos_sp(1)));
 	valid = valid && (PX4_ISFINITE(_vel_sp(0)) == PX4_ISFINITE(_vel_sp(1)));
 	valid = valid && (PX4_ISFINITE(_acc_sp(0)) == PX4_ISFINITE(_acc_sp(1)));
 
 	// For each controlled state the estimate has to be valid
-	// 翻译：对于每个受控状态，估计值必须有效。
+	// 翻译：对于每个受控状态，估计值必须有效
 	for (int i = 0; i <= 2; i++) {
 		if (PX4_ISFINITE(_pos_sp(i))) {
 			valid = valid && PX4_ISFINITE(_pos(i));

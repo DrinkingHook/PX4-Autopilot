@@ -210,6 +210,7 @@ MulticopterAttitudeControl::generate_attitude_setpoint(const Quatf &q, float dt)
 		v *= _man_tilt_max / v_norm;
 	}
 
+	// 右手坐标系: v(0)表示x轴 v(1)表示y轴 注意v(1)为负数 因为俯仰向下为正
 	Quatf q_sp_rp = AxisAnglef(v(0), v(1), 0.f);
 	// Make sure there's a valid attitude quaternion with no yaw error when yaw is unlocked (NAN)
 	// 翻译：确保在解锁时有有效的姿态四元数，没有偏航误差（NAN）
@@ -231,18 +232,18 @@ MulticopterAttitudeControl::generate_attitude_setpoint(const Quatf &q, float dt)
 		// an attitude setpoint from the yaw setpoint will lead to unexpected attitude behaviour from
 		// the user's view as the tilt will not be aligned with the heading of the vehicle.
 
-		// 翻译：修改滚转和俯仰设定点，以确保即使存在较大的偏航误差（yaw_sp - yaw），它们也能反映用户意图。
-		//      在存在偏航误差的情况下，从偏航设定点构建姿态设定点会导致从用户视角来看的意外姿态行为，因为倾斜不会与车辆航向对齐。
+		// 翻译：修改横滚和俯仰的设定值，使其即使存在较大的偏航误差（yaw_sp - yaw）也能反映用户的意图
+		// 	如果存在偏航误差，则从偏航设定值构建姿态设定值会导致用户视角出现意料之外的姿态行为，因为倾斜角度将与飞行器的航向不一致
 
 		AttitudeControlMath::correctTiltSetpointForYawError(q_sp_rp, q, q_sp_yaw);
 	}
 
 	// Align the desired tilt with the yaw setpoint
 	// 翻译：将期望的倾斜与偏航设定点对齐。
-	// 先应用倾斜旋转（q_sp_rp），再在那个基础上应用偏航旋转（q_sp_yaw），飞机先倾斜产生前进方向，然后整体机头对准设定的 yaw 方向（典型的多旋翼“机头不随倾斜转”的感觉）。
-	// 如果为 q_sp = q_sp_rp * q_sp_yaw 飞机倾斜方向会跟着机头转（像固定翼或直升机那种“机头始终对准飞行方向”的感觉），这不是多旋翼手动模式想要的。
+	// 先应用倾斜旋转(q_sp_rp)，再在那个基础上应用偏航旋转(q_sp_yaw)。飞机先倾斜产生前进方向，然后整体机头对准设定的 yaw 方向。实际上并没有先后，只是四元数的旋转特性罢了。(例如让飞机偏航和横滚各90度，那么实际飞机会变成机头向右，向南侧倾，呈现向南飞的姿态)
+	// 如果为 q_sp = q_sp_rp * q_sp_yaw 飞机倾斜方向会跟着机头转
 	Quatf q_sp = q_sp_yaw * q_sp_rp;
-
+	// Quatf q_sp = q_sp_rp * q_sp_yaw;
 	q_sp.copyTo(attitude_setpoint.q_d);
 
 	attitude_setpoint.thrust_body[2] = -throttle_curve(_manual_control_setpoint.throttle);
@@ -294,6 +295,7 @@ MulticopterAttitudeControl::Run()
 	// 翻译：在姿态更新上运行控制器。
 	vehicle_attitude_s v_att;
 
+	// 获取姿态信息来自EKF或者外部惯性导航
 	if (_vehicle_attitude_sub.update(&v_att)) {
 
 		// Guard against too small (< 0.2ms) and too large (> 20ms) dt's.
@@ -334,6 +336,7 @@ MulticopterAttitudeControl::Run()
 			vehicle_local_position_s vehicle_local_position;
 
 			if (_vehicle_local_position_sub.copy(&vehicle_local_position)) {
+				// 无需辅助的转向
 				_unaided_heading = vehicle_local_position.unaided_heading;
 			}
 		}
@@ -354,6 +357,7 @@ MulticopterAttitudeControl::Run()
 			    !_vehicle_control_mode.flag_control_velocity_enabled &&
 			    !_vehicle_control_mode.flag_control_position_enabled) {
 
+				// 用到了_manual_control_setpoint，这个是用户打杆及期望的姿态 传入参数q则是当前的姿态
 				generate_attitude_setpoint(q, dt);
 
 			} else {

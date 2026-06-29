@@ -162,7 +162,7 @@ private:
 	 * @param _param_mc_rollrate_max 多旋翼最大滚转速率（deg/s）
 	 * @param _param_mc_pitchrate_max 多旋翼最大俯仰速率（deg/s）
 	 * @param _param_mc_yawrate_max 多旋翼最大偏航速率（deg/s）
-	// Stabilized mode params
+	 // Stabilized mode params
 	 * @param _param_man_deadzone 手动摇杆死区阈值
 	 * @param _param_mpc_man_tilt_max 手动模式最大倾斜角（度）
 	 * @param _param_mpc_manthr_min 手动模式最小油门值（0~1）

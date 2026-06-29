@@ -119,6 +119,9 @@ class UavcanNode;
  * a fixed rate or upon bus updates).
  * All work items are expected to run on the same work queue.
  */
+// 翻译：UAVCAN 混控类 用于 ESC
+// 	它与 UavcanNode 分离，拥有独立的 WorkItem，因此可以独立调度（例如，UavcanMixingInterfaceESC 在 actuator_control 更新时运行，而 UavcanNode 按固定速率或总线更新时运行）
+// 	所有工作项都应在同一个工作队列中运行
 
 #if defined(CONFIG_UAVCAN_OUTPUTS_CONTROLLER)
 class UavcanMixingInterfaceESC : public OutputModuleInterface

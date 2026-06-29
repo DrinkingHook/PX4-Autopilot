@@ -286,12 +286,10 @@ void Navigator::run()
 				// TODO: move DO_GO_AROUND handling to navigator
 				publish_vehicle_command_ack(cmd, vehicle_command_ack_s::VEHICLE_CMD_RESULT_ACCEPTED);
 
-				/**
-				* @brief 重新定位的几种情况:
-				* 	     1.任务暂停时临时悬停的定位点
-				* 	     2.单一定位点goto
-				* 	     3.机载电脑发送goto命令
-				*/
+			// 重新定位的几种情况:
+			// 	1.任务暂停时临时悬停的定位点
+			// 	2.单一定位点goto
+			// 	3.机载电脑发送goto命令	
 
 			} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_DO_REPOSITION
 				   && _vstatus.arming_state == vehicle_status_s::ARMING_STATE_ARMED
@@ -300,6 +298,8 @@ void Navigator::run()
 				// Only apply the reposition setpoint when armed and either a mode switch into Hold was requested
 				// (CHANGE_MODE flag) or we're already in Hold. Otherwise a later switch into Hold could execute a
 				// stale setpoint (loiter.cpp applies it within a 500ms window).
+				// 翻译: 仅当已启动且请求切换到保持模式（CHANGE_MODE 标志）或我们已处于保持模式时，才应用重新定位设定点
+				// 	否则，稍后切换到保持模式可能会执行过时的设定点（loiter.cpp 会在 500 毫秒的时间窗口内应用该设定点）
 
 				// Wait for vehicle_status before handling the next command, otherwise the setpoint could be overwritten
 				// 翻译：处理下一条命令前等待车辆状态，否则设定点可能会被覆盖
@@ -307,12 +307,11 @@ void Navigator::run()
 
 				vehicle_global_position_s position_setpoint{};
 
-				/**
-				 * lat：经度
-				 * lon：纬度
-						 * alt：高度
-				         * @brief 获取cmd参数为地理围栏检测做准备,如果参数异常则使用 global_position 替代
-				         */
+				// lat：经度
+				// lon：纬度
+				// alt：高度
+				// 获取cmd参数为地理围栏检测做准备,如果参数异常则使用 global_position 替代
+
 				if (PX4_ISFINITE(cmd.param5) && PX4_ISFINITE(cmd.param6)) {
 					position_setpoint.lat = cmd.param5;
 					position_setpoint.lon = cmd.param6;
@@ -326,10 +325,9 @@ void Navigator::run()
 
 				// 地理围栏允许位置判断
 				if (geofence_allows_position(position_setpoint)) {
-					/**
-					 * @brief triplet 名为三元组 表示为纬度 Lat, 经度 Lon, 高度 Alt
-					 *
-					 */
+					
+					// triplet 名为三元组 表示为纬度 Lat, 经度 Lon, 高度 Alt
+
 					position_setpoint_triplet_s *rep = get_reposition_triplet();
 					position_setpoint_triplet_s *curr = get_position_setpoint_triplet();
 

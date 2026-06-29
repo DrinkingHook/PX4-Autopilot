@@ -92,6 +92,7 @@ RCUpdate::RCUpdate() :
 	}
 
 	// RC to parameter mapping for changing parameters with RC
+	// 翻译：RC到参数映射，用于通过RC更改参数
 	for (int i = 0; i < rc_parameter_map_s::RC_PARAM_MAP_NCHAN; i++) {
 		// shifted by 1 because param name starts at 1
 		char name[rc_parameter_map_s::PARAM_ID_LEN];
@@ -226,6 +227,9 @@ void RCUpdate::update_rc_functions()
 	map_flight_modes_buttons();
 }
 
+/**
+ * @brief 从订阅的 rc_parameter_map 主题中获取 RC 参数映射，并更新参数句柄，常用于空中调参
+ */
 void RCUpdate::rc_parameter_map_poll(bool forced)
 {
 	if (_rc_parameter_map_sub.updated() || forced) {
@@ -391,6 +395,8 @@ void RCUpdate::Run()
 		bool signal_lost = true;
 
 		/* check flags and require at least four channels to consider the signal valid */
+		// 翻译：检查标志，并要求至少有四个通道才能认为信号有效
+		// 一般现在的数字遥控协议通过 _input_rc_sub.update(&input_rc) 就得到是否处于信号丢失状态。如果不是那么还需要进行通道值判断
 		if (input_rc.rc_lost || input_rc.rc_failsafe || input_rc.channel_count < 4) {
 			/* signal is lost or no enough channels */
 			signal_lost = true;
@@ -402,6 +408,8 @@ void RCUpdate::Run()
 			// This is a specific RC lost check for RFD 868+/900 Modems on PPM.
 			// The observation was that when RC is lost, 16 channels are active and the first 12 are 1000
 			// and the remaining ones are 0.
+			// 翻译：这是针对 PPM 上 RFD 868+/900 调制解调器的特定 RC 丢失检查
+			// 	观察发现，当 RC 丢失时，16 个通道处于活动状态，其中前 12 个通道的值为 1000，其余通道的值为 0
 			for (unsigned int i = 0; i < 16; i++) {
 				if (i < 12 && input_rc.values[i] > 999 && input_rc.values[i] < 1005) {
 					signal_lost = true;
@@ -461,6 +469,7 @@ void RCUpdate::Run()
 		 * some RC systems glitch after a reboot, we should ignore the first 100ms of regained signal
 		 * as the glitch might be interpreted as a commanded stick action or a flight mode switch
 		 */
+		// 翻译：某些遥控器系统在重启后会出现故障，我们应该忽略恢复信号的前 100 毫秒，因为该故障可能被解释为摇杆指令操作或飞行模式切换
 		_rc_signal_lost_hysteresis.set_hysteresis_time_from(true, 100_ms);
 		_rc_signal_lost_hysteresis.set_state_and_update(signal_lost, hrt_absolute_time());
 
@@ -474,6 +483,7 @@ void RCUpdate::Run()
 		_rc_channels_pub.publish(_rc);
 
 		// only publish manual control if the signal is present and regularly updating
+		// 翻译：仅当信号存在且定期更新时才发布手动控制
 		if (input_source_stable && channel_count_stable && !_rc_signal_lost_hysteresis.get_state()) {
 
 			if ((input_rc.timestamp_last_signal > _last_timestamp_signal)

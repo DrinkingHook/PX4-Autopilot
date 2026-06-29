@@ -1115,9 +1115,7 @@ bool UavcanMixingInterfaceESC::updateOutputs(float outputs[MAX_ACTUATORS], unsig
 		// num_outputs is the maximum possible number of outputs (8)
 		// output_array_size adapts to the highest output index that is mapped (4 for a quad)
 		// this allows for sending less CAN frames depending on what output indices are mapped
-		// 翻译：num_outputs 是输出的最大数量 (8)
-		// 	output_array_size 会根据映射的最大输出索引进行调整（四路输出为 4）
-		// 	这样可以根据映射的输出索引发送更少的 CAN 帧
+		// 翻译：num_outputs 是输出的最大数量 (8) output_array_size 会根据映射的最大输出索引进行调整（四路输出为 4）这样可以根据映射的输出索引减少发送的 CAN 帧数量
 		uint8_t output_array_size = 0;
 
 		for (int i = MAX_ACTUATORS - 1; i >= 0; i--) {
