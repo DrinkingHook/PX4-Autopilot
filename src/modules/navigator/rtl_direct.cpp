@@ -43,6 +43,7 @@
 #include <float.h>
 
 #include "rtl_direct.h"
+#include "mission_item_utils.h"
 #include "navigator.h"
 #include <px4_platform_common/events.h>
 
@@ -382,8 +383,7 @@ void RtlDirect::set_rtl_item()
 	reset_mission_item_reached();
 
 	// Execute command if set. This is required for commands like VTOL transition.
-	// 翻译：执行命令，如果设置。这需要命令像VTOL转换。
-	if (!MissionBlock::item_contains_position(_mission_item)) {
+	if (!mission_item_contains_position(_mission_item)) {
 		issue_command(_mission_item);
 
 	} else {

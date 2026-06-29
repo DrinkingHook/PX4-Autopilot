@@ -41,6 +41,10 @@
 
 using namespace matrix;
 
+static __attribute__((noinline)) Quatf qmul(const Quatf &a, const Quatf &b) { return a * b; }
+static __attribute__((noinline)) Quatf qinv(const Quatf &q) { return q.inversed(); }
+static __attribute__((noinline)) Vector3f qzaxis(const Quatf &q) { return q.dcm_z(); }
+
 void AttitudeControl::setProportionalGain(const matrix::Vector3f &proportional_gain, const float yaw_weight)
 {
 	_proportional_gain = proportional_gain;
@@ -53,25 +57,94 @@ void AttitudeControl::setProportionalGain(const matrix::Vector3f &proportional_g
 	}
 }
 
-/**
- * @brief 姿态控制更新
- * @param q 当前的姿态四元数
- * @param qd 期望的姿态四元数
- * @return 控制输出
- */
+void AttitudeControl::setRefModelFrequency(float omega_n)
+{
+	_omega_n = math::max(omega_n, 0.1f);
+	_kq      = _omega_n * _omega_n;
+}
+
+void AttitudeControl::setAttitudeSetpoint(const Quatf &qd, const float yawspeed_setpoint, const float dt)
+{
+	Quatf qd_normalized = qd;
+	qd_normalized.normalize();
+
+	if (_ref_initialized && dt > 0.f) {
+		propagateReferenceModel(qd_normalized, yawspeed_setpoint, dt);
+
+	} else {
+		// First call (or dt out of range): snap reference to the current setpoint.
+		_q_ref = qd_normalized;
+		_omega_correction.zero();
+		_omega_command.zero();
+		_ref_initialized = true;
+	}
+}
+
+void AttitudeControl::propagateReferenceModel(const Quatf &qd, const float yawspeed_setpoint, const float dt)
+{
+	// 2nd-order critically damped ref model with exact (ZOH) discretisation.
+	// Repeated eigenvalue at s = -_omega_n; unconditionally stable for any dt.
+
+	// Tangent-space inputs: rotate the analytical yaw rate into q_ref's body
+	//    frame, and form the small-angle error vector from q_ref to q_d.
+	const Quatf q_ref_inv = qinv(_q_ref);
+	const Vector3f yaw_axis_body = qzaxis(q_ref_inv); // world yaw axis expressed in q_ref's body frame
+	const Vector3f omega_command = PX4_ISFINITE(yawspeed_setpoint)
+				       ? yaw_axis_body * yawspeed_setpoint
+				       : Vector3f{};
+
+	Quatf q_err = qmul(q_ref_inv, qd);
+	q_err.canonicalize();
+	const Vector3f e = 2.f * q_err.imag();
+
+	// Entries of exp(A*dt) for A = [0 -1; _kq -2*_omega_n]. A has the repeated eigenvalue lambda = -_omega_n.
+	// The matrix N = A - lambda*I is then nilpotent (a matrix is nilpotent when
+	// N^k = 0 for some k, and here N^2 = 0). Writing exp(A*dt) = e^(lambda*dt) * exp(N*dt) and expanding the
+	// series for exp(N*dt) = I + N*dt + (N*dt)^2/2! + ... , every term from (N*dt)^2
+	// onward vanishes, so the exponential truncates to the exact closed form
+	//     exp(A*dt) = e^(-_omega_n*dt) * [ (1 + _omega_n*dt) I + dt*A ]
+	//               = emt * [ a  -b ;  gamma  delta ].
+	const float w_dt  = _omega_n * dt;
+	const float emt   = expf(-w_dt);
+	const float a     = (1.f + w_dt) * emt;
+	const float b     = dt * emt;
+	const float gamma = _kq * dt * emt;
+	const float delta = (1.f - w_dt) * emt;
+
+	// Propagate the error-driven correction in tangent space (the 2nd-order state). delta_phi is the integral
+	//    of omega over [0, dt]; the correction part collapses to e(0) - e(dt) since e_dot = -correction.
+	const Vector3f delta_phi = (1.f - a) * e + b * _omega_correction + omega_command * dt;
+	_omega_correction = gamma * e + delta * _omega_correction;
+
+	// Yaw-rate command: the heading setpoint just follows the measured yaw, so feeding the error-driven
+	// rate forward closes a positive-feedback loop. Keep only the commanded rate (omega_command) on the yaw axis.
+	if (PX4_ISFINITE(yawspeed_setpoint) && (fabsf(yawspeed_setpoint) > FLT_EPSILON)) {
+		_omega_correction -= _omega_correction.dot(yaw_axis_body) * yaw_axis_body;
+	}
+
+	// Commanded (analytical) reference rate, kept separate so update() can exempt it from the feedforward limit.
+	_omega_command = omega_command;
+
+	_q_ref     = qmul(_q_ref, Quatf(AxisAnglef(delta_phi)));
+	_q_ref.normalize();
+}
+
+void AttitudeControl::adaptAttitudeSetpoint(const Quatf &q_delta)
+{
+	// Apply the world-frame delta to the reference attitude. _omega_correction and _omega_command are
+	// in the reference body frame and physically invariant under a world relabeling.
+	_q_ref = qmul(q_delta, _q_ref);
+	_q_ref.normalize();
+}
+
 matrix::Vector3f AttitudeControl::update(const Quatf &q) const
 {
-	Quatf qd = _attitude_setpoint_q;
+	// The P controller always tracks the reference-model attitude.
+	Quatf qd = _q_ref;
 
 	// calculate reduced desired attitude neglecting vehicle's yaw to prioritize roll and pitch
-	// 翻译：计算减少的期望姿态，忽略车辆的yaw，优先考虑roll和pitch
-	// 四元数对应一个完整的旋转，可提取三个正交轴（x,y,z）在世界系中的方向。
-	// 从四元数中取出任意一个轴的数据都不包含完整的机体的xyz轴上的姿态数据。
-	// 只取一个轴（如e_z），只能确定roll/pitch（倾斜），无法唯一确定yaw（偏航）。一个轴只提供两个自由度（方向向量），不足以表达完整三自由度姿态。
-	const Vector3f e_z = q.dcm_z();
-	const Vector3f e_z_d = qd.dcm_z();
-	// 这里生成的四元数是从完整的四元数中提取的Z轴数据重新生成的，所以只有两个自由度，丢弃了yaw轴数据。
-	// 它也是一个合法的单位四元数（规范化的），数学上完整表示一个旋转。只是这个旋转绕Z轴的自由度未定义（yaw任意），所以姿态控制上不完整（缺yaw。
+	const Vector3f e_z = qzaxis(q);
+	const Vector3f e_z_d = qzaxis(qd);
 	Quatf qd_red(e_z, e_z_d);
 
 	if (fabsf(qd_red(1)) > (1.f - 1e-5f) || fabsf(qd_red(2)) > (1.f - 1e-5f)) {
@@ -96,8 +169,7 @@ matrix::Vector3f AttitudeControl::update(const Quatf &q) const
 	// With a full desired attitude given by: qd = qd_red * qd_dyaw, extract the delta yaw component.
 	// 翻译：给定完全期望姿态：qd = qd_red * qd_dyaw，提取偏航角分量。
 	// By definition, the delta yaw quaternion has the form (cos(angle/2), 0, 0, sin(angle/2))
-	// 翻译：通过定义，delta yaw四元数具有形式(cos(angle/2)，0，0，sin(angle/2))
-	Quatf qd_dyaw = qd_red.inversed() * qd;
+	Quatf qd_dyaw = qmul(qinv(qd_red), qd);
 	qd_dyaw.canonicalize();
 	// catch numerical problems with the domain of acosf and asinf
 	// 翻译：捕捉acosf和asinf函数域的数值问题
@@ -109,8 +181,7 @@ matrix::Vector3f AttitudeControl::update(const Quatf &q) const
 	qd = qd_red * Quatf(cosf(_yaw_w * acosf(qd_dyaw(0))), 0.f, 0.f, sinf(_yaw_w * asinf(qd_dyaw(3))));
 
 	// quaternion attitude control law, qe is rotation from q to qd
-	// 翻译：四元数姿态控制律，qe 是从 q 到 qd 的旋转
-	const Quatf qe = q.inversed() * qd;
+	const Quatf qe = qmul(qinv(q), qd);
 
 	// using sin(alpha/2) scaled rotation axis as attitude error (see quaternion definition by axis angle)
 	// also taking care of the antipodal unit quaternion ambiguity
@@ -122,23 +193,23 @@ matrix::Vector3f AttitudeControl::update(const Quatf &q) const
 	// 乘上比例增益 _proportional_gain
 	Vector3f rate_setpoint = eq.emult(_proportional_gain);
 
-	// Feed forward the yaw setpoint rate.
-	// yawspeed_setpoint is the feed forward commanded rotation around the world z-axis,
-	// but we need to apply it in the body frame (because _rates_sp is expressed in the body frame).
-	// Therefore we infer the world z-axis (expressed in the body frame) by taking the last column of R.transposed (== q.inversed)
-	// and multiply it by the yaw setpoint rate (yawspeed_setpoint).
-	// This yields a vector representing the commanded rotatation around the world z-axis expressed in the body frame
-	// such that it can be added to the rates setpoint.
-	// 翻译：前馈偏航设定值速率。
-	// yawspeed_setpoint 是前馈的绕世界坐标系 z 轴的指令旋转，
-	// 但我们需要将其应用到机体坐标系中（因为 _rates_sp 是在机体坐标系中表示的）。
-	// 因此，我们通过取 R.transposed（== q.inversed）的最后一列来推断世界坐标系 z 轴（在机体坐标系中表示）。
-	// 并将其乘以偏航设定值速率 (yawspeed_setpoint)。
-	// 这将产生一个向量，表示在机体坐标系中表示的绕世界坐标系 z 轴的指令旋转，
-	// 以便将其添加到速率设定值中。
-	if (std::isfinite(_yawspeed_setpoint)) {
-		rate_setpoint += q.inversed().dcm_z() * _yawspeed_setpoint;
+	// Map reference-frame rates into the current body frame.
+	const Quatf q_rel = qmul(qinv(q), _q_ref);
+
+	// The commanded reference rate (e.g. manual/auto yaw rate) is a setpoint, not a model prediction, so it
+	// bypasses the reference model: it is fed forward at unity regardless of the feedforward gain and limit.
+	rate_setpoint += q_rel.rotateVector(_omega_command);
+
+	// the gain scales and the limit caps the model's error-driven anticipation (zero at gain 0)
+	Vector3f omega_ff = _ff_gain * q_rel.rotateVector(_omega_correction);
+
+	if (_ff_max > 0.f) {
+		for (int i = 0; i < 3; i++) {
+			omega_ff(i) = math::constrain(omega_ff(i), -_ff_max, _ff_max);
+		}
 	}
+
+	rate_setpoint += omega_ff;
 
 	// limit rates
 	for (int i = 0; i < 3; i++) {

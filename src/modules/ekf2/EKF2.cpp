@@ -1819,7 +1819,7 @@ void EKF2::PublishLocalPosition(const hrt_abstime &timestamp)
 	// Distance to bottom surface (ground) in meters, must be positive
 	lpos.dist_bottom_valid = _ekf.isTerrainEstimateValid() || (_ekf.getHeightSensorRef() == HeightSensor::RANGE);
 	lpos.dist_bottom = math::max(_ekf.getHagl(), 0.f);
-	lpos.dist_bottom_var = _ekf.getTerrainVariance();
+	lpos.dist_bottom_var = _ekf.getHaglVariance();
 	_ekf.get_hagl_reset(&lpos.delta_dist_bottom, &lpos.dist_bottom_reset_counter);
 
 	lpos.dist_bottom_sensor_bitfield = vehicle_local_position_s::DIST_BOTTOM_SENSOR_NONE;
@@ -2401,10 +2401,13 @@ void EKF2::UpdateAuxVelSample(ekf2_timestamps_s &ekf2_timestamps)
 	// 翻译：使用着陆目标姿势估计作为另一个速度数据源。
 	landing_target_pose_s landing_target_pose;
 
+	if (!_param_ekf2_avel_en.get()) {
+		return;
+	}
+
 	if (_landing_target_pose_sub.update(&landing_target_pose)) {
-		// we can only use the landing target if it has a fixed position and  a valid velocity estimate
-		// 翻译：我们只能使用着陆目标，如果它有一个固定的位置和一个有效的速度估计。
-		if (landing_target_pose.is_static && landing_target_pose.rel_vel_valid) {
+
+		if (landing_target_pose.rel_vel_ekf2_valid) {
 			// velocity of vehicle relative to target has opposite sign to target relative to vehicle
 			// 翻译：车辆相对于目标的速度与目标相对于车辆的速度相反。
 			auxVelSample auxvel_sample{

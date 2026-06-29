@@ -106,13 +106,15 @@ uint8_t FailsafeBase::update(const hrt_abstime &time_us, const State &state, boo
 	// 更新故障保护延迟状态
 	updateFailsafeDeferState(time_us, action_state.failsafe_deferred);
 
-	// Notify user if the action is worse than before, or a new action got added
-	// 翻译：如果操作结果比以前更糟，或者添加了新操作，则通知用户。
-	if (action_state.action > _selected_action || (action_state.action != Action::None && _notification_required)) {
+	// Notify about escalation, or about any new subsumed condition as an informational warning
+	if (action_state.action > _selected_action) {
 		notifyUser(state.user_intended_mode, action_state.action, action_state.delayed_action, action_state.cause);
+
+	} else if (_pending_notification_cause != Cause::Count) {
+		notifyUser(state.user_intended_mode, Action::Warn, Action::None, _pending_notification_cause);
 	}
 
-	_notification_required = false;
+	_pending_notification_cause = Cause::Count;
 
 	// 修改用户意图模式
 	_last_user_intended_mode = modifyUserIntendedMode(_selected_action, action_state.action,
@@ -430,8 +432,8 @@ bool FailsafeBase::checkFailsafe(int caller_id, bool last_state_failure, bool cu
 					}
 				}
 
-				if (options.action == Action::Warn) {
-					_notification_required = true;
+				if (options.action != Action::None) { // If not disabled
+					_pending_notification_cause = options.cause;
 				}
 
 				if (options.action >= Action::Hold) { // If not a Fallback
@@ -576,6 +578,10 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 		const ActionOptions &cur_action = _actions[action_idx];
 
 		if (cur_action.valid()) {
+			if (cur_action.action == Action::None) {
+				continue;
+			}
+
 			if (cur_action.allow_user_takeover > allow_user_takeover) {
 				// Use the most restrictive setting among all active actions
 				allow_user_takeover = cur_action.allow_user_takeover;

@@ -53,9 +53,6 @@ UserModeIntention::UserModeIntention(const vehicle_status_s &vehicle_status,
 bool UserModeIntention::change(uint8_t user_intended_nav_state, ModeChangeSource source, bool allow_fallback,
 			       bool force)
 {
-	// 是否发生过模式更改设为真
-	_ever_had_mode_change = true;
-
 	if (_handler) {
 		// If a replacement mode is selected, select the internal one instead. The replacement will be selected after.
 		// 翻译：如果选择了替换模式，请选择内部模式。之后将选择替换模式。

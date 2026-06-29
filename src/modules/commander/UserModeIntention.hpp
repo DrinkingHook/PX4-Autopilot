@@ -99,18 +99,6 @@ public:
 	 */
 	void onDisarm();
 
-	/**
-	 * Returns false if there has not been any mode change yet
-	 */
-	bool everHadModeChange() const { return _ever_had_mode_change; }
-
-	/**
-	 * @brief Get the Had Mode Change And Clear object
-	 *	  获取已更改模式并清除
-	 * @param _had_mode_change 在函数 UserModeIntention::change()中置为True
-	 * @return true
-	 * @return false
-	 */
 	bool getHadModeChangeAndClear() { bool ret = _had_mode_change; _had_mode_change = false; return ret; }
 
 private:
@@ -121,9 +109,8 @@ private:
 	const HealthAndArmingChecks &_health_and_arming_checks;
 	ModeChangeHandler *const _handler{nullptr};
 
-	uint8_t _user_intented_nav_state{vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER}; ///< Current user intended mode
-	uint8_t _nav_state_after_disarming{vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER}; ///< Mode that is switched into after landing/disarming
+	uint8_t _user_intented_nav_state{vehicle_status_s::NAVIGATION_STATE_POSCTL}; ///< Current user intended mode
+	uint8_t _nav_state_after_disarming{vehicle_status_s::NAVIGATION_STATE_POSCTL}; ///< Mode that is switched into after landing/disarming
 
-	bool _ever_had_mode_change{false}; ///< true if there was ever a mode change call (also if the same mode as already set)
 	bool _had_mode_change{false}; ///< true if there was a mode change call since the last getHadModeChangeAndClear()
 };

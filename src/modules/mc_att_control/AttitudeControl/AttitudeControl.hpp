@@ -64,6 +64,15 @@ public:
 	 */
 	void setProportionalGain(const matrix::Vector3f &proportional_gain, const float yaw_weight);
 
+	/// Set the critically damped reference-model natural frequency [rad/s].
+	void setRefModelFrequency(float omega_n);
+
+	/// Set the FF magnitude scaling [0..1]
+	void setFeedForwardGain(float gain) { _ff_gain = math::constrain(gain, 0.f, 1.f); }
+
+	/// Set per-axis saturation on the FF angular-velocity contribution [rad/s]; 0 = disabled.
+	void setFeedForwardLimit(float limit) { _ff_max = math::max(limit, 0.f); }
+
 	/**
 	 * Set hard limit for output rate setpoints
 	 * @param rate_limit [rad/s] 3D vector containing limits for roll, pitch, yaw
@@ -78,34 +87,16 @@ public:
 	 * Set a new attitude setpoint replacing the one tracked before
 	 * @param qd desired vehicle attitude setpoint
 	 * @param yawspeed_setpoint [rad/s] yaw feed forward angular rate in world frame
+	 * @param dt [s] time since previous setpoint
 	 */
-	/**
-	* 设置新的姿态设定值，替换之前跟踪的设定值
-	* @param qd 期望的车辆姿态设定值
-	* @param yawspeed_setpoint [rad/s] 偏航角速度（世界坐标系中的前向角速率）
-	*/
-	void setAttitudeSetpoint(const matrix::Quatf &qd, const float yawspeed_setpoint)
-	{
-		_attitude_setpoint_q = qd;
-		_attitude_setpoint_q.normalize();
-		_yawspeed_setpoint = yawspeed_setpoint;
-	}
+	void setAttitudeSetpoint(const matrix::Quatf &qd, const float yawspeed_setpoint, const float dt = -1.f);
 
 	/**
 	 * Adjust last known attitude setpoint by a delta rotation
 	 * Optional use to avoid glitches when attitude estimate reference e.g. heading changes.
 	 * @param q_delta delta rotation to apply
 	 */
-	/**
-	* 通过增量旋转调整上次已知的姿态设定点
-	* 可选，用于避免姿态估计参考（例如航向）发生变化时出现故障。
-	* @param q_delta 要应用的增量旋转
-	*/
-	void adaptAttitudeSetpoint(const matrix::Quatf &q_delta)
-	{
-		_attitude_setpoint_q = q_delta * _attitude_setpoint_q;
-		_attitude_setpoint_q.normalize();
-	}
+	void adaptAttitudeSetpoint(const matrix::Quatf &q_delta);
 
 	/**
 	 * Run one control loop cycle calculation
@@ -114,14 +105,32 @@ public:
 	 */
 	matrix::Vector3f update(const matrix::Quatf &q) const;
 
+	/**
+	 * Attitude state of the reference model
+	 */
+	const matrix::Quatf &getReferenceAttitude() const { return _q_ref; }
+
 private:
-	// 比例增益
+	/**
+	 * Advance the 2nd-order reference model by one step toward the desired attitude
+	 * @param qd normalized desired attitude setpoint
+	 * @param yawspeed_setpoint [rad/s] yaw feed forward angular rate in world frame
+	 * @param dt [s] time since previous setpoint (> 0)
+	 */
+	void propagateReferenceModel(const matrix::Quatf &qd, const float yawspeed_setpoint, const float dt);
+
 	matrix::Vector3f _proportional_gain;
 	matrix::Vector3f _rate_limit;
 	float _yaw_w{0.f}; ///< yaw weight [0,1] to deprioritize compared to roll and pitch
 
-	// 最新已知姿态设定点，例如来自位置控制
-	matrix::Quatf _attitude_setpoint_q; ///< latest known attitude setpoint e.g. from position control
-	// 最新已知的偏航速度前馈设定点
-	float _yawspeed_setpoint{0.f}; ///< latest known yawspeed feed-forward setpoint
+	matrix::Quatf _q_ref;                  ///< reference attitude tracked by the 2nd-order ref model
+	matrix::Vector3f _omega_correction;    ///< error-driven correction (2nd-order state); reference rate = _omega_correction + _omega_command
+	matrix::Vector3f _omega_command;       ///< commanded (analytical) reference rate; exempt from the feedforward limit
+	bool _ref_initialized{false};
+
+	float _omega_n{50.f};                  ///< ref-model natural frequency [rad/s]
+	float _kq{_omega_n * _omega_n};        ///< stiffness coefficient, kept in sync with _omega_n
+
+	float _ff_gain{1.f};
+	float _ff_max{0.f};
 };

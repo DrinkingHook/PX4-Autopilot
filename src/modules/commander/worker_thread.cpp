@@ -151,6 +151,13 @@ void WorkerThread::threadEntry()
 	case Request::ParamLoadDefault:
 		_ret_value = param_load_default();
 
+		// blank storage (1) is not an error: all parameters were reset to defaults
+		if (_ret_value == 1) {
+			mavlink_log_warning(&_mavlink_log_pub, "Blank storage, parameters reset to default\t");
+			events::send(events::ID("commander_load_param_blank"), events::Log::Warning, "Blank storage, parameters reset to default");
+			_ret_value = 0;
+		}
+
 		if (_ret_value != 0) {
 			mavlink_log_critical(&_mavlink_log_pub, "Error loading settings\t");
 			events::send(events::ID("commander_load_param_failed"), events::Log::Critical, "Error loading settings");
@@ -170,7 +177,7 @@ void WorkerThread::threadEntry()
 
 	case Request::ParamResetAll:
 		param_reset_all();
-		_ret_value = 0;
+		_ret_value = param_save_default(true);
 		break;
 
 	case Request::ParamResetSensorFactory: {
@@ -190,7 +197,7 @@ void WorkerThread::threadEntry()
 				"COM_FLIGHT_UUID"
 			};
 			param_reset_excludes(exclude_list, sizeof(exclude_list) / sizeof(exclude_list[0]));
-			_ret_value = 0;
+			_ret_value = param_save_default(true);
 			break;
 		}
 	}

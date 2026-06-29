@@ -42,7 +42,7 @@
 
 #include "mission_feasibility_checker.h"
 
-#include "mission_block.h"
+#include "mission_item_utils.h"
 #include "navigator.h"
 
 #include <drivers/drv_pwm_output.h>
@@ -153,7 +153,7 @@ MissionFeasibilityChecker::checkMissionAgainstGeofence(const mission_s &mission,
 			// 翻译：地理围栏功能会检查返航点海拔高度（平均海平面以上）
 			missionitem.altitude = missionitem.altitude_is_relative ? missionitem.altitude + home_alt : missionitem.altitude;
 
-			if (MissionBlock::item_contains_position(missionitem) && !_navigator->get_geofence().checkPointAgainstAllGeofences(
+			if (mission_item_contains_position(missionitem) && !_navigator->get_geofence().checkPointAgainstAllGeofences(
 				    missionitem.lat, missionitem.lon, missionitem.altitude)) {
 
 				mavlink_log_critical(_navigator->get_mavlink_log_pub(), "Geofence violation for waypoint %zu\t", i + 1);

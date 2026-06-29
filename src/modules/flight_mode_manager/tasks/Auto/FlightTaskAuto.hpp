@@ -44,6 +44,9 @@
 #include <uORB/topics/position_setpoint.h>
 #include <uORB/topics/home_position.h>
 #include <uORB/topics/manual_control_setpoint.h>
+#if defined(CONFIG_MODULES_VISION_TARGET_ESTIMATOR) && CONFIG_MODULES_VISION_TARGET_ESTIMATOR
+#include <uORB/topics/prec_land_status.h>
+#endif // CONFIG_MODULES_VISION_TARGET_ESTIMATOR
 #include <uORB/topics/vehicle_status.h>
 #include <lib/geo/geo.h>
 #include <lib/mathlib/math/filter/AlphaFilter.hpp>
@@ -122,7 +125,10 @@ protected:
 	WaypointType _type{WaypointType::idle}; /**< Type of current target triplet. */
 
 	uORB::SubscriptionData<position_setpoint_triplet_s> _position_setpoint_triplet_sub{ORB_ID(position_setpoint_triplet)};
-	uORB::SubscriptionData<home_position_s>			_sub_home_position{ORB_ID(home_position)};
+#if defined(CONFIG_MODULES_VISION_TARGET_ESTIMATOR) && CONFIG_MODULES_VISION_TARGET_ESTIMATOR
+	uORB::SubscriptionData<prec_land_status_s>		_prec_land_status_sub {ORB_ID(prec_land_status)};
+#endif // CONFIG_MODULES_VISION_TARGET_ESTIMATOR
+	uORB::SubscriptionData<home_position_s>			_sub_home_position {ORB_ID(home_position)};
 	uORB::SubscriptionData<vehicle_status_s>		_sub_vehicle_status{ORB_ID(vehicle_status)};
 
 	float _target_acceptance_radius{0.0f}; /**< Acceptances radius of the target */
@@ -168,6 +174,9 @@ protected:
 	 * @param _param_mpc_tko_ramp_t     起飞油门斜坡时间（throttle ramp time），控制起飞时油门缓慢增加的时间，避免突然冲击
 	 */
 	DEFINE_PARAMETERS_CUSTOM_PARENT(FlightTask,
+#if defined(CONFIG_MODULES_VISION_TARGET_ESTIMATOR) && CONFIG_MODULES_VISION_TARGET_ESTIMATOR
+					(ParamInt<px4::params::PLD_YAW_EN>) _param_pld_yaw_en,
+#endif // CONFIG_MODULES_VISION_TARGET_ESTIMATOR
 					(ParamFloat<px4::params::MPC_XY_CRUISE>) _param_mpc_xy_cruise,
 					(ParamFloat<px4::params::NAV_MC_ALT_RAD>)
 					_param_nav_mc_alt_rad, //vertical acceptance radius at which waypoints are updated

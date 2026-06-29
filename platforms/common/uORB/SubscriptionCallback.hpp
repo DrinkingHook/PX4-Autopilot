@@ -66,41 +66,9 @@ public:
 		unregisterCallback();
 	};
 
-	bool registerCallback()
-	{
-		if (!_registered) {
-			if (_subscription.get_node() && Manager::register_callback(_subscription.get_node(), this)) {
-				// registered
-				_registered = true;
+	bool registerCallback();
 
-			} else {
-				// force topic creation by subscribing with old API
-				// 翻译：通过使用旧 API 订阅来强制创建主题
-				int fd = orb_subscribe_multi(_subscription.get_topic(), _subscription.get_instance());
-
-				// try to register callback again
-				// 翻译：再次尝试注册回调
-				if (_subscription.subscribe()) {
-					if (_subscription.get_node() && Manager::register_callback(_subscription.get_node(), this)) {
-						_registered = true;
-					}
-				}
-
-				orb_unsubscribe(fd);
-			}
-		}
-
-		return _registered;
-	}
-
-	void unregisterCallback()
-	{
-		if (_subscription.get_node()) {
-			Manager::unregister_callback(_subscription.get_node(), this);
-		}
-
-		_registered = false;
-	}
+	void unregisterCallback();
 
 	/**
 	 * Change subscription instance
