@@ -118,11 +118,6 @@ public:
 		}
 	}
 
-	enum class RcOverrideBits : int32_t {
-		AUTO_MODE_BIT = (1 << 0),
-		OFFBOARD_MODE_BIT = (1 << 1),
-	};
-
 	struct State {
 		bool armed{false};
 		// 用户意图的飞行模式

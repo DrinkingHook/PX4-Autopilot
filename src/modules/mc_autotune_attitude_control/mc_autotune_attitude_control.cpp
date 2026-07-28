@@ -645,7 +645,6 @@ void McAutotuneAttitudeControl::saveGainsToParams()
 void McAutotuneAttitudeControl::stopAutotune()
 {
 	_vehicle_cmd_start_autotune = false;
-	_vehicle_torque_setpoint_sub.unregisterCallback();
 }
 
 /**

@@ -32,6 +32,7 @@
  ****************************************************************************/
 
 #include "failsafe.h"
+#include "failsafe_action_modes.h"
 
 #include <px4_platform_common/log.h>
 #include <uORB/topics/vehicle_status.h>
@@ -53,6 +54,10 @@ FailsafeBase::ActionOptions Failsafe::fromNavDllOrRclActParam(int param_value)
 
 	switch (gcs_connection_loss_failsafe_mode(param_value)) {
 	case gcs_connection_loss_failsafe_mode::Disabled:
+
+	// No failsafe action: for NAV_RCL_ACT this is handled by Commander switching to Hold as a regular
+	// mode change (see Commander::manualControlLossModeSwitch()).
+	case gcs_connection_loss_failsafe_mode::Hold_mode_no_failsafe:
 	default:
 		options.action = Action::None;
 		break;
@@ -424,6 +429,7 @@ FailsafeBase::ActionOptions Failsafe::fromParachuteActParam(int param_value)
 		break;
 
 	case parachute_unhealthy_failsafe_mode::Warning:
+	case parachute_unhealthy_failsafe_mode::Error:
 		options.action = Action::Warn;
 		options.clear_condition = ClearCondition::WhenConditionClears;
 		break;
@@ -434,6 +440,36 @@ FailsafeBase::ActionOptions Failsafe::fromParachuteActParam(int param_value)
 		break;
 
 	case parachute_unhealthy_failsafe_mode::Land:
+		options.action = Action::Land;
+		options.clear_condition = ClearCondition::OnModeChangeOrDisarm;
+		break;
+	}
+
+	return options;
+}
+
+FailsafeBase::ActionOptions Failsafe::fromTrafficAvoidanceActParam(int param_value)
+{
+	ActionOptions options{};
+
+	switch (static_cast<traffic_avoidance::FailsafeMode>(param_value)) {
+	case traffic_avoidance::FailsafeMode::Disabled:
+	default:
+		options.action = Action::None;
+		break;
+
+	case traffic_avoidance::FailsafeMode::Warning:
+	case traffic_avoidance::FailsafeMode::Error:
+		options.action = Action::Warn;
+		options.clear_condition = ClearCondition::WhenConditionClears;
+		break;
+
+	case traffic_avoidance::FailsafeMode::Return:
+		options.action = Action::RTL;
+		options.clear_condition = ClearCondition::OnModeChangeOrDisarm;
+		break;
+
+	case traffic_avoidance::FailsafeMode::Land:
 		options.action = Action::Land;
 		options.clear_condition = ClearCondition::OnModeChangeOrDisarm;
 		break;
@@ -543,8 +579,7 @@ bool Failsafe::isFailsafeIgnored(uint8_t user_intended_mode, int32_t exception_m
 	}
 }
 
-void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
-				 const failsafe_flags_s &status_flags)
+void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state, const failsafe_flags_s &status_flags)
 {
 	updateArmingState(time_us, state.armed, status_flags);
 
@@ -659,6 +694,9 @@ void Failsafe::checkStateAndMode(const hrt_abstime &time_us, const State &state,
 	// Parachute system health failsafe
 	CHECK_FAILSAFE(status_flags, parachute_unhealthy, ActionOptions(fromParachuteActParam(_param_com_parachute.get())));
 
+	// Traffic avoidance system health failsafe
+	CHECK_FAILSAFE(status_flags, traffic_avoidance_unhealthy, ActionOptions(fromTrafficAvoidanceActParam(_param_com_traff_avoid.get())));
+
 	// Remote ID (Open Drone ID) loss failsafe
 	if (state.armed && _param_com_arm_odid.get() >= int32_t(open_drone_id_failsafe_mode::Return_mode)) {
 		CHECK_FAILSAFE(status_flags, remote_id_unhealthy, fromOdidFailActParam(_param_com_arm_odid.get()));
@@ -747,15 +785,7 @@ void Failsafe::updateArmingState(const hrt_abstime &time_us, bool armed, const f
 	_was_armed = armed;
 }
 
-/**
- * @brief 检查模式回调
- *
- * @param status_flags
- * @param user_intended_mode
- * @return FailsafeBase::Action
- */
-FailsafeBase::Action Failsafe::checkModeFallback(const failsafe_flags_s &status_flags,
-		uint8_t user_intended_mode) const
+FailsafeBase::Action Failsafe::checkModeFallback(const failsafe_flags_s &status_flags, uint8_t user_intended_mode) const
 {
 	Action action = Action::None;
 
@@ -799,14 +829,14 @@ FailsafeBase::Action Failsafe::checkModeFallback(const failsafe_flags_s &status_
 	return action;
 }
 
-uint8_t Failsafe::modifyUserIntendedMode(Action previous_action, Action current_action,
-		uint8_t user_intended_mode) const
+uint8_t Failsafe::modifyUserIntendedMode(Action previous_action, Action current_action, uint8_t user_intended_mode) const
 {
-	// If we switch from a failsafe back into orbit, switch to loiter instead
-	// 翻译：修改用户预期模式
-	if ((int)previous_action > (int)Action::Warn
-	    && modeFromAction(current_action, user_intended_mode) == vehicle_status_s::NAVIGATION_STATE_ORBIT) {
-		PX4_DEBUG("Failsafe cleared, switching from ORBIT to LOITER");
+	// When a failsafe engages, immediately downgrade Orbit to Loiter so that
+	// if the failsafe later clears without a new explicit mode command the vehicle holds position.
+	if ((int)previous_action <= (int)Action::Warn
+	    && (int)current_action > (int)Action::Warn
+	    && user_intended_mode == vehicle_status_s::NAVIGATION_STATE_ORBIT) {
+		PX4_DEBUG("Failsafe engaged, downgrading ORBIT to LOITER");
 		return vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER;
 	}
 

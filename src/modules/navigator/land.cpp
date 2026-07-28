@@ -54,6 +54,9 @@ Land::Land(Navigator *navigator) :
 void
 Land::on_activation()
 {
+	// reset triplets, modes should be explicit about which fields they want to set
+	_navigator->reset_triplets();
+
 	/* set current mission item to Land */
 	// 翻译：将当前任务项目设置为 "陆地"
 	set_land_item(&_mission_item);
@@ -106,7 +109,6 @@ Land::on_active()
 	if (_navigator->get_land_detected()->landed) {
 		_navigator->get_mission_result()->finished = true;
 		_navigator->set_mission_result_updated();
-		_navigator->mode_completed(getNavigatorStateId());
 		set_idle_item(&_mission_item);
 
 		// 获取全局共享的导航目标点
@@ -132,5 +134,9 @@ Land::on_active()
 		vehicle_command.param7 = _navigator->get_global_position()->alt + _navigator->get_landing_abort_min_alt();
 
 		_navigator->publish_vehicle_command(vehicle_command);
+	}
+
+	if (_navigator->get_mission_result()->finished) {
+		_navigator->mode_completed(getNavigatorStateId());
 	}
 }
