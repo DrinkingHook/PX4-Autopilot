@@ -120,7 +120,9 @@ private:
 	 *
 	 */
 	enum class RTLState {
+		// 爬升
 		CLIMBING,
+		// 避开地理围栏
 		AVOID_GEOFENCE,
 		MOVE_TO_LOITER,
 		LOITER_DOWN,

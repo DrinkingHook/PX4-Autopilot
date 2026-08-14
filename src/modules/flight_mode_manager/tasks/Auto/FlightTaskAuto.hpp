@@ -161,7 +161,7 @@ protected:
 	 * @param _param_mpc_xy_err_max     水平位置误差最大允许值，超过可能触发保护或切换行为
 	 * @param _param_mpc_land_speed     自动降落时的下降速度（最后阶段的目标下降速率，通常 0.6~1.0 m/s 左右）
 	 * @param _param_mpc_land_crwl      降落爬行（crawl）阶段的下降速度（接近地面时极低速阶段，配合 MPC_LAND_ALTx 使用）
-	 * @param _param_mpc_land_rc_help   是否允许遥控器在自动降落时辅助控制（0=禁用，1=允许）
+	 * @param _param_mpc_auto_nudging   在自主模式下启用摇杆轻推(bit0 - 偏航轻推 bit1 - 降落轻推)
 	 * @param _param_mpc_land_radius    降落接受半径（水平方向，认为进入该圆内开始执行降落逻辑）
 	 * @param _param_mpc_land_alt1      降落第一阶段切换高度（通常较高，进入慢速下降）
 	 * @param _param_mpc_land_alt2      降落第二阶段切换高度（更低，进入更慢下降或爬行阶段）

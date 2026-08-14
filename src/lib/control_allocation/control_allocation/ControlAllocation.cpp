@@ -127,9 +127,9 @@ void ControlAllocation::applySlewRateLimit(float dt)
 	// therefore for the purpose of slew limiting we need to consider NaN
 	// equivalent to zero. But after the slew limiting, we again replace by
 	// NaN.
-	// 翻译：对于电机而言，执行器设定值为 NaN 表示关闭电机（使其失去 PWM 功能）。
-	// 	从物理角度来看，这会导致推力为零，因此，为了限制回转速率，我们需要将 NaN 视为零。
-	// 	但在回转速率限制之后，我们再次将其替换为 NaN。
+	// 翻译：对于电机而言，执行器设定值为 NaN 表示关闭电机（使其失去 PWM 功能）
+	// 	从物理角度来看，这会导致推力为零，因此，为了限制回转速率，我们需要将 NaN 视为零
+	// 	但在回转速率限制之后，我们再次将其替换为 NaN
 
 	// We want the slew rate to behave like this on different input transitions:
 	//  - between 0 and NaN: immediately match input

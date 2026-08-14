@@ -65,23 +65,39 @@ ControlAllocationSequentialDesaturation::allocate()
 	}
 }
 
+/**
+ * @brief 去饱和执行器：沿 desaturation_vector 方向调整执行器输出，消除饱和
+ *
+ * 核心思想：分配器混出来的输出向量 actuator_sp 中，某些执行器可能超出 [min, max] 边界（饱和）。
+ * 我们沿着一个"不影响指定轴控制效果"的方向 desaturation_vector（例如只沿推力轴、或只沿 yaw 轴）
+ * 给输出叠加一个修正量，用牺牲该轴的方式把饱和的执行器拉回边界内。
+ *
+ * @param actuator_sp         执行器输出向量，会被原地修改（既是输入也是输出）
+ * @param desaturation_vector 去饱和方向向量，叠加它不会改变目标轴上的力矩/推力
+ * @param increase_only       为 true 时只允许沿该方向"增大"输出，不允许减小
+ */
 void ControlAllocationSequentialDesaturation::desaturateActuators(
 	ActuatorVector &actuator_sp,
 	const ActuatorVector &desaturation_vector, bool increase_only)
 {
+	// 计算去饱和增益：找到把"最饱和"的执行器恰好拉回边界所需的修正系数 k
 	float gain = computeDesaturationGain(desaturation_vector, actuator_sp);
 
+	// 若要求"只增不减"，但算出的增益为负（即必须减小输出才能去饱和），则本次不做任何调整
 	if (increase_only && gain < 0.f) {
 		return;
 	}
 
+	// 第一次去饱和：把增益乘以方向向量，叠加到每个执行器的输出上，消除最严重的饱和
 	for (int i = 0; i < _num_actuators; i++) {
 		actuator_sp(i) += gain * desaturation_vector(i);
 	}
 
+	// 第二次去饱和：用减半的增益再算一次，处理第一次调整后新出现的轻微饱和（起到收敛效果）
 	gain = 0.5f * computeDesaturationGain(desaturation_vector, actuator_sp);
 
 	for (int i = 0; i < _num_actuators; i++) {
+		// 以一半的力度再叠加一次，继续去饱和
 		actuator_sp(i) += gain * desaturation_vector(i);
 	}
 }
@@ -123,7 +139,7 @@ void
 ControlAllocationSequentialDesaturation::mixAirmodeRP()
 {
 	// Airmode for roll and pitch, but not yaw
-	// 翻译：空中模式支持横滚和俯仰，但不支持偏航
+	// 翻译：该空中模式支持横滚和俯仰，但不支持偏航
 
 	// Mix without yaw
 	// 翻译：不考虑偏航，直接分配
@@ -145,6 +161,8 @@ ControlAllocationSequentialDesaturation::mixAirmodeRP()
 	mixYaw();
 }
 
+// mixAirmodeRPY（完整 Airmode）是一开始就把 roll + pitch + yaw + 推力全部混进去
+// 因为 yaw 提前占用了执行器输出空间，所以更容易触顶。此时算法会优先用调整推力的方式去饱和（允许升高或降低总推力），如果还不够，再削减 yaw，从而优先保证 roll/pitch
 void
 ControlAllocationSequentialDesaturation::mixAirmodeRPY()
 {
@@ -173,11 +191,13 @@ ControlAllocationSequentialDesaturation::mixAirmodeRPY()
 	desaturateActuators(_actuator_sp, yaw);
 }
 
+// mixAirmodeDisabled（关闭 Airmode）是先只混 roll + pitch + 推力，yaw 故意放在最后
+// 去饱和时绝对不允许抬高推力，只能降低推力或削减 roll/pitch。最后才尝试加入 yaw，并且最多只允许再降低 15% 的推力来给 yaw 留一点余量。因此在高推力或接近饱和时，yaw 经常会被大幅甚至完全牺牲
 void
 ControlAllocationSequentialDesaturation::mixAirmodeDisabled()
 {
 	// Airmode disabled: never allow to increase the thrust to unsaturate a motor
-	// 翻译：空中模式已禁用：绝不允许增加推力以使电机去饱和。
+	// 翻译：空中模式已禁用：绝不允许增加推力以使电机去饱和
 
 	// Mix without yaw
 	ActuatorVector thrust_z;
@@ -197,9 +217,11 @@ ControlAllocationSequentialDesaturation::mixAirmodeDisabled()
 	}
 
 	// only reduce thrust
+	// 翻译：仅减少推力
 	desaturateActuators(_actuator_sp, thrust_z, true);
 
 	// Reduce roll/pitch acceleration if needed to unsaturate
+	// 翻译：如果需要解除饱和，则减少横滚/俯仰加速度
 	desaturateActuators(_actuator_sp, roll);
 	desaturateActuators(_actuator_sp, pitch);
 
@@ -222,6 +244,7 @@ ControlAllocationSequentialDesaturation::mixYaw()
 
 	// Change yaw acceleration to unsaturate the outputs if needed (do not change roll/pitch),
 	// and allow some yaw response at maximum thrust
+	// 翻译：如有需要，调整偏航加速度以使输出不饱和（不要改变滚转/俯仰），并在最大推力下允许一定的偏航响应
 	ActuatorVector max_prev = _actuator_max;
 	_actuator_max += (_actuator_max - _actuator_min) * MINIMUM_YAW_MARGIN;
 	desaturateActuators(_actuator_sp, yaw);

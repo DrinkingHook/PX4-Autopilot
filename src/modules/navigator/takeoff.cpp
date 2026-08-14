@@ -51,6 +51,7 @@ void
 Takeoff::on_activation()
 {
 	// reset triplets, modes should be explicit about which fields they want to set
+	// 重置triplets，模式应该明确设置哪些字段
 	_navigator->reset_triplets();
 
 	set_takeoff_position();
@@ -81,8 +82,8 @@ Takeoff::on_active()
 					// we need the vehicle to loiter indefinitely but also we want this mission item to be reached as soon
 					// as the loiter is established. therefore, set a small loiter time so that the mission item will be reached quickly,
 					// however it will just continue loitering as there is no next mission item
-					// 翻译：我们需要飞行器无限期地盘旋，但同时也希望飞行器在盘旋开始后尽快到达此任务项。
-					//      因此，设置一个较短的盘旋时间，以便快速到达任务项，但由于没有下一个任务项，飞行器将继续盘旋。
+					// 翻译：我们需要飞行器无限期地盘旋，但同时也希望飞行器在盘旋开始后尽快到达此任务项
+					//      因此，设置一个较短的盘旋时间，以便快速到达任务项，但由于没有下一个任务项，飞行器将继续盘旋
 					_mission_item.time_inside = 1.f;
 					_mission_item.loiter_radius = _navigator->get_default_loiter_rad();
 					_mission_item.acceptance_radius  = _navigator->get_acceptance_radius();
@@ -121,6 +122,7 @@ Takeoff::on_active()
 
 				if (navigation_valid) {
 					// only consider lateral acceptance if position estimation is valid
+					// 翻译：只有在位置估计有效时才考虑横向接受
 					const float distance_to_loiter = get_distance_to_next_waypoint(_navigator->get_global_position()->lat,
 									 _navigator->get_global_position()->lon, _mission_item.lat, _mission_item.lon);
 
@@ -227,27 +229,32 @@ Takeoff::set_takeoff_position()
 	}
 
 	// set current mission item to takeoff
+	// 翻译：将当前任务项设置为起飞任务项
 	set_takeoff_item(&_mission_item, takeoff_altitude_amsl);
 	_navigator->get_mission_result()->finished = false;
 	_navigator->set_mission_result_updated();
 	reset_mission_item_reached();
 
 	// convert mission item to current setpoint
+	// 翻译：将当前任务项转换为当前设置点
 	struct position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
 	mission_item_to_position_setpoint(_mission_item, &pos_sp_triplet->current);
 
+	// 起飞阶段特殊情况(1.没有上一个任务点 2.不关心下一个任务点)
 	pos_sp_triplet->previous.valid = false;
 	pos_sp_triplet->next.valid = false;
 
 	if (rep->current.valid) {
 
 		// Go on and check which changes had been requested
+		// 翻译：继续检查哪些更改已被请求
 		if (PX4_ISFINITE(rep->current.yaw)) {
 			pos_sp_triplet->current.yaw = rep->current.yaw;
 		}
 
 		// Set the current latitude and longitude even if they are NAN
 		// NANs are handled in FlightTaskAuto.cpp
+		// 翻译：即使它们是NAN，也设置当前的经纬度
 		pos_sp_triplet->current.lat = rep->current.lat;
 		pos_sp_triplet->current.lon = rep->current.lon;
 

@@ -113,11 +113,14 @@ ActuatorEffectiveness::ActuatorBitmask ActuatorEffectiveness::getStoppedMotors()
 	// Motors can be stopped (here) for two reasons. They can
 	// additionally be stopped in the ControlAllocator, due to motor
 	// failure.
+	// 翻译：电机可能因两种原因(在此处)停止。此外，电机也可能因故障而在 ControlAllocator(控制分配器)中停止
 
 	//  a) because they are generally not used in the given flight phase.
+	// 翻译：a) 因为在当前飞行阶段通常不使用这些电机
 	ActuatorEffectiveness::ActuatorBitmask stopped_motors_mask = _stopped_motors_mask_due_to_flight_phase;
 
 	//  b) because the thrust setpoint in a given direction is NaN
+	// 翻译：b) 因为特定方向上的推力设定值为 NaN
 	if (_longitudinal_motors_stopped_by_thrust) { stopped_motors_mask |= _motor_direction_bitmasks.longitudinal; }
 
 	if (_lateral_motors_stopped_by_thrust) { stopped_motors_mask |= _motor_direction_bitmasks.lateral; }

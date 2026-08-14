@@ -82,14 +82,14 @@ void RtlMissionFast::on_activation()
 
 		} else {
 			// No more position items left. Set it to the land item if it exists
-			// 翻译：没有剩余的位置项。如果存在着陆项，则将其设置为着陆项。
+			// 翻译：没有剩余的位置项。如果存在着陆项，则将其设置为着陆项
 			if (_mission.land_index > 0) {
 				setMissionIndex(_mission.land_index);
 				_is_current_planned_mission_item_valid = isMissionValid();
 
 			} else {
 				// Nothing we can do, set the validity to false to trigger end of mission reaction
-				// 翻译：我们无能为力，将有效性设置为 false 以触发任务结束反应。
+				// 翻译：我们无能为力，将有效性设置为 false 以触发任务结束反应
 				_is_current_planned_mission_item_valid = false;
 			}
 		}
@@ -97,6 +97,7 @@ void RtlMissionFast::on_activation()
 
 	if (_land_detected_sub.get().landed) {
 		// already landed, no need to do anything, invalidad the position mission item.
+		// 翻译：已经降落，无需做任何事情，将位置任务项的有效性设置为 false 以触发任务结束反应
 		_is_current_planned_mission_item_valid = false;
 	}
 
@@ -189,6 +190,7 @@ void RtlMissionFast::setActiveMissionItems()
 		mission_item_to_position_setpoint(_mission_item, &pos_sp_triplet->current);
 
 		// Only set the previous position item if the current one really changed
+		// 翻译：只有在当前位置项真正改变时才设置上一个位置项
 		if ((_work_item_type != WorkItemType::WORK_ITEM_TYPE_MOVE_TO_LAND) &&
 		    !position_setpoint_equal(&pos_sp_triplet->current, &current_setpoint_copy)) {
 			pos_sp_triplet->previous = current_setpoint_copy;

@@ -666,6 +666,7 @@ MissionBlock::mission_item_to_position_setpoint(const mission_item_s &item, posi
 
 			// land_detected (above) is unreliable on a moving deck, so for multicopters additionally
 			// require the takeoff state machine to report FLIGHT (it only exists on multicopters).
+			// 翻译: 在移动平台上，land_detected(如上所示)不可靠，因此对于多旋翼飞行器，还需要起飞状态机报告 FLIGHT 状态(该状态机仅存在于多旋翼飞行器中)
 			if (_navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
 				already_flying &= (_navigator->get_takeoff_state() == takeoff_status_s::TAKEOFF_STATE_FLIGHT);
 			}
@@ -679,6 +680,8 @@ MissionBlock::mission_item_to_position_setpoint(const mission_item_s &item, posi
 
 				// Don't set a yaw setpoint for takeoff, as Navigator doesn't handle the yaw reset.
 				// The yaw setpoint generation is handled by FlightTaskAuto.
+				// 翻译：起飞时不要设置偏航设定值，因为导航器不处理偏航重置
+				// 	偏航设定值的生成由 FlightTaskAuto 处理
 				sp->yaw = NAN;
 			}
 

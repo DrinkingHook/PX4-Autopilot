@@ -284,9 +284,9 @@ void MulticopterNeuralNetworkControl::generate_trajectory_setpoint(float dt)
 	if (_manual_control_setpoint.throttle > 0.1f
 	    || _manual_control_setpoint.throttle < -0.1f) {
 		// If throttle is not zero, we use it to set the vertical velocity
-		// 翻译：如果推力不为零，我们使用它来设置垂直速度设定点
 		// Note: negative sign due to NED frame
-		// 翻译：由于NED框架，负号
+		// 翻译：如果推力不为零，我们使用它来设置垂直速度设定点
+		// 	由于NED框架，负号
 		vz_sp = -_manual_control_setpoint.throttle * 0.5f;
 	}
 

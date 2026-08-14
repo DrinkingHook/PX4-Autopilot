@@ -237,8 +237,8 @@ MissionBase::on_activation()
 			// The mission we are resuming had camera triggering enabled. In order to not lose any images
 			// we restart the mission at the previous position item.
 			// We will replay the cached commands once we reach the previous position item and have yaw aligned.
-			// 翻译：我们正在恢复的任务启用了相机触发。为了不丢失任何图像，我们将从上一个位置项重新启动任务。
-			// 	一旦到达上一个位置项并完成偏航角对齐，我们将重放缓存的命令。
+			// 翻译：我们正在恢复的任务启用了相机触发。为了不丢失任何图像，我们将从上一个位置项重新启动任务
+			// 	一旦到达上一个位置项并完成偏航角对齐，我们将重放缓存的命令
 			setMissionIndex(resume_index);
 
 			_align_heading_necessary = true;
@@ -249,8 +249,8 @@ MissionBase::on_activation()
 	if (!resume_mission_on_previous) {
 		// Only replay speed changes immediately if we are not resuming the mission at the previous position item.
 		// Otherwise it must be handled in the on_active() method once we reach the previous position item.
-		// 翻译：仅当我们不是从上一个位置项恢复任务时才立即重放速度更改。
-		// 	否则，必须在到达上一个位置项后在 on_active() 方法中处理。
+		// 翻译：仅当我们不是从上一个位置项恢复任务时才立即重放速度更改
+		// 	否则，必须在到达上一个位置项后在 on_active() 方法中处理
 		replayCachedSpeedChangeItems();
 		_speed_replayed_on_activation = true;
 
@@ -380,8 +380,8 @@ MissionBase::on_active()
 		// Mount control is disabled If the vehicle is in ROI-mode, the vehicle
 		// needs to rotate such that ROI is in the field of view.
 		// ROI only makes sense for multicopters.
-		// 翻译：如果飞行器处于 ROI 模式，则飞行器需要旋转以使 ROI 位于视野范围内，此时挂载控制功能已禁用。
-		// 	ROI 模式仅适用于多旋翼飞行器。
+		// 翻译：如果飞行器处于 ROI 模式，则飞行器需要旋转以使 ROI 位于视野范围内，此时挂载控制功能已禁用
+		// 	ROI 模式仅适用于多旋翼飞行器
 		heading_sp_update();
 	}
 
@@ -415,7 +415,7 @@ bool
 MissionBase::isLanding()
 {
 
-	// 如果定义了定义了一个降落段并且执行的任务项（current_seq）已经超过降落段的起点，但还没有超过降落终点（LAND 指令项）。
+	// 如果定义了定义了一个降落段并且执行的任务项(current_seq)已经超过降落段的起点，但还没有超过降落终点(LAND 指令项)
 	if (hasMissionLandStart() && (_mission.current_seq > _mission.land_start_index)
 	    && (_mission.current_seq <= _mission.land_index)) {
 		static constexpr size_t max_num_next_items{1u};
@@ -426,19 +426,19 @@ MissionBase::isLanding()
 
 		// vehicle is currently landing if
 		//  mission valid, still flying, and in the landing portion of mission (past land start marker)
-		// 翻译：如果任务有效，飞行器仍在飞行，并处于任务的着陆部分（过了着陆起始标记），则飞行器目前正在着陆
+		// 翻译：如果任务有效，飞行器仍在飞行，并处于任务的着陆部分(过了着陆起始标记)，则飞行器目前正在着陆
 		bool on_landing_stage = (num_found_items > 0U) &&  _mission.current_seq > next_mission_items_index[0U];
 
 		// special case: if the land start index is at a LOITER_TO_ALT WP, then we're in the landing sequence already when the
 		// distance to the WP is below the loiter radius + acceptance.
-		// 翻译：特殊情况：如果着陆起始索引位于 LOITER_TO_ALT WP，那么当到 WP 的距离小于闲逛半径+接受度时，我们已经进入着陆序列。
+		// 翻译：特殊情况：如果着陆起始索引位于 LOITER_TO_ALT WP，那么当到 WP 的距离小于闲逛半径+接受度时，我们已经进入着陆序列
 		if ((num_found_items > 0U) && _mission.current_seq == next_mission_items_index[0U]
 		    && _mission_item.nav_cmd == NAV_CMD_LOITER_TO_ALT) {
 			const float d_current = get_distance_to_next_waypoint(_mission_item.lat, _mission_item.lon,
 						_navigator->get_global_position()->lat, _navigator->get_global_position()->lon);
 
 			// consider mission_item.loiter_radius invalid if NAN or 0, use default value in this case.
-			// 翻译：考虑 mission_item.loiter_radius 无效，如果 NAN 或 0，则使用默认值。
+			// 翻译：考虑 mission_item.loiter_radius 无效，如果 NAN 或 0，则使用默认值
 			const float mission_item_loiter_radius_abs = (PX4_ISFINITE(_mission_item.loiter_radius)
 					&& fabsf(_mission_item.loiter_radius) > FLT_EPSILON) ? fabsf(_mission_item.loiter_radius) :
 					_navigator->get_default_loiter_rad();
@@ -549,7 +549,7 @@ MissionBase::set_mission_items()
 
 	if (_is_current_planned_mission_item_valid && _mission_type == MissionType::MISSION_TYPE_MISSION && isMissionValid()) {
 		/* By default set the mission item to the current planned mission item. Depending on request, it can be altered. */
-		// 翻译: 默认情况下，任务项目设置为当前计划的任务项目。可根据要求进行更改。
+		// 翻译: 默认情况下，任务项目设置为当前计划的任务项目。可根据要求进行更改
 		if (loadCurrentMissionItem()) {
 			/* force vtol land */
 			if (_navigator->force_vtol() && _mission_item.nav_cmd == NAV_CMD_LAND) {
@@ -739,9 +739,9 @@ void MissionBase::handleLanding(WorkItemType &new_work_item_type, mission_item_s
 			_mission_item.acceptance_radius = _navigator->get_acceptance_radius();
 
 			// make previous setpoint invalid, such that there will be no prev-current line following.
-			// 翻译：使前一个设定点失效，这样就不会有前一个-当前设定点之间的连线。
 			// if the vehicle drifted off the path during back-transition it should just go straight to the landing point
-			// 翻译：如果车辆在后退过程中偏离了路径，它应该直接到达着陆点
+			// 翻译：使前一个设定点失效，这样就不会有前一个-当前设定点之间的连线
+			// 	如果车辆在后退过程中偏离了路径，它应该直接到达着陆点
 			_navigator->reset_position_setpoint(pos_sp_triplet->previous);
 
 			_navigator->activate_set_gimbal_neutral_timer(hrt_absolute_time());
@@ -807,7 +807,7 @@ void
 MissionBase::check_mission_valid(bool forced)
 {
 	// Allow forcing it, since we currently not rechecking if parameters have changed.
-	// 翻译：允许强制它，因为我们目前没有重新检查参数是否已更改。
+	// 翻译：允许强制它，因为我们目前没有重新检查参数是否已更改
 	if (forced ||
 	    (_navigator->get_mission_result()->mission_id != _mission.mission_id) ||
 	    (_navigator->get_mission_result()->geofence_id != _mission.geofence_id) ||
@@ -887,7 +887,7 @@ MissionBase::heading_sp_update()
 		// Get desired heading and update it.
 		// However, only update if distance to desired heading is
 		// larger than acceptance radius to prevent excessive yawing
-		// 翻译：获取期望航向并更新它。
+		// 翻译：获取期望航向并更新它
 		// 但是，仅当与期望航向的距离大于接受半径时才更新，以防止过度偏航
 		float d_current = get_distance_to_next_waypoint(point_from_latlon[0],
 				  point_from_latlon[1], point_to_latlon[0], point_to_latlon[1]);
@@ -1240,7 +1240,7 @@ void MissionBase::getNextPositionItems(int32_t start_index, int32_t items_index[
 				       MissionTraversalType traversal_type)
 {
 	// Make sure vector does not contain any preexisting elements.
-	// 翻译：确保向量不包含任何已存在的元素。
+	// 翻译：确保向量不包含任何已存在的元素
 	num_found_items = 0u;
 
 	int32_t search_index{start_index};
@@ -1609,8 +1609,7 @@ bool MissionBase::canRunMissionFeasibility()
 /**
  * @brief Home位置变更后更新任务高度
  *
- * 当返航点高度或位置发生变化时，同步调整任务中所有相对Home的高度参数，
- * 保证任务执行时的实际高度与预期一致。
+ * 当返航点高度或位置发生变化时，同步调整任务中所有相对Home的高度参数，保证任务执行时的实际高度与预期一致
  */
 void MissionBase::updateMissionAltAfterHomeChanged()
 {

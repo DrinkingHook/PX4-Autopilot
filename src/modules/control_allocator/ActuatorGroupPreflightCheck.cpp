@@ -63,6 +63,7 @@ bool ActuatorGroupPreflightCheck::isKnownGroup(uint8_t group)
 const char *ActuatorGroupPreflightCheck::validateCommand(uint8_t group, bool is_tiltrotor, uint8_t &ack_result)
 {
 	// Permanent failures: the airframe does not support the command
+	// 翻译：永久性故障：机身不支持该命令
 	ack_result = vehicle_command_ack_s::VEHICLE_CMD_RESULT_UNSUPPORTED;
 
 	if (!isKnownGroup(group)) {
@@ -75,6 +76,7 @@ const char *ActuatorGroupPreflightCheck::validateCommand(uint8_t group, bool is_
 	}
 
 	// Transient: arming state mismatch. The user can change it and retry.
+	// 翻译：瞬态：解锁状态不匹配。用户可以更改并重试
 	ack_result = vehicle_command_ack_s::VEHICLE_CMD_RESULT_TEMPORARILY_REJECTED;
 
 	actuator_armed_s actuator_armed{};
@@ -126,12 +128,14 @@ void ActuatorGroupPreflightCheck::handleCommand(hrt_abstime now, bool is_tiltrot
 		PX4_WARN("Actuator group preflight check rejected (%s)", reject_reason);
 
 		// Ack the rejected command directly without affecting any running check.
+		// 翻译: 直接确认被拒绝的命令，而不影响任何运行检查。
 		sendAck(vehicle_command, reject_result, now);
 		return;
 	}
 
 	if (_running) {
 		// Cancel the previous check, still targeted at its original requester.
+		// 翻译：取消之前的检查，仍然针对其原始请求者
 		stop(vehicle_command_ack_s::VEHICLE_CMD_RESULT_CANCELLED, now);
 	}
 
@@ -156,6 +160,7 @@ void ActuatorGroupPreflightCheck::updateState(hrt_abstime now)
 		// Cancel if any of the conditions we depend on are lost (thrust -> armed,
 		// torque/tilt -> pre-armed or armed, always !landed), or when nav_state
 		// changes (safety measure).
+		// 翻译：如果我们所依赖的任何条件(推力->已装备，扭矩/倾斜->预装备或已装备，始终！已着陆)不满足，或者当nav_state(导航状态)发生变化时(安全措施)，请取消
 		const bool is_thrust = isThrust(_active_check.group);
 		const bool armed_requirement_lost = is_thrust && !actuator_armed.armed;
 		const bool prearmed_requirement_lost = !is_thrust && (!actuator_armed.prearmed && !actuator_armed.armed);
@@ -179,6 +184,7 @@ void ActuatorGroupPreflightCheck::applyOverrides(matrix::Vector<float, NUM_AXES>
 	int override_index = -1;
 
 	// Map vehicle command constants to indices of the c matrix used in ControlAllocator
+	// 翻译: 将车辆指令常数映射到ControlAllocator中使用的c矩阵的索引
 	switch (_active_check.group) {
 	case vehicle_command_s::ACTUATOR_TEST_GROUP_ROLL_TORQUE:
 		override_index = 0; break;
@@ -205,10 +211,12 @@ void ActuatorGroupPreflightCheck::applyOverrides(matrix::Vector<float, NUM_AXES>
 
 	// Always update tilt override, even when not running. We need an
 	// explicit call with do_override_tilt = false to undo the override.
+	// 翻译：始终更新倾斜角度覆盖，即使程序未运行。我们需要显式调用 `do_override_tilt = false` 来撤销覆盖
 	effectiveness.overrideCollectiveTilt(do_override_tilt, _active_check.input);
 
 	if (_running && override_index >= 0) {
 		// On a VTOL, control surfaces are in instance 1; thrust always lives in instance 0.
+		// 翻译：在垂直起降飞行器 (VTOL) 上，控制面位于实例 1；推力始终位于实例 0
 		const int instance = (is_vtol && !isThrust(_active_check.group)) ? 1 : 0;
 		c[instance](override_index) = _active_check.input;
 	}

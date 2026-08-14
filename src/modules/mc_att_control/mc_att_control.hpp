@@ -134,7 +134,7 @@ private:
 
 	// 0 当着陆并在空中斜坡至 MPC_MANTHR_MIN 时
 	SlewRate<float> _manual_throttle_minimum{0.f}; ///< 0 when landed and ramped to MPC_MANTHR_MIN in air
-	// 撤防时为 0，假脱机时为 1
+	// 解除警戒时为0，待命时斜升至1
 	SlewRate<float> _manual_throttle_maximum{0.f}; ///< 0 when disarmed ramped to 1 when spooled up
 	AlphaFilter<float> _man_roll_input_filter;
 	AlphaFilter<float> _man_pitch_input_filter;

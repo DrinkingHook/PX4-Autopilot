@@ -265,7 +265,7 @@ void RTL::setRtlTypeAndDestination()
 	const MissionRouteCache &mission_route_cache = _navigator->get_mission_route_cache();
 
 	// init destination with Home (used also with Type 2 and 4 as backup)
-	// 翻译：初始化目的地为Home（也用于类型2和4作为备份）
+	// 翻译：初始化目的地为Home(也用于类型2和4作为备份)
 	DestinationType destination_type = DestinationType::DESTINATION_TYPE_HOME;
 	PositionYawSetpoint destination;
 	destination.lat = _home_pos_sub.get().lat;
@@ -305,7 +305,7 @@ void RTL::setRtlTypeAndDestination()
 
 	} else {
 		// check the closest allowed destination.
-		// 翻译：检查最接近的允许目的地。
+		// 翻译：检查最接近的允许目的地
 		findRtlDestination(destination_type, destination, safe_point_index);
 
 		if (destination_type == DestinationType::DESTINATION_TYPE_MISSION_LAND) {
@@ -347,6 +347,7 @@ void RTL::setRtlTypeAndDestination()
 
 	// Update destination of geofence avoidance planner. Depending on the
 	// RTL type it is the position of the loiter or mission landing.
+	// 翻译：更新地理围栏规避规划器的目标。根据 RTL 类型，这是盘旋或任务着陆的位置
 
 	GeofenceAvoidancePlanner &planner = _navigator->get_geofence_avoidance_planner();
 	matrix::Vector2d planner_destination{(double)NAN, (double)NAN};
@@ -432,6 +433,7 @@ PositionYawSetpoint RTL::findClosestSafePoint(float min_dist, uint8_t &safe_poin
 		};
 
 		// Ignore safepoints which are too close to the homepoint (only if home is an option to return to)
+		// 翻译：忽略距离返航点过近的安全点(仅当返航点是可选的返航点时)
 		const bool far_from_home = get_distance_to_next_waypoint(_home_pos_sub.get().lat, _home_pos_sub.get().lon,
 					   candidate_setpoint.lat, candidate_setpoint.lon) > mission_route::kLandApproachAssociationDistanceM;
 
@@ -486,7 +488,7 @@ void RTL::findRtlDestination(DestinationType &destination_type, PositionYawSetpo
 #endif
 
 		// Set minimum distance to maximum value when RTL_TYPE is set to 1 and we are not in RW mode or we force approach landing for vtol in fw and it is not defined for home.
-		// 翻译：当RTL_TYPE设置为1且我们不在RW模式或强制VTOL在FW模式下着陆时，将最小距离设置为最大值。
+		// 翻译：当RTL_TYPE设置为1且我们不在RW模式或强制VTOL在FW模式下着陆时，将最小距离设置为最大值
 		const bool deprioritize_home = prioritize_safe_points_over_home || required_approach_missing_for_home;
 
 		if (!deprioritize_home) {
@@ -514,6 +516,7 @@ void RTL::findRtlDestination(DestinationType &destination_type, PositionYawSetpo
 				}
 
 				// A cache miss is expected while Navigator is asynchronously loading the item.
+				// 翻译：导航器异步加载物品时，缓存未命中属于正常情况
 				if ((!mission_route_cache.missionLandItemUpdatePending()
 				     || mission_route_cache.missionLandItemAttemptFailed()) && !_mission_land_failure_reported) {
 					mavlink_log_critical(_navigator->get_mavlink_log_pub(), "Mission land item could not be read.\t");
@@ -536,6 +539,7 @@ void RTL::findRtlDestination(DestinationType &destination_type, PositionYawSetpo
 
 					} else {
 						// Mission landing is not allowed, but home has no approaches. Still use mission landing.
+						// 翻译：不允许进行任务着陆，但返航航线没有进近航线。仍然使用任务着陆
 						min_dist = FLT_MAX;
 					}
 
@@ -586,8 +590,8 @@ float RTL::computeReturnAltitude(const PositionYawSetpoint &rtl_position) const
 		// minium rtl altitude to use when outside of horizontal acceptance radius of target position.
 		// We choose the minimum height to be two times the distance from the land position in order to
 		// avoid the vehicle touching the ground while still moving horizontally.
-		// 翻译：当超出目标位置的水平接受半径时，使用的最小rtl高度。
-		// 	我们选择最小高度为从着陆位置的距离的两倍，以避免车辆在水平移动时接触地面。
+		// 翻译：当超出目标位置的水平接受半径时，使用的最小rtl高度
+		// 	我们选择最小高度为从着陆位置的距离的两倍，以避免车辆在水平移动时接触地面
 		const float return_altitude_min_outside_acceptance_rad_amsl = rtl_position.alt + 2.0f * _param_nav_acc_rad.get();
 
 		const float max_return_altitude = rtl_position.alt + _param_rtl_return_alt.get();
@@ -601,10 +605,11 @@ float RTL::computeReturnAltitude(const PositionYawSetpoint &rtl_position) const
 			if (destination_dist <= _param_rtl_min_dist.get()) {
 
 				// constrain cone half angle to meaningful values. All other cases are already handled above.
+				// 翻译：将圆锥半角约束为有意义的值。所有其他情况已在上方处理
 				const float cone_half_angle_rad = radians(constrain((float)_param_rtl_cone_ang.get(), 1.0f, 89.0f));
 
 				// minimum altitude we need in order to be within the user defined cone
-				// 翻译：我们需要的最小高度，以便在用户定义的锥形内。
+				// 翻译：我们需要的最小高度，以便在用户定义的锥形内
 				const float cone_intersection_altitude_amsl = destination_dist / tanf(cone_half_angle_rad) + rtl_position.alt;
 
 				return_altitude_amsl = min(cone_intersection_altitude_amsl, return_altitude_amsl);
@@ -641,7 +646,7 @@ void RTL::initRtlMissionType(RtlType new_rtl_type, float rtl_alt)
 		}
 
 		// RTL type is either direct or mission land have to set it later.
-		// 翻译：RTL类型是直接或任务着陆，必须稍后设置它。
+		// 翻译：RTL类型是直接或任务着陆，必须稍后设置它
 		break;
 
 	case RtlType::RTL_MISSION_FAST:
@@ -675,7 +680,7 @@ void RTL::parameters_update()
 
 		// If any parameter updated, call updateParams() to check if
 		// this class attributes need updating (and do so).
-		// 翻译：如果任何参数更新，调用updateParams()检查是否需要更新此类属性（并执行更新）。
+		// 翻译：如果任何参数更新，调用updateParams()检查是否需要更新此类属性(并执行更新)
 		updateParams();
 
 		if (!isActive()) {
@@ -710,6 +715,7 @@ loiter_point_s RTL::selectLandingApproach(const PositionYawSetpoint &destination
 	loiter_point_s landing_approach{};
 
 	// Only a VTOL currently flying as fixed wing needs a wind-selected approach loiter.
+	// 翻译：只有当前以固定翼飞行的垂直起降飞行器才需要根据风向选择进近盘旋状态
 	if (!_vehicle_status_sub.get().is_vtol
 	    || (_vehicle_status_sub.get().vehicle_type != vehicle_status_s::VEHICLE_TYPE_FIXED_WING)) {
 		return landing_approach;
@@ -739,6 +745,7 @@ loiter_point_s RTL::chooseBestLandingApproach(const land_approaches_s &vtol_land
 
 		if (vtol_land_approaches.approaches[i].isValid()) {
 			// The approach circles are defined around the land location.
+			// 翻译：进近圆围绕着陆点定义
 			const float wind_angle = wrap_pi(get_bearing_to_next_waypoint(vtol_land_approaches.land_location_lat_lon(0),
 							 vtol_land_approaches.land_location_lat_lon(1), vtol_land_approaches.approaches[i].lat,
 							 vtol_land_approaches.approaches[i].lon) - wind_direction);

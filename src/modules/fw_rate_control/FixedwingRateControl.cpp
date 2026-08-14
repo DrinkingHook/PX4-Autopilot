@@ -99,15 +99,18 @@ FixedwingRateControl::vehicle_manual_poll()
 	if (_vcontrol_mode.flag_control_manual_enabled && _in_fw_or_transition_wo_tailsitter_transition) {
 
 		// Always copy the new manual setpoint, even if it wasn't updated, to fill the actuators with valid values
+		// 翻译：始终复制新的手动设定值，即使它没有更新，以确保执行器填充有效值
 		if (_manual_control_setpoint_sub.copy(&_manual_control_setpoint)) {
 
 			if (_vcontrol_mode.flag_control_rates_enabled &&
 			    !_vcontrol_mode.flag_control_attitude_enabled) {
 
 				// RATE mode we need to generate the rate setpoint from manual user inputs
+				// 翻译：在 RATE(速率)模式下，需根据用户的手动输入生成速率设定值
 
 				if (_vehicle_status.is_vtol_tailsitter && _vehicle_status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) {
 					// the rate_sp must always be published in body (hover) frame
+					// 翻译：rate_sp(速率设定值)必须始终在机体(悬停)坐标系下发布
 					_rates_sp.roll = _manual_control_setpoint.yaw * radians(_param_fw_acro_z_max.get());
 					_rates_sp.yaw = -_manual_control_setpoint.roll * radians(_param_fw_acro_x_max.get());
 
@@ -159,6 +162,7 @@ float FixedwingRateControl::get_airspeed_and_update_scaling(float dt)
 				    && (hrt_elapsed_time(&_airspeed_validated_sub.get().timestamp) < 1_s);
 
 	// if no airspeed measurement is available out best guess is to use the trim airspeed
+	// 翻译：若无空速测量值，最佳估算做法是使用配平空速 (trim airspeed)
 	float airspeed = _param_fw_airspd_trim.get();
 
 	if (_param_fw_use_airspd.get() && airspeed_valid) {
@@ -176,6 +180,7 @@ float FixedwingRateControl::get_airspeed_and_update_scaling(float dt)
 		// VTOL: if we have no airspeed available and we are in hover mode then assume the lowest airspeed possible
 		// this assumption is good as long as the vehicle is not hovering in a headwind which is much larger
 		// than the stall airspeed
+		// 翻译：VTOL：若无空速数据且处于悬停模式，则假设空速为最小值；只要飞行器未在风速远超失速空速的迎风环境中悬停，该假设即适用
 		if (_vehicle_status.is_vtol && _vehicle_status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING
 		    && !_vehicle_status.in_transition_mode) {
 			airspeed = _param_fw_airspd_stall.get();
@@ -214,6 +219,7 @@ void FixedwingRateControl::Run()
 	perf_begin(_loop_perf);
 
 	// only run controller if angular velocity changed
+	// 翻译：仅在角速度发生变化时运行控制器
 	if (_vehicle_angular_velocity_sub.updated() || (hrt_elapsed_time(&_last_run) > 20_ms)) { //TODO rate!
 
 		// only update parameters if they changed
@@ -383,6 +389,7 @@ void FixedwingRateControl::Run()
 				// Positive feedforward compensates aerodynamic damping and is scaled linearly with airspeed.
 				// Negative feedforward instead weights down the setpoint acting on the P gain (turning the
 				// controller into a 2-DOF controller).
+				// 翻译：正向前馈用于补偿气动阻尼，并随空速线性缩放。负向前馈则通过作用于 P 增益来降低设定值的权重(从而将控制器转变为双自由度控制器)
 				Vector3f scaled_gain_ff;
 
 				for (int i = 0; i < 3; i++) {
@@ -399,6 +406,7 @@ void FixedwingRateControl::Run()
 				_gain_compression.update(control_u, dt);
 
 				// Special case yaw in Acro: if the parameter FW_ACRO_YAW_EN is not set then don't rate-control yaw
+				// 翻译：Acro(特技)模式下的偏航特殊情况：若未设置参数 FW_ACRO_YAW_EN，则不对偏航角速率进行控制
 				if (!_vcontrol_mode.flag_control_attitude_enabled && _vcontrol_mode.flag_control_manual_enabled
 				    && !_param_fw_acro_yaw_en.get()) {
 					control_u(2) = _manual_control_setpoint.yaw * _param_fw_man_y_sc.get();
@@ -417,6 +425,8 @@ void FixedwingRateControl::Run()
 
 				// Stop motor if its setpoint is below 2%. This value was determined empirically (RC stick inaccuracy).
 				// Motor is stopped by setting the output to NAN (per definition).
+				// 翻译：若电机设定值低于 2%，则停止电机。该阈值基于经验确定(考虑了遥控器摇杆的不精确性) 
+				// 	通过将输出设为 NAN(按定义)来停止电机
 				if (PX4_ISFINITE(thrust_setpoint) && thrust_setpoint > 0.02f) {
 					/* scale effort by battery status */
 					if (_param_fw_bat_scale_en.get()) {

@@ -2040,6 +2040,7 @@ FixedWingModeManager::Run()
 
 		// The controller (and thus the altitude FOH) does not run while an external mode is active. Mark the FOH
 		// as inactive so that returning to an internal auto mode starts a fresh ramp instead of resuming stale state.
+		// 翻译：当外部模式处于激活状态时，控制器（以及高度FOH）不会运行。将前场设置为非激活，这样回到内部自动模式时会重新开始一个斜坡，而不是恢复陈旧状态
 		_foh_altitude_active = false;
 
 	} else if (_local_pos_sub.update(&_local_pos)) {
@@ -2077,7 +2078,7 @@ FixedWingModeManager::Run()
 		_current_altitude = -_local_pos.z + _reference_altitude; // Altitude AMSL in meters
 
 		// handle estimator reset events. we only adjust setpoins for manual modes
-		// 翻译：处理估算器重置事件。我们仅调整手动​​模式的设定点
+		// 翻译：处理估算器重置事件。我们仅调整手动模式的设定点
 		if (_control_mode.flag_control_manual_enabled) {
 			// adjust navigation waypoints in position control mode
 			// 翻译：在位置控制模式下调整导航航路点
@@ -2210,6 +2211,7 @@ FixedWingModeManager::Run()
 				// The altitude first order hold (FOH) restarts its ramp itself whenever the target altitude
 				// changes, so it must not be reset here: a new triplet that keeps the same target altitude
 				// (e.g. a lat/lon-only update) has to leave the ongoing ramp progressing.
+				// 翻译：高度一阶保持（FOH）会在目标高度变更时自动重启斜坡计算，因此不应在此处强制重置：若接收到目标高度不变的新指令组（例如仅更新经纬度），应允许当前的斜坡过程继续进行
 
 				_go_direct_to_destination = false;
 			}
@@ -2275,10 +2277,14 @@ FixedWingModeManager::Run()
 			// on the previous cycle (any other mode, but also AUTO sub-types like velocity/idle/course-hold that
 			// skip it) its ramp state is stale, so reset it here. (Re-)engaging FOH then starts a fresh ramp from
 			// the current altitude instead of a last-commanded setpoint that went stale while it was not running.
+			// 翻译：高度一阶保持（FOH）逻辑仅在 AUTO 模式下的位置（position）或悬停（loiter）航点处运行
+			// 	若上一周期未运行该逻辑（例如处于其他模式，或 AUTO 模式下跳过此逻辑的子模式如速度/怠速/航向保持），其斜坡（ramp）状态即已失效，故需在此重置
+			// 	重新启用 FOH 时，斜坡将从当前高度开始重新计算，而非基于此前因逻辑未运行而失效的指令设定值
 			_foh_altitude_state = FirstOrderHoldAltitudeState{};
 		}
 
 		// Cleared here every cycle and set again by the FOH call sites when they actually run this cycle.
+		// 翻译：每个周期都在这里清除，FOH呼叫点在实际运行该周期时重新设置
 		_foh_altitude_active = false;
 
 		int8_t old_landing_gear_position = _new_landing_gear_position;

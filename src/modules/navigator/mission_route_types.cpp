@@ -68,6 +68,14 @@ float getAbsoluteAltitudeForMissionItem(const mission_item_s &mission_item, floa
 	return mission_item.altitude;
 }
 
+/**
+ * @brief 从集结点安全点物品中提取有效位置
+ * 
+ * @param safe_point_item 要从中提取的安全点项
+ * @param home_altitude_amsl 以平均海平面（MSL）为基准的起始高度
+ * @param position 要提取到的位置
+ * @return 如果位置提取成功，则返回True，否则返回False
+ */
 bool extractSafePointPosition(const mission_item_s &safe_point_item, float home_altitude_amsl, Position &position)
 {
 	if (safe_point_item.nav_cmd != NAV_CMD_RALLY_POINT) {
@@ -75,6 +83,7 @@ bool extractSafePointPosition(const mission_item_s &safe_point_item, float home_
 	}
 
 	// Rally-point safe points are expected in global AMSL or global-relative-altitude frames.
+	// 翻译：从全局AMSL或全局相对高度帧中提取安全点位置
 	switch (safe_point_item.frame) {
 	case NAV_FRAME_GLOBAL:
 	case NAV_FRAME_GLOBAL_INT:

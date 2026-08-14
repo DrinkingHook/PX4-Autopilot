@@ -100,6 +100,7 @@ PrecLand::on_activation()
 
 	// Snapshot the setpoint the previous mode left, then reset the triplet. If it was a valid landing
 	// target we continue to it, otherwise we land at the current position.
+	// 翻译：快照上一个模式离开的设置点，然后重置三元组。如果它是一个有效的着陆目标，我们继续它，否则我们着陆在当前位置
 	const position_setpoint_s previous_setpoint = pos_sp_triplet->current;
 	_navigator->reset_triplets();
 
@@ -250,12 +251,14 @@ void
 PrecLand::run_state_start()
 {
 	// check if target visible and go to horizontal approach
+	// 翻译：检查目标是否可见并进入水平接近状态
 	if (switch_to_state_horizontal_approach()) {
 		return;
 	}
 
 	if (_mode == PrecLandMode::Opportunistic) {
 		// could not see the target immediately, so just fall back to normal landing
+		// 翻译：无法立即看到目标，因此只需回退到正常着陆
 		switch_to_state_fallback();
 	}
 
@@ -264,12 +267,14 @@ PrecLand::run_state_start()
 			_navigator->get_global_position()->lat, _navigator->get_global_position()->lon);
 
 	// check if we've reached the start point
+	// 翻译：检查我们是否到达了起始点
 	if (dist < _navigator->get_acceptance_radius()) {
 		if (!_point_reached_time) {
 			_point_reached_time = hrt_absolute_time();
 		}
 
 		// if we don't see the target after 1 second, search for it
+		// 翻译：如果在1秒后仍未看到目标，则搜索它
 		if (_param_pld_srch_tout.get() > 0) {
 
 			if (hrt_absolute_time() - _point_reached_time > 2000000) {
@@ -290,10 +295,12 @@ PrecLand::run_state_horizontal_approach()
 	position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
 
 	// check if target visible, if not go to start
+	// 翻译：检查目标是否可见，如果不可见则返回起始点
 	if (!check_state_conditions(PrecLandState::HorizontalApproach)) {
 		PX4_WARN("%s, state: %i", LOST_TARGET_ERROR_MESSAGE, (int) _state);
 
 		// Stay at current position for searching for the landing target
+		// 翻译：保持当前位置以搜索着陆目标
 		pos_sp_triplet->current.lat = _navigator->get_global_position()->lat;
 		pos_sp_triplet->current.lon = _navigator->get_global_position()->lon;
 		pos_sp_triplet->current.alt = _navigator->get_global_position()->alt;
@@ -312,6 +319,7 @@ PrecLand::run_state_horizontal_approach()
 
 		if (hrt_absolute_time() - _point_reached_time > 2000000) {
 			// if close enough for descent above target go to descend above target
+			// 翻译：如果足够接近目标上方进行下降，则切换到目标上方下降状态
 			if (switch_to_state_descend_above_target()) {
 
 				return;
@@ -327,6 +335,7 @@ PrecLand::run_state_horizontal_approach()
 	slewrate(x, y);
 
 	// XXX need to transform to GPS coords because mc_pos_control only looks at that
+	// 翻译：需要将坐标转换为GPS坐标，因为mc_pos_control只看GPS坐标
 	_map_ref.reproject(x, y, pos_sp_triplet->current.lat, pos_sp_triplet->current.lon);
 
 	pos_sp_triplet->current.alt = _approach_alt;
@@ -399,6 +408,7 @@ PrecLand::run_state_search()
 	}
 
 	// stay at that height for a second to allow the vehicle to settle
+	// 翻译：保持高度一段时间以允许车辆稳定
 	if (_target_acquired_time && (hrt_absolute_time() - _target_acquired_time) > 1000000) {
 		// try to switch to horizontal approach
 		if (switch_to_state_horizontal_approach()) {
@@ -407,6 +417,7 @@ PrecLand::run_state_search()
 	}
 
 	// check if search timed out and go to fallback
+	// 翻译：检查搜索是否超时并切换到回退状态
 	if (hrt_absolute_time() - _state_start_time > _param_pld_srch_tout.get()*SEC2USEC) {
 		PX4_WARN("Search timed out");
 
@@ -562,6 +573,7 @@ matrix::Vector2f PrecLand::get_target_position_setpoint()
 
 	// Reconstruct the absolute target velocity in the local NED frame from the relative
 	// velocity published by the VTE and the EKF2 vehicle velocity.
+	// 翻译：从 VTE 发布的相对速度和 EKF2 车辆速度重建本地 NED 帧中的绝对目标速度
 	const matrix::Vector2f target_velocity = target_rel_velocity + vehicle_velocity;
 	const float min_prediction_time = math::min(_param_pld_moving_t_min.get(), _param_pld_moving_t_max.get());
 	const float max_prediction_time = math::max(_param_pld_moving_t_min.get(), _param_pld_moving_t_max.get());
@@ -575,6 +587,7 @@ matrix::Vector2f PrecLand::get_target_position_setpoint()
 	return target_position_sp;
 }
 
+// 检查当前状态的条件
 bool PrecLand::check_state_conditions(PrecLandState state)
 {
 	vehicle_local_position_s *vehicle_local_position = _navigator->get_local_position();
@@ -586,29 +599,35 @@ bool PrecLand::check_state_conditions(PrecLandState state)
 	case PrecLandState::HorizontalApproach:
 
 		// if we're already in this state, only want to make it invalid if we reached the target but can't see it anymore
+		// 翻译：如果我们已经处于此状态，则仅在我们到达目标但无法看到它时才使它无效
 		if (_state == PrecLandState::HorizontalApproach) {
 			const matrix::Vector2f target_position_sp = get_target_position_setpoint();
 
 			if (fabsf(target_position_sp(0) - vehicle_local_position->x) < _param_pld_hacc_rad.get()
 			    && fabsf(target_position_sp(1) - vehicle_local_position->y) < _param_pld_hacc_rad.get()) {
 				// we've reached the position where we last saw the target. If we don't see it now, we need to do something
+				// 翻译：我们已经到达了我们最后看到目标的位置。如果现在看不到它，我们需要做一些事情
 				return _target_pose_valid && _target_pose.abs_pos_valid;
 
 			} else {
 				// We've seen the target sometime during horizontal approach.
 				// Even if we don't see it as we're moving towards it, continue approaching last known location
+				// 翻译：我们已经在水平接近过程中看到了目标。即使我们在向目标移动时看不到它，也继续接近最后已知的位置
 				return true;
 			}
 		}
 
 		// If we're trying to switch to this state, the target needs to be visible
+		// 翻译：如果我们要切换到此状态，则目标需要可见
 		return _target_pose_updated && _target_pose_valid && _target_pose.abs_pos_valid;
 
 	case PrecLandState::DescendAboveTarget:
 
 		// if we're already in this state, only leave it if target becomes unusable, don't care about horizontall offset to target
+		// 翻译：如果我们已经处于此状态，则仅在目标不可用时离开它，不关心目标与水平方向的偏移
 		if (_state == PrecLandState::DescendAboveTarget) {
 			// if we're close to the ground, we're more critical of target timeouts so we quickly go into descend
+			// 翻译：如果我们接近地面，我们对目标超时的要求更高，因此我们快速进入下降状态
 			if (check_state_conditions(PrecLandState::FinalApproach)) {
 				return hrt_absolute_time() - _target_pose.timestamp < 500000; // 0.5s
 
@@ -618,6 +637,7 @@ bool PrecLand::check_state_conditions(PrecLandState state)
 
 		} else {
 			// if not already in this state, need to be above target to enter it
+			// 翻译：如果我们还没有处于此状态，则需要在目标上方才能进入它
 			const matrix::Vector2f target_position_sp = get_target_position_setpoint();
 			return _target_pose_updated && _target_pose.abs_pos_valid
 			       && fabsf(target_position_sp(0) - vehicle_local_position->x) < _param_pld_hacc_rad.get()

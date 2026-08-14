@@ -168,8 +168,8 @@ matrix::Vector3f AttitudeControl::update(const Quatf &q) const
 	} else {
 		// Transform rotation from current to desired thrust vector into a world frame reduced desired attitude.
 		// This is a right multiplication as the tilt error quaternion is obtained from two Z vectors expressed in the world frame
-		// 翻译：将当前推力矢量到期望推力矢量的旋转变换到世界坐标系下的期望姿态。
-		// 	这是一个右乘运算，因为倾斜误差四元数是由世界坐标系下的两个 Z 矢量得到的。
+		// 翻译：将当前推力矢量到期望推力矢量的旋转变换到世界坐标系下的期望姿态
+		// 	这是一个右乘运算，因为倾斜误差四元数是由世界坐标系下的两个 Z 矢量得到的
 		qd_red *= q;
 	}
 
@@ -189,7 +189,7 @@ matrix::Vector3f AttitudeControl::update(const Quatf &q) const
 	qd = qd_red * Quatf(cosf(_yaw_w * acosf(qd_dyaw(0))), 0.f, 0.f, sinf(_yaw_w * asinf(qd_dyaw(3))));
 
 	// quaternion attitude control law, qe is rotation from q to qd
-	// 翻译：四元数姿态控制律，qe 是从 q 到 qd 的旋转。
+	// 翻译：四元数姿态控制律，qe 是从 q 到 qd 的旋转
 	const Quatf qe = qmul(qinv(q), qd);
 
 	// using sin(alpha/2) scaled rotation axis as attitude error (see quaternion definition by axis angle)

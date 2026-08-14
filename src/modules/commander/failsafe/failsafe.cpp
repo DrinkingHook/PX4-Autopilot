@@ -833,6 +833,7 @@ uint8_t Failsafe::modifyUserIntendedMode(Action previous_action, Action current_
 {
 	// When a failsafe engages, immediately downgrade Orbit to Loiter so that
 	// if the failsafe later clears without a new explicit mode command the vehicle holds position.
+	// 翻译：当故障保护机制启动时，立即将“绕圈”（Orbit）模式降级为“定点盘旋”(Loiter)；这样，如果故障保护状态随后解除且没有新的明确模式指令，飞行器将保持当前位置
 	if ((int)previous_action <= (int)Action::Warn
 	    && (int)current_action > (int)Action::Warn
 	    && user_intended_mode == vehicle_status_s::NAVIGATION_STATE_ORBIT) {

@@ -83,6 +83,7 @@ void RtlDirect::on_activation()
 
 	// save the setpoint the previous mode left before resetting the triplet, so the climb can
 	// continue an already-established loiter (used in set_rtl_item(), CLIMBING state)
+	// 翻译：在重置三元组之前，保存上一模式留下的设定点，以便爬升可以延续已建立的悬停状态(在set_rtl_item()函数中，CLIMBING状态下使用)
 	_setpoint_on_activation = _navigator->get_position_setpoint_triplet()->current;
 	_navigator->reset_triplets();
 
@@ -164,6 +165,7 @@ void RtlDirect::setRtlPosition(const PositionYawSetpoint &rtl_position, const lo
 		_destination = rtl_position;
 		_force_heading = false;
 
+		// 判断数据有效性，做保底
 		_land_approach = sanitizeLandApproach(loiter_pos);
 
 		const float dist_to_destination{get_distance_to_next_waypoint(_land_approach.lat, _land_approach.lon, _destination.lat, _destination.lon)};
@@ -262,6 +264,7 @@ void RtlDirect::set_rtl_item()
 	switch (_rtl_state) {
 	case RTLState::CLIMBING: {
 			// By default climb on a loiter centered at the current position.
+			// 翻译：默认情况下，爬升时使用以当前位置为中心的盘旋
 			double loiter_center_lat = _global_pos_sub.get().lat;
 			double loiter_center_lon = _global_pos_sub.get().lon;
 			float loiter_radius = _navigator->get_default_loiter_rad();
@@ -269,10 +272,12 @@ void RtlDirect::set_rtl_item()
 			// If the vehicle was already established on a loiter when RTL was engaged (e.g. from Hold),
 			// keep that loiter's center and radius while climbing instead of re-centering the circle on
 			// the current position.
+			// 翻译：如果在触发 RTL(返航)时飞行器已处于悬停(Loiter)状态(例如从“保持”模式进入)，则在爬升过程中应保持该悬停模式的中心点和半径，而不是将圆心重新设定为当前位置
 			if (_navigator->is_established_on_loiter(_setpoint_on_activation)) {
 				loiter_center_lat = _setpoint_on_activation.lat;
 				loiter_center_lon = _setpoint_on_activation.lon;
 				// loiter_radius sign encodes direction (negative == counter-clockwise).
+				// 翻译: loiter_radius 符号表示方向(负值表示逆时针方向)
 				loiter_radius = _setpoint_on_activation.loiter_direction_counter_clockwise ?
 						-_setpoint_on_activation.loiter_radius : _setpoint_on_activation.loiter_radius;
 			}
@@ -301,12 +306,14 @@ void RtlDirect::set_rtl_item()
 			if (!point.isAllFinite()) {
 				// Should never happen -- AVOID_GEOFENCE is only entered while hasMore() is true.
 				// Fall back to RTLing in a straight line
+				// 翻译：这种情况不应该发生——只有当 hasMore() 为真时才会进入 AVOID_GEOFENCE 状态。否则将回退到直线返航
 				point(0) = _land_approach.lat;
 				point(1) = _land_approach.lon;
 			}
 
 			float yaw = NAN;
 
+			// 当VTOL在多旋翼模式下时，侧风容易把机翼“掀”起来导致翻机，所以需要开启风向标模式，让其机头保持朝向迎风面
 			if (!_param_wv_en.get() && point.isAllFinite()) {
 				yaw = get_bearing_to_next_waypoint(_global_pos_sub.get().lat, _global_pos_sub.get().lon,
 								   point(0), point(1));
@@ -322,6 +329,7 @@ void RtlDirect::set_rtl_item()
 			setMoveToPositionMissionItem(_mission_item, pos_yaw_sp);
 
 			// Line following only between points on the path, not when flying to the first point
+			// 翻译：仅在路径上的点之间进行沿线飞行，而不是在飞向第一个点时进行沿线飞行
 			if (is_first_waypoint) {
 				_navigator->reset_position_setpoint(pos_sp_triplet->previous);
 
@@ -351,6 +359,7 @@ void RtlDirect::set_rtl_item()
 	case RTLState::MOVE_TO_LOITER: {
 
 			// Shift waypoint to enable line following with respect to last waypoint
+			// 翻译: 移动航点以启用相对于上一个航点的直线跟踪
 			pos_sp_triplet->previous = pos_sp_triplet->current;
 
 			PositionYawSetpoint pos_yaw_sp {
@@ -361,7 +370,7 @@ void RtlDirect::set_rtl_item()
 
 			// For FW flight:set to LOITER_TIME (with 0s loiter time), such that the loiter (orbit) status
 			// can be displayed on groundstation and the WP is accepted once within loiter radius
-			// 翻译：对于FW飞行：设置为LOITER_TIME（滞空时间为0秒），以便在地面站显示滞空（轨道）状态，并且一旦进入滞空半径，WP就会被接受。
+			// 翻译：对于FW飞行：设置为LOITER_TIME(滞空时间为0秒)，以便在地面站显示滞空(轨道)状态，并且一旦进入滞空半径，WP就会被接受
 			if (_vehicle_status_sub.get().vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) {
 				pos_yaw_sp.yaw = NAN;
 				setLoiterHoldMissionItem(_mission_item, pos_yaw_sp, 0.f, _land_approach.loiter_radius_m);
@@ -442,7 +451,7 @@ void RtlDirect::set_rtl_item()
 
 			// set previous item location to loiter location such that vehicle tracks line between loiter
 			// location and land location after exiting the loiter circle
-			// 翻译：将先前物品位置设置为盘旋位置，以便载具在离开盘旋圈后沿盘旋位置和着陆位置之间的连线行驶。
+			// 翻译：将先前物品位置设置为盘旋位置，以便载具在离开盘旋圈后沿盘旋位置和着陆位置之间的连线行驶
 			pos_sp_triplet->previous.lat = _land_approach.lat;
 			pos_sp_triplet->previous.lon = _land_approach.lon;
 			pos_sp_triplet->previous.alt = get_absolute_altitude_for_item(_mission_item);
@@ -502,7 +511,7 @@ void RtlDirect::set_rtl_item()
 
 	} else {
 		// Convert mission item to current position setpoint and make it valid.
-		// 翻译：将任务项转换为当前位置设定点并使其有效。
+		// 翻译：将任务项转换为当前位置设定点并使其有效
 		if (mission_item_to_position_setpoint(_mission_item, &pos_sp_triplet->current)) {
 			pos_sp_triplet->current.alt_acceptance_radius = altitude_acceptance_radius;
 			_navigator->set_position_setpoint_triplet_updated();
@@ -570,14 +579,16 @@ rtl_time_estimate_s RtlDirect::calc_rtl_time_estimate()
 
 		// If geofence avoidance, this is set to the last waypoint.
 		// Otherwise, we move directly from vehicle position to loiter.
+		// 翻译：如果启用了地理围栏避开，则此值设置为上一个航点
+		// 	否则，我们将直接从车辆位置转移到徘徊位置
 		matrix::Vector2d pos_before_loiter{_global_pos_sub.get().lat, _global_pos_sub.get().lon};
 
 		// Sum up time estimate for various segments of the landing procedure
-		// 翻译：汇总着陆过程各阶段的预计用时。
+		// 翻译：汇总着陆过程各阶段的预计用时
 		switch (start_state_for_estimate) {
 		case RTLState::CLIMBING: {
 				// Climb segment is only relevant if the drone is below return altitude
-				// 翻译：爬升段仅在无人机低于返回高度时才相关。
+				// 翻译：爬升段仅在无人机低于返回高度时才相关
 				if ((_global_pos_sub.get().alt < _rtl_alt) || _enforce_rtl_alt) {
 					_rtl_time_estimator.addVertDistance(_rtl_alt - _global_pos_sub.get().alt);
 				}
@@ -613,12 +624,12 @@ rtl_time_estimate_s RtlDirect::calc_rtl_time_estimate()
 		// FALLTHROUGH
 		case RTLState::LOITER_DOWN: {
 				// when descending, the target altitude is stored in the current mission item
-				// 翻译：当下降时，目标高度存储在当前航点中。
+				// 翻译：当下降时，目标高度存储在当前航点中
 				float initial_altitude = 0.f;
 
 				if (start_state_for_estimate == RTLState::LOITER_DOWN) {
 					// Take current vehicle altitude as the starting point for calculation
-					// 翻译：以当前飞行器高度作为计算的起始点。
+					// 翻译：以当前飞行器高度作为计算的起始点
 					initial_altitude = _global_pos_sub.get().alt;  // TODO: Check if this is in the right frame
 
 				} else {
@@ -633,7 +644,7 @@ rtl_time_estimate_s RtlDirect::calc_rtl_time_estimate()
 		// FALLTHROUGH
 		case RTLState::LOITER_HOLD:
 			// Add land delay (the short pause for deploying landing gear)
-			// 翻译：添加降落延迟（降落前的短暂暂停）。
+			// 翻译：添加降落延迟(降落前的短暂暂停)
 			_rtl_time_estimator.addWait(_param_rtl_land_delay.get());
 
 			if (_param_rtl_land_delay.get() < -FLT_EPSILON) { // Set to loiter infinitely and not land. Stop calculation here
@@ -671,18 +682,18 @@ rtl_time_estimate_s RtlDirect::calc_rtl_time_estimate()
 				float initial_altitude;
 
 				// Add land segment (second landing phase) which comes after LOITER
-				// 翻译：添加着陆段（第二个着陆阶段），在LOITER之后。
+				// 翻译：添加着陆段(第二个着陆阶段)，在LOITER之后
 				if (start_state_for_estimate == RTLState::LAND) {
 					// If we are in this phase, use the current vehicle altitude  instead
 					// of the altitude paramteter to get a continous time estimate
-					// 翻译：如果我们在这个阶段，使用当前的车辆高度，而不是高度参数来获得连续的时间估计。
+					// 翻译：如果我们在这个阶段，使用当前的车辆高度，而不是高度参数来获得连续的时间估计
 					initial_altitude = _global_pos_sub.get().alt;
 
 
 				} else {
 					// If this phase is not active yet, simply use the loiter altitude,
 					// which is where the LAND phase will start
-					// 翻译：如果这个阶段还没有激活，简单地使用着陆高度，这是着陆阶段将开始的地方。
+					// 翻译：如果这个阶段还没有激活，简单地使用着陆高度，这是着陆阶段将开始的地方
 					initial_altitude = loiter_altitude;
 				}
 
@@ -712,7 +723,7 @@ void RtlDirect::parameters_update()
 
 		// If any parameter updated, call updateParams() to check if
 		// this class attributes need updating (and do so).
-		// 翻译：如果任何参数更新，调用updateParams()检查是否需要更新此类属性（并执行更新）。
+		// 翻译：如果任何参数更新，调用updateParams()检查是否需要更新此类属性(并执行更新)
 		updateParams();
 	}
 }

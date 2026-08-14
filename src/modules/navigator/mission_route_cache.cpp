@@ -83,6 +83,7 @@ bool MissionRouteCache::missionLandItemCacheFullyLoaded() const
 bool MissionRouteCache::safePointCacheFullyLoaded() const
 {
 	// Validate against the set currently being loaded.
+	// 翻译：验证当前正在加载的安全点集
 	if (_safe_point.read_stats.num_items == 0) {
 		return true;
 	}
@@ -90,6 +91,7 @@ bool MissionRouteCache::safePointCacheFullyLoaded() const
 	mission_item_s safe_point_item;
 
 	// A miss means async preloading did not finish cleanly.
+	// 翻译：未命中表示异步预加载未干净地完成
 	for (int32_t index = 0; index < _safe_point.read_stats.num_items; ++index) {
 		if (!_dataman_cache_safepoint.loadWait(static_cast<dm_item_t>(_safe_point.read_stats.dataman_id), index,
 						       reinterpret_cast<uint8_t *>(&safe_point_item), sizeof(safe_point_item), 0)) {
@@ -100,12 +102,15 @@ bool MissionRouteCache::safePointCacheFullyLoaded() const
 	return true;
 }
 
+// 安全积分缓存匹配读取统计数据
 bool MissionRouteCache::safePointCacheMatchesReadStats() const
 {
 	const SafePointState &state = _safe_point;
 
 	// Comparing the opaque id alone is not enough
 	// because it can be reused across different safe-point sets
+	// 翻译：仅比较不透明 ID 是不够的
+	// 	因为它可以在不同的安全点集之间重复使用
 	return state.ready
 	       && state.cached_source_id == state.source_id
 	       && state.cached_stats.opaque_id == state.read_stats.opaque_id
@@ -123,6 +128,7 @@ void MissionRouteCache::publishSafePointCache()
 void MissionRouteCache::resetSafePointCacheState(bool clear_source_identity)
 {
 	// Drop any in-flight response before resetting the local state machine.
+	// 翻译：在重置本地状态机之前，丢弃任何正在传输的响应。
 	_dataman_client_safepoint.abortCurrentOperation();
 	_dataman_cache_safepoint.invalidate();
 
@@ -176,6 +182,7 @@ void MissionRouteCache::updateMissionLandItemCache(const mission_s &mission)
 	MissionLandState &state = _mission_land;
 	const hrt_abstime now = hrt_absolute_time();
 	// Trust the published land_index, no mission rescanning.
+	// 翻译：相信已发布的土地索引，无需重新扫描
 	const bool valid_dataman_id = mission.mission_dataman_id == DM_KEY_WAYPOINTS_OFFBOARD_0
 				      || mission.mission_dataman_id == DM_KEY_WAYPOINTS_OFFBOARD_1;
 	const bool valid_land_index = mission.land_index >= 0 && mission.land_index < mission.count;
@@ -266,6 +273,7 @@ void MissionRouteCache::updateSafePointCache(const mission_s &mission)
 
 	if (mission.safe_points_id != state.source_id || mission.safepoint_dataman_id != state.source_dataman_id) {
 		// A new safe-point source makes any in-flight read and cached items stale.
+		// 翻译：新的安全点源会使任何正在进行的读取和缓存的项目失效
 		state.source_id = mission.safe_points_id;
 		state.source_dataman_id = mission.safepoint_dataman_id;
 		resetSafePointCacheState(false);
@@ -316,6 +324,7 @@ void MissionRouteCache::updateSafePointCache(const mission_s &mission)
 		}
 
 		// The RAM cache already holds this exact set, skip the rebuild.
+		// 翻译：RAM 缓存中已包含此索引集，无需重建
 		if (safePointCacheMatchesReadStats()) {
 			state.dataman_state = SafePointDatamanState::kUpdateRequestWait;
 			state.ready = true;
@@ -324,6 +333,7 @@ void MissionRouteCache::updateSafePointCache(const mission_s &mission)
 		}
 
 		// Cache miss, rebuild the cache from the new read state.
+		// 翻译：缓存未命中，从新读取状态重建缓存
 		state.ready = false;
 
 		_dataman_cache_safepoint.invalidate();
@@ -353,6 +363,7 @@ void MissionRouteCache::updateSafePointCache(const mission_s &mission)
 
 		} else {
 			// Zero safe points is still a valid ready state.
+			// 翻译：零安全点仍然是一个有效的就绪状态
 			publishSafePointCache();
 			state.dataman_state = SafePointDatamanState::kUpdateRequestWait;
 			state.ready = true;
@@ -383,6 +394,7 @@ void MissionRouteCache::updateSafePointCache(const mission_s &mission)
 	case SafePointDatamanState::kError:
 	default: {
 			// resetSafePointCacheState() clears the backoff, so save it first.
+			// 翻译：resetSafePointCacheState() 会清除重试间隔，先保存它
 			const RetryBackoff retry = state.retry;
 
 			if (state.dataman_state == SafePointDatamanState::kError) {

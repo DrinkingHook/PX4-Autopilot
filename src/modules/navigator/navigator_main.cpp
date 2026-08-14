@@ -487,6 +487,8 @@ void Navigator::run()
 						// position. This lets a Hold/pause continue the existing orbit. Non-circular
 						// patterns (e.g. figure-eight) are not continued: a Hold reverts to a plain
 						// loiter circle so we never mix patterns.
+						// 翻译：如果飞行器已经建立在圆形盘旋轨道上，应保持该盘旋器的中心和形状，而不是将圆重新置中到当前位置。这样保持/暂停就能继续运行现有轨道
+						// 	非圆形模式（例如数字8）不会继续：按键会恢复为普通的徘徊圈，因此我们绝不混合模式
 						if (is_established_on_loiter(curr->current)) {
 							rep->current.lat = curr->current.lat;
 							rep->current.lon = curr->current.lon;
@@ -860,15 +862,15 @@ void Navigator::run()
 				}
 
 				// after the transition the vehicle will establish on a loiter at this position
-				// 翻译：在转换后，车辆将在该位置建立一个环形着陆圈。
+				// 翻译：在转换后，车辆将在该位置建立一个环形着陆圈
 				_vtol_takeoff.setLoiterLocation(matrix::Vector2d(cmd.param5, cmd.param6));
 
 				// loiter height is the height above takeoff altitude at which the vehicle will establish on a loiter circle
-				// 翻译：着陆高度是起飞高度以上车辆将建立在环形着陆圈的高度。
+				// 翻译：着陆高度是起飞高度以上车辆将建立在环形着陆圈的高度
 				_vtol_takeoff.setLoiterHeight(cmd.param1);
 #endif //CONFIG_MODE_NAVIGATOR_VTOL_TAKEOFF
 
-				// 标记任务着陆模式开始的任务项目，或使用任务着陆模式着陆的命令。
+				// 标记任务着陆模式开始的任务项目，或使用任务着陆模式着陆的命令
 
 			} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_DO_LAND_START) {
 
@@ -964,7 +966,7 @@ void Navigator::run()
 			} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_DO_VTOL_TRANSITION
 				   && get_vstatus()->nav_state != vehicle_status_s::NAVIGATION_STATE_AUTO_VTOL_TAKEOFF) {
 				// reset cruise speed and throttle to default when transitioning (VTOL Takeoff handles it separately)
-				// 翻译：过渡时将巡航速度和节流阀重置为默认值（VTOL 起飞单独处理）。
+				// 翻译：过渡时将巡航速度和节流阀重置为默认值(VTOL 起飞单独处理)
 				reset_cruising_speed();
 				set_cruising_throttle();
 			}
@@ -1128,15 +1130,15 @@ void Navigator::run()
 			publish_position_setpoint_triplet();
 		}
 
-		// 发布任务结果（Mission Result）消息
+		// 发布任务结果(Mission Result)消息
 		if (_mission_result_updated) {
 			publish_mission_result();
 		}
 
-		// 临时禁用云台的自动跟踪或姿态控制（如 ROI 跟踪）
+		// 临时禁用云台的自动跟踪或姿态控制(如 ROI 跟踪)
 		neutralize_gimbal_if_control_activated();
 
-		// 发布导航器状态（Navigator Status）消息
+		// 发布导航器状态(Navigator Status)消息
 		publish_navigator_status();
 
 		// 发布距离传感器模式请求,自动任务或rtl模式下的降落阶段
@@ -1150,6 +1152,7 @@ void Navigator::run()
 		const float margin = geofence_avoidance_margin();
 
 		// Margin is baked into polygons, so a margin change requires rebuilding them.
+		// 翻译：边距已嵌入多边形中，因此更改边距需要重建多边形
 		const bool margin_changed = fabsf(margin - _last_geofence_avoidance_margin) > FLT_EPSILON;
 
 
@@ -1161,9 +1164,11 @@ void Navigator::run()
 			_last_geofence_avoidance_margin = margin;
 
 			// Add granularity with more status values / user messages if needed.
+			// 翻译：如有需要，可通过增加状态值或用户提示信息来细化反馈内容
 
 			switch (planner_status) {
 			// Failure in building fence graph / path. Collapse to one generic user message. Add granularity if needed.
+			// 翻译：构建围栏图/路径失败。合并为一条通用用户消息。如有需要，可添加更细粒度的消息
 			case PlannerStatus::BudgetExceeded: // TODO make this more specific now that it is more likely
 			case PlannerStatus::OutOfRange:
 			case PlannerStatus::Degenerate:
@@ -1182,6 +1187,7 @@ void Navigator::run()
 		} else {
 
 			// Signal status values not related to updating geofence data. Reset status to not spam.
+			// 翻译：针对与更新地理围栏数据无关的状态值，重置状态以避免产生冗余通知
 			const PlannerStatus planner_status = _geofence_avoidance_planner.status();
 
 			if (planner_status == PlannerStatus::DestinationInvalid) {
@@ -1388,7 +1394,7 @@ float Navigator::get_altitude_acceptance_radius()
 
 		} else if (!force_vtol() && next_sp.type == position_setpoint_s::SETPOINT_TYPE_LAND && next_sp.valid) {
 			// Use separate (tighter) altitude acceptance for clean altitude starting point before FW landing
-			// 翻译：使用单独的（更紧的）高度接受半径，用于在固定翼着陆前的干净高度起始点
+			// 翻译：使用单独的(更紧的)高度接受半径，用于在固定翼着陆前的干净高度起始点
 			return _param_nav_fw_altl_rad.get();
 
 		} else {
@@ -1449,6 +1455,7 @@ float Navigator::get_cruising_throttle()
 	}
 }
 
+// 获取接收半径
 float Navigator::get_acceptance_radius() const
 {
 	float acceptance_radius = get_default_acceptance_radius(); // the value specified in the parameter NAV_ACC_RAD
@@ -1687,7 +1694,7 @@ void Navigator::publish_vehicle_command(vehicle_command_s &vehicle_command)
 
 	// The camera commands are not processed on the autopilot but will be
 	// sent to the mavlink links to other components.
-	// 翻译：相机命令不会在自动驾驶仪上处理，而是将它们发送到其他组件的MAVLink链接。
+	// 翻译：相机命令不会在自动驾驶仪上处理，而是将它们发送到其他组件的MAVLink链接
 	switch (vehicle_command.command) {
 	case NAV_CMD_IMAGE_START_CAPTURE:
 
@@ -1705,9 +1712,9 @@ void Navigator::publish_vehicle_command(vehicle_command_s &vehicle_command)
 
 		} else {
 			// We are only capturing multiple if param3 is 0 or > 1.
-			// 翻译：如果param3为0或大于1，则我们只捕获多个。
+			// 翻译：如果param3为0或大于1，则我们只捕获多个
 			// For multiple pictures the sequence number does not need to be included, thus there is no need to go through camera_trigger
-			// 翻译：对于多张照片，无需包含序列号，因此无需调用 camera_trigger。
+			// 翻译：对于多张照片，无需包含序列号，因此无需调用 camera_trigger
 			_is_capturing_images = true;
 		}
 
@@ -1873,12 +1880,14 @@ float Navigator::geofence_avoidance_margin() const
 	// These margins should be above the horizontal tracking error that can be expected for each vehicle type.
 	// If re-using the enlarged polygons for a predictive geofence failsafe feature, additionally ensure
 	// that the margin is large enough to turn around / stop / carry out the desired failsafe action in time.
+	// 翻译：这些间距应高于每种车辆类型可能产生的水平跟踪误差。如果将放大后的多边形用于预测地理围栏的保险功能，还要确保空间足够大，能够及时转身/停止/执行所需的安全措施
 
 	if (_vstatus.is_vtol || _vstatus.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) {
 
 		// Use FW loiter radius even for VTOL in MC -- changing the
 		// margin on transition is confusing and RTLing in MC as a VTOL
 		// is a very rare edge case
+		// 翻译：即使在MC中VTOL也使用FW滞空半径——改变过渡时的余距令人困惑，而在MC中作为VTOL进行RTL是非常罕见的边缘情况
 		return get_default_loiter_rad();
 	}
 
@@ -1890,7 +1899,7 @@ float Navigator::geofence_avoidance_margin() const
 void Navigator::preproject_stop_point(double &lat, double &lon)
 {
 	// For multirotors we need to account for the braking distance, otherwise the vehicle will overshoot and go back
-	// 翻译：对于多旋翼飞行器，我们需要考虑制动距离，否则飞行器将超速并返回。
+	// 翻译：对于多旋翼飞行器，我们需要考虑制动距离，否则飞行器将超速并返回
 	const float course_over_ground = atan2f(_local_pos.vy, _local_pos.vx);
 
 	// predict braking distance
@@ -1963,7 +1972,7 @@ void Navigator::neutralize_gimbal_if_control_activated()
 
 	// The time delay must be sufficiently long to allow flight tasks to complete its
 	// destruction and release gimbal control before the navigator takes control of the gimbal.
-	// 翻译：延迟时间必须足够长，以便飞行任务完成其销毁并释放云台控制，然后导航员才能控制云台。
+	// 翻译：延迟时间必须足够长，以便飞行任务完成其销毁并释放云台控制，然后导航员才能控制云台
 	if (_gimbal_neutral_activation_time != UINT64_MAX && now > _gimbal_neutral_activation_time + 250_ms) {
 		acquire_gimbal_control();
 		set_gimbal_neutral();
@@ -1973,7 +1982,7 @@ void Navigator::neutralize_gimbal_if_control_activated()
 }
 
 /**
- * @brief 发送警告：由于地形原因，下降已停止。
+ * @brief 发送警告：由于地形原因，下降已停止
  */
 void Navigator::sendWarningDescentStoppedDueToTerrain()
 {

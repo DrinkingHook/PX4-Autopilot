@@ -155,8 +155,8 @@ public:
 
 	/**
 	 * Get the desired allocation method(s) for each matrix, if configured as AUTO
-	 * 翻译：如果配置为自动，则为每个矩阵获取所需的分配方法
 	 */
+	// 翻译：如果配置为自动，则为每个矩阵获取所需的分配方法
 	virtual void getDesiredAllocationMethod(AllocationMethod allocation_method_out[MAX_NUM_MATRICES]) const
 	{
 		for (int i = 0; i < MAX_NUM_MATRICES; ++i) {
@@ -166,8 +166,8 @@ public:
 
 	/**
 	 * Query if the roll, pitch and yaw columns of the mixing matrix should be normalized
-	 * 翻译：查询混合矩阵的滚动、俯仰和偏航列是否应标准化
 	 */
+	// 翻译：查询混合矩阵的滚动、俯仰和偏航列是否应标准化
 	virtual void getNormalizeRPY(bool normalize[MAX_NUM_MATRICES]) const
 	{
 		for (int i = 0; i < MAX_NUM_MATRICES; ++i) {
@@ -224,8 +224,8 @@ public:
 	 * Can be implemented for every type separately. If not implemented then the effectivenes matrix is used instead.
 	 */
 	/**
-	 * 填写未分配的扭矩和推力，按功效类型定制。
-	 * 可以针对每种类型单独实施。 如果未实现，则使用效果矩阵代替。
+	 * 翻译：填写未分配的扭矩和推力，按功效类型定制
+	 * 	可以针对每种类型单独实施。 如果未实现，则使用效果矩阵代替
 	 */
 	virtual void getUnallocatedControl(int matrix_index, control_allocator_status_s &status) {}
 

@@ -41,6 +41,12 @@
 
 #include "ControlAllocationPseudoInverse.hpp"
 
+/**
+ * @brief 设置控制分配有效性矩阵，并标记需要更新伪逆矩阵和归一化比例
+ *
+ * 调用基类方法保存有效性矩阵、执行器中点与线性化点，同时设置内部标志，
+ * 表示混合矩阵需要重新计算；若启用度量分配且需要更新归一化，则关闭归一化更新
+ */
 void
 ControlAllocationPseudoInverse::setEffectivenessMatrix(
 	const matrix::Matrix<float, ControlAllocation::NUM_AXES, ControlAllocation::NUM_ACTUATORS> &effectiveness,
@@ -58,6 +64,12 @@ ControlAllocationPseudoInverse::setEffectivenessMatrix(
 	}
 }
 
+/**
+ * @brief 更新伪逆混合矩阵(若需要)
+ *
+ * 当 _mix_update_needed 为真时，对有效性矩阵求广义逆得到混合矩阵 _mix。
+ * 非度量分配模式下，必要时先更新归一化比例，再对混合矩阵进行归一化，最后清除更新标志。
+ */
 void
 ControlAllocationPseudoInverse::updatePseudoInverse()
 {
@@ -77,6 +89,13 @@ ControlAllocationPseudoInverse::updatePseudoInverse()
 	}
 }
 
+/**
+ * @brief 计算控制分配矩阵各轴的归一化比例因子
+ *
+ * 根据混合矩阵列向量的非零元素数量与范数，分别计算滚转/俯仰(共用)、
+ * 偏航以及三轴推力的缩放系数，用于后续归一化，使各轴分配增益处于合理范围。
+ * 对倾斜执行器等无对应执行器的推力轴，复用 Z 轴缩放值。
+ */
 void
 ControlAllocationPseudoInverse::updateControlAllocationMatrixScale()
 {
@@ -123,7 +142,7 @@ ControlAllocationPseudoInverse::updateControlAllocationMatrixScale()
 
 	// Scale thrust by the sum of the individual thrust axes, and use the scaling for the Z axis if there's no actuators
 	// (for tilted actuators)
-	// 翻译：按各个推力轴之和缩放推力，如果没有执行器（对于倾斜执行器），则使用 Z 轴的缩放比例
+	// 翻译：按各个推力轴之和缩放推力，如果没有执行器(对于倾斜执行器)，则使用 Z 轴的缩放比例
 	_control_allocation_scale(THRUST_Z) = 1.f;
 
 	for (int axis_idx = 2; axis_idx >= 0; --axis_idx) {
@@ -148,6 +167,12 @@ ControlAllocationPseudoInverse::updateControlAllocationMatrixScale()
 	}
 }
 
+/**
+ * @brief 使用已计算的比例因子对混合矩阵进行归一化
+ *
+ * 将混合矩阵的滚转、俯仰、偏航和三轴推力列分别除以对应的缩放系数，
+ * 并将绝对值小于阈值的元素置零，避免后续分配算法中出现数值问题。
+ */
 void
 ControlAllocationPseudoInverse::normalizeControlAllocationMatrix()
 {
@@ -177,6 +202,13 @@ ControlAllocationPseudoInverse::normalizeControlAllocationMatrix()
 	}
 }
 
+/**
+ * @brief 执行控制分配，计算各执行器设定值
+ *
+ * 先更新伪逆混合矩阵(若需要)，保存上一次执行器设定值，
+ * 然后通过线性映射：执行器设定值 = 中点 + 混合矩阵 × (控制设定值 - 控制中点)
+ * 得到当前执行器指令。
+ */
 void
 ControlAllocationPseudoInverse::allocate()
 {

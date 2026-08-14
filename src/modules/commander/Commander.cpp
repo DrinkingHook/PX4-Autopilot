@@ -3258,11 +3258,14 @@ void Commander::manualControlCheck()
 		if (isArmed()) {
 			// Hand control back to the pilot when they override with the sticks (see MAN_OVERRIDE_SPD).
 			// Only applies to multicopters (incl. VTOLs in MC mode) in auto/offboard modes.
+			// 翻译：当飞行员通过摇杆进行干预(覆盖控制)时，将控制权交还给飞行员(参见 MAN_OVERRIDE_SPD)
+			// 	仅适用于自动 (Auto) 或外部控制 (Offboard) 模式下的多旋翼飞行器(包括处于 MC 模式的 VTOL)
 			const bool rotary_wing = (_vehicle_status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING);
 			const bool overridable_mode = _vehicle_control_mode.flag_control_auto_enabled || _vehicle_control_mode.flag_control_offboard_enabled;
 
 			if (manual_control_setpoint.sticks_moving && rotary_wing && overridable_mode) {
 				// If no failsafe is active, directly change the mode, otherwise pass the request to the failsafe state machine
+				// 翻译：如果未启用故障保护机制，则直接更改模式；否则，将请求传递给故障保护状态机
 				if (_failsafe.selectedAction() <= FailsafeBase::Action::Warn) {
 					if (_user_mode_intention.change(vehicle_status_s::NAVIGATION_STATE_POSCTL, ModeChangeSource::User, true)) {
 						tune_positive(true);
@@ -3283,12 +3286,15 @@ void Commander::manualControlLossModeSwitch()
 {
 	// NAV_RCL_ACT value that switches to Hold as a regular mode change instead of triggering the failsafe.
 	// Kept in sync with gcs_connection_loss_failsafe_mode::Hold_mode_no_failsafe (private to the failsafe).
+	// 翻译：NAV_RCL_ACT 的设定值，用于切换至“悬停”(Hold)模式(作为常规模式切换)，而非触发故障保护
+	//	与 gcs_connection_loss_failsafe_mode::Hold_mode_no_failsafe(故障保护模块内部私有)保持同步
 	static constexpr int32_t NAV_RCL_ACT_HOLD_NO_FAILSAFE = 7;
 
 	const bool manual_control_lost = _failsafe_flags.manual_control_signal_lost;
 
 	// Only act on the moment manual control is lost while actively flying a manual mode. Using an edge avoids
 	// repeatedly overriding the pilot if they command a different mode while manual control stays lost.
+	// 翻译：仅在处于手动飞行模式期间丢失手动控制信号的瞬间触发动作。使用边沿触发(edge detection)机制可避免在手动控制持续丢失的情况下，因飞行员发出其他模式指令而反复覆盖其操作
 	if (manual_control_lost && !_manual_control_lost_prev
 	    && isArmed()
 	    && _param_nav_rcl_act.get() == NAV_RCL_ACT_HOLD_NO_FAILSAFE
@@ -3297,6 +3303,8 @@ void Commander::manualControlLossModeSwitch()
 		// Force the switch to Hold as a regular mode change (no failsafe, no alarming notification).
 		// force=true skips the mode availability check on purpose: if Hold cannot actually run (e.g. without a
 		// valid position estimate), the failsafe mode-fallback escalates from there (Hold -> RTL -> Land/Descend/Terminate).
+		// 翻译：强制切换至“保持”模式，并将其视为常规模式变更(不触发故障保护，也不发出警报通知)
+		// 	设置 `force=true` 是为了有意跳过模式可用性检查：如果“保持”模式实际上无法运行(例如缺乏有效的位置估计)，系统将从该状态进一步升级故障保护的后备策略(即：保持 -> 返航/RTL -> 降落/下降/终止)
 		_user_mode_intention.change(vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER, ModeChangeSource::User, false, true);
 
 		mavlink_log_info(&_mavlink_log_pub, "Manual control lost: switching to Hold\t");

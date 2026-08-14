@@ -180,6 +180,7 @@ Loiter::reposition()
 
 		// mark this as done: reset instead of zeroing so unset fields (yaw, course)
 		// stay NaN when the triplet is repopulated by a partial reposition command
+		// 翻译：标记为完成：重置而不是归零，这样当三重组通过部分重新定位命令重新填充时，未设场（偏航、航向）保持 NaN
 		_navigator->reset_position_setpoint(rep->previous);
 		_navigator->reset_position_setpoint(rep->current);
 		_navigator->reset_position_setpoint(rep->next);

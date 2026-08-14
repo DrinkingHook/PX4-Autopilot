@@ -169,8 +169,7 @@ float FixedwingAttitudeControl::get_airspeed_constrained()
 		// VTOL: if we have no airspeed available and we are in hover mode then assume the lowest airspeed possible
 		// this assumption is good as long as the vehicle is not hovering in a headwind which is much larger
 		// than the stall airspeed
-		// 翻译：VTOL: 如果我们没有空速可用并且处于悬停模式，则假设最低可能的空速
-		// 这种假设在车辆没有在远大于失速空速的逆风中悬停的情况下是有效的
+		// 翻译：VTOL：若无空速数据且处于悬停模式，则假设空速为可能的最小值；只要飞行器不是在风速远超失速空速的迎风条件下悬停，该假设即适用
 
 		if (_vehicle_status.is_vtol && _vehicle_status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING
 		    && !_vehicle_status.in_transition_mode) {
@@ -232,6 +231,8 @@ void FixedwingAttitudeControl::Run()
 
 		// Tailsitter: rotate measurement from MC to FW frame (controller is in FW frame, interface in MC).
 		// The attitude is world-from-body, so it composes on the right with the body rotation FW -> MC.
+		// 翻译：尾座式飞行器(Tailsitter)：将测量值从多旋翼(MC)坐标系旋转至固定翼（FW）坐标系（控制器运行于 FW 坐标系，接口位于 MC 坐标系）。 
+		// 	该姿态表示从机体坐标系到世界坐标系的变换，因此需在右侧与从 FW 到 MC 的机体旋转进行组合。
 		const Quatf q_current = _vehicle_status.is_vtol_tailsitter ? Quatf(att.q) * _q_mc_to_fw.inversed() : Quatf(att.q);
 
 		const matrix::Eulerf euler_angles(q_current);
@@ -331,6 +332,7 @@ void FixedwingAttitudeControl::Run()
 					}
 
 					// Tailsitter: rotate setpoint back from FW to MC frame (controller is in FW frame, interface in MC).
+					// 翻译：尾座式飞行器(Tailsitter): 将设定值从固定翼(FW)坐标系反向旋转至多旋翼(MC)坐标系(控制器位于 FW 坐标系，接口位于 MC 坐标系)
 					if (_vehicle_status.is_vtol_tailsitter) {
 						body_rates_setpoint = _q_mc_to_fw.rotateVectorInverse(body_rates_setpoint);
 					}

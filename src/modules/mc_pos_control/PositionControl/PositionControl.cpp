@@ -249,10 +249,10 @@ void PositionControl::_velocityControl(const float dt)
 	}
 
 	// Make sure integral doesn't get NAN
-	// 翻译：确保积分不为NAN。
+	// 翻译：确保积分不为NAN
 	ControlMath::setZeroIfNanVector3f(vel_error);
 	// Update integral part of velocity control
-	// 翻译：更新速度控制的积分部分。
+	// 翻译：更新速度控制的积分部分
 	_vel_int += vel_error.emult(_gain_vel_i) * dt;
 }
 
@@ -276,7 +276,7 @@ void PositionControl::_accelerationControl()
 	// 范围: 一般 -20 ~ -5 (取决于 _acc_sp(2) ≈ -10 ~ +5 m/s²)
 	if (!_decouple_horizontal_and_vertical_acceleration) {
 		// Include vertical acceleration setpoint for better horizontal acceleration tracking
-		// 翻译：包括垂直加速度设定点以更好地跟踪水平加速度。
+		// 翻译：包括垂直加速度设定点以更好地跟踪水平加速度
 		z_specific_force += _acc_sp(2);
 	}
 

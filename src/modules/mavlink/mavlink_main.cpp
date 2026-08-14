@@ -100,6 +100,7 @@ Mavlink *mavlink_module_instances[MAVLINK_COMM_NUM_BUFFERS] {};
 // Per-channel status, buffer, and send mutex live in static arrays so they survive instance teardown.
 // This prevents use-after-free when the MAVLink C library accesses channel status/buffer during a send
 // that races with instance destruction.
+// 翻译：每个通道的状态、缓冲区和发送互斥单元都存在静态数组，以在实例拆除时存活。这防止了MAVLink C库在发送过程中访问通道状态/缓冲区时的免费使用问题，与实例毁灭赛跑
 static mavlink_status_t mavlink_channel_statuses[MAVLINK_COMM_NUM_BUFFERS] {};
 static mavlink_message_t mavlink_channel_buffers[MAVLINK_COMM_NUM_BUFFERS] {};
 // Recursive mutex: allows callers to hold lock_send() while send_start()/send_finish()
@@ -384,6 +385,7 @@ Mavlink::set_instance_id()
 
 			// Now that we own a channel, apply the protocol version cached during
 			// construction to this channel's (zero-initialized) status flags.
+			// 翻译：既然我们已经拥有了该通道，就将构建期间缓存的协议版本应用到该通道（已初始化为零）的状态标志上
 			setProtocolVersion(_protocol_version.load());
 			return true;
 		}
@@ -2617,6 +2619,7 @@ Mavlink::task_main(int argc, char *argv[])
 	// Initialize _mavlink_start_time before starting the receiver thread —
 	// the receiver reads it via get_start_time(), so writing it afterwards
 	// would race with the receiver's first iterations.
+	// 翻译：在启动接收线程前先初始化_mavlink_start_time——接收端通过get_start_time（）读取，因此之后写入会与接收端的初始迭代竞争
 	_mavlink_start_time = hrt_absolute_time();
 
 	_receiver.start();
@@ -3063,6 +3066,7 @@ void Mavlink::check_requested_subscriptions()
 	// Acquire the producer's handoff. The rate field is valid once we've
 	// observed a non-null pointer (the producer wrote rate before the atomic
 	// store on _subscribe_to_stream).
+	// 翻译：获取制片人的交接权。一旦我们观察到非空指针（生产者在原子存储前写了rate），速率字段即有效_subscribe_to_stream
 	char *stream_name = _subscribe_to_stream.load();
 
 	if (stream_name != nullptr) {

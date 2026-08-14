@@ -121,6 +121,25 @@ bool Provider::findAssociatedSafePointIndex(const PositionYawSetpoint &rtl_posit
 	return false;
 }
 
+/**
+ * @brief 获取 RTL 目的地附近的 VTOL(垂直起降)着陆进近盘旋点集合
+ *
+ * 流程：
+ * 1. 在任务安全点(NAV_CMD_RALLY_POINT)中，查找距离 rtl_position
+ *    小于 kLandApproachAssociationDistanceM 的关联安全点
+ *    (findAssociatedSafePointIndex)，找不到则返回空集合
+ * 2. 将该安全点的经纬度作为降落位置 land_location_lat_lon
+ * 3. 从安全点之后扫描 NAV_CMD_LOITER_TO_ALT 航点，把有效者转为
+ *    着陆进近盘旋点(scanVtolLandApproachBlock，最多取 8 个)
+ *
+ * 供 RTL 着落时按风向择优选择逆风进近盘旋点(rtl.cpp::selectLandingApproach)
+ *
+ * @param rtl_position       RTL 目标位置(持久/家点)，用于关联附近安全点
+ * @param home_altitude_amsl 家点海拔(MSL)[m]，用于把航点高度转为海拔
+ * @return 一个 land_approaches_s(含最多 num_approaches_max 个进近盘旋方案
+ *         + 降落位置)；找不到关联安全点时返回空集合
+ */
+
 land_approaches_s Provider::getVtolLandApproachesNearLocation(const PositionYawSetpoint &rtl_position,
 		float home_altitude_amsl) const
 {

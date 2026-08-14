@@ -303,7 +303,7 @@ void addIfNotNanVector3f(Vector3f &setpoint, const Vector3f &addition)
 void setZeroIfNanVector3f(Vector3f &vector)
 {
 	// Adding zero vector overwrites elements that are NaN with zero
-	// 翻译：添加零向量会将 NaN 元素覆盖为零。
+	// 翻译：添加零向量会将 NaN 元素覆盖为零
 	addIfNotNanVector3f(vector, Vector3f());
 }
 

@@ -149,7 +149,7 @@ void RtlDirectMissionLand::setActiveMissionItems()
 	// 翻译：爬升到高度
 	if (_needs_climbing && _work_item_type == WorkItemType::WORK_ITEM_TYPE_DEFAULT) {
 		// TODO: check if we also should use NAV_CMD_LOITER_TO_ALT for rotary wing
-		// 翻译：检查是否也应该对旋翼机使用 NAV_CMD_LOITER_TO_ALT。
+		// 翻译：检查是否也应该对旋翼机使用 NAV_CMD_LOITER_TO_ALT
 		if (_vehicle_status_sub.get().vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
 			_mission_item.nav_cmd = NAV_CMD_WAYPOINT;
 
@@ -158,6 +158,7 @@ void RtlDirectMissionLand::setActiveMissionItems()
 		}
 
 		// By default climb centered on the current position with the default loiter radius.
+		// 翻译：默认情况下，爬升以当前位置为中心，并具有默认的盘旋半径
 		_mission_item.lat = _global_pos_sub.get().lat;
 		_mission_item.lon = _global_pos_sub.get().lon;
 		_mission_item.loiter_radius = _navigator->get_default_loiter_rad();
@@ -165,6 +166,8 @@ void RtlDirectMissionLand::setActiveMissionItems()
 		// If the vehicle was already established on a loiter when RTL was engaged (e.g. from Hold),
 		// keep that loiter's center and radius while climbing instead of re-centering the circle on
 		// the current position. The setpoint was snapshotted on activation before the triplet reset.
+		// 翻译：如果在启用 RTL 功能时(例如从保持模式切换回来)，飞行器已处于悬停状态，则爬升过程中保持该悬停状态的中心和半径不变，
+		// 	而不是将圆心重新定位到当前位置。设定点在三元组重置之前，于激活时被快照
 		if (_setpoint_on_activation.valid
 		    && _setpoint_on_activation.type == position_setpoint_s::SETPOINT_TYPE_LOITER
 		    && _setpoint_on_activation.loiter_pattern == position_setpoint_s::LOITER_TYPE_ORBIT) {
@@ -176,6 +179,7 @@ void RtlDirectMissionLand::setActiveMissionItems()
 				_mission_item.lat = _setpoint_on_activation.lat;
 				_mission_item.lon = _setpoint_on_activation.lon;
 				// loiter_radius sign encodes direction (negative == counter-clockwise).
+				// 翻译：loiter_radius 符号表示方向(负号表示逆时针方向)
 				_mission_item.loiter_radius = _setpoint_on_activation.loiter_direction_counter_clockwise ?
 							      -_setpoint_on_activation.loiter_radius : _setpoint_on_activation.loiter_radius;
 			}
@@ -203,20 +207,21 @@ void RtlDirectMissionLand::setActiveMissionItems()
 	} else if (_vehicle_status_sub.get().vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING &&
 		   _vehicle_status_sub.get().is_vtol &&
 		   !_land_detected_sub.get().landed && _work_item_type == WorkItemType::WORK_ITEM_TYPE_DEFAULT) {
-		// vtol已经处于飞行的情况下，那么肯定是已经切换到了固定翼模式。这里预防的应该是vtol刚起飞还没有转换模式就切换到RTL的情况。
+		// 该分支只在 VTOL 处于旋转翼状态（尚未进入固定翼）且已离地、RTL 刚被激活时进入：主动触发向固定翼过渡，避免 VTOL 以悬停姿态直接执行 RTL 的地形回航/下降逻辑。
 		// Transition to fixed wing if necessary.
 		// 翻译：如果必要，转换到固定翼
 		set_vtol_transition_item(&_mission_item, vtol_vehicle_status_s::VEHICLE_VTOL_STATE_FW);
 		_mission_item.yaw = _navigator->get_local_position()->heading;
 
 		// keep current setpoints (FW position controller generates wp to track during transition)
-		// 翻译：保持当前设定点（FW位置控制器在转换期间生成wp来跟踪）
+		// 翻译：保持当前设定点(FW位置控制器在转换期间生成wp来跟踪)
 		pos_sp_triplet->current.type = position_setpoint_s::SETPOINT_TYPE_POSITION;
 
 		new_work_item_type = WorkItemType::WORK_ITEM_TYPE_TRANSITION_AFTER_TAKEOFF;
 
 #if CONFIG_NAVIGATOR_GEOFENCE_AVOIDANCE
 
+	// 然后路径优先跟着地理围栏绕飞点走（队列取完为止）
 	} else if (_navigator->get_geofence_avoidance_planner().hasMore()) {
 
 		GeofenceAvoidancePlanner &planner = _navigator->get_geofence_avoidance_planner();
@@ -228,6 +233,7 @@ void RtlDirectMissionLand::setActiveMissionItems()
 		if (!point.isAllFinite()) {
 			// Should never happen -- the geofence branch is only entered while hasMore() is true.
 			// Fall back to flying straight to the destination, as rtl_direct does.
+			// 翻译：这种情况不应该发生——只有当 hasMore() 为真时才会进入地理围栏分支，回退到像 rtl_direct 那样直接飞往目的地
 			const matrix::Vector2d destination = getRtlPlannerDestination();
 
 			if (destination.isAllFinite()) {
@@ -240,6 +246,7 @@ void RtlDirectMissionLand::setActiveMissionItems()
 		}
 
 		// Line following only between points on the path, not when flying to the first point
+		// 翻译：仅在路径上的点之间进行沿线飞行，而不是在飞往第一个点时进行沿线飞行
 		if (is_first_waypoint) {
 			_navigator->reset_position_setpoint(pos_sp_triplet->previous);
 
@@ -261,6 +268,7 @@ void RtlDirectMissionLand::setActiveMissionItems()
 		mission_item_to_position_setpoint(_mission_item, &pos_sp_triplet->current);
 
 		// If next point does not exist, we have NaN and inalid next setpoint
+		// 翻译：如果下一个点不存在，则返回 NaN 值，并且下一个设定点无效
 		pos_sp_triplet->next.valid = next_point.isAllFinite();
 		pos_sp_triplet->next.alt = _rtl_alt;
 		pos_sp_triplet->next.type = position_setpoint_s::SETPOINT_TYPE_POSITION;
@@ -269,6 +277,7 @@ void RtlDirectMissionLand::setActiveMissionItems()
 
 #endif // CONFIG_NAVIGATOR_GEOFENCE_AVOIDANCE
 
+	// 最后落到普通回航航点
 	} else if (mission_item_contains_position(_mission_item)) {
 
 		static constexpr size_t max_num_next_items{1u};
@@ -414,7 +423,7 @@ rtl_time_estimate_s RtlDirectMissionLand::calc_rtl_time_estimate()
 
 					if (!success) {
 						// Could not load the mission item, mark time estimate as invalid.
-						// 翻译：无法加载航点，将时间估计标记为无效。
+						// 翻译：无法加载航点，将时间估计标记为无效
 						_rtl_time_estimator.reset();
 						break;
 					}
@@ -489,7 +498,7 @@ rtl_time_estimate_s RtlDirectMissionLand::calc_rtl_time_estimate()
 
 							} else {
 								// For VTOL, Rotary, go there horizontally first, then land
-								// 翻译：对于垂直起降飞行器和旋翼机，先水平飞行，然后再降落。
+								// 翻译：对于垂直起降飞行器和旋翼机，先水平飞行，然后再降落
 								_rtl_time_estimator.addDistance(hor_dist, direction, 0.f);
 
 								if (_vehicle_status_sub.get().is_vtol) {
@@ -545,9 +554,9 @@ bool RtlDirectMissionLand::checkNeedsToClimb()
 	if ((_global_pos_sub.get().alt < _rtl_alt) || _enforce_rtl_alt) {
 
 		// If lower than return altitude, climb up first.
-		// 翻译：如果低于返回高度，则先爬升。
 		// If enforce_rtl_alt is true then forcing altitude change even if above.
-		// 翻译：如果强制返回高度，则强制高度变化，即使在上面。
+ 		// 翻译：如果低于返回高度，则先爬升
+		// 	如果强制返回高度，则强制高度变化，即使在上面
 		needs_climbing = true;
 
 	}

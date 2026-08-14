@@ -335,6 +335,7 @@ void FlightTaskAuto::_prepareLandSetpoints()
 	_land_position = Vector3f(_triplet_current(0), _triplet_current(1), NAN);
 
 	// User input assisted landing
+	// 翻译：用户辅助降落
 	if ((_param_mpc_auto_nudging.get() & 2) && _sticks.checkAndUpdateStickInputs()) {
 		// Stick full up -1 -> stop, stick full down 1 -> double the speed
 		vertical_speed *= (1 - _sticks.getThrottleZeroCenteredExpo());
@@ -344,6 +345,7 @@ void FlightTaskAuto::_prepareLandSetpoints()
 
 		if (sticks_xy.longerThan(FLT_EPSILON)) {
 			// Prevent unintended yaw during initial heading alignment when nudging horizontally
+			// 翻译：在初始航向对准期间进行水平微调时，防止发生意外的偏航(yaw)
 			_yaw_setpoint = _yaw_setpoint_previous;
 		}
 
@@ -558,6 +560,7 @@ bool FlightTaskAuto::_evaluatePositionSetpointTriplet()
 	}
 
 	// activation/deactivation of weather vane is based on parameter WV_EN and setting of navigator (allow_weather_vane)
+	// 翻译:“风标模式”(weather vane)的启用/禁用取决于参数 WV_EN 及导航器设置(allow_weather_vane)
 	_weathervane.setNavigatorForceDisabled(PX4_ISFINITE(position_setpoint_triplet.current.yaw));
 
 	// set heading
@@ -600,6 +603,7 @@ bool FlightTaskAuto::_evaluatePositionSetpointTriplet()
 			} else if (!_manual_yaw_active && (_type != WaypointType::land || _type_previous != WaypointType::land)) {
 				// Skip when manual yaw latch is active (nudge holds heading until mode switch) or
 				// during ongoing land (heading initialised on first cycle, only nudging/weathervane may change it).
+				// 翻译：当手动偏航锁定(manual yaw latch)激活时(即微调操作保持航向直至切换模式)，或在着陆过程中(航向在首个周期初始化，仅微调或风标模式可改变航向)，跳过此逻辑
 				_set_heading_from_mode();
 			}
 

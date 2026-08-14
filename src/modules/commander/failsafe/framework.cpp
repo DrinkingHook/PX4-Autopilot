@@ -107,6 +107,7 @@ uint8_t FailsafeBase::update(const hrt_abstime &time_us, const State &state, boo
 	updateFailsafeDeferState(time_us, action_state.failsafe_deferred);
 
 	// Notify about escalation, or about any new subsumed condition as an informational warning
+	// 翻译：通知升级情况，或将任何新出现的被包含条件作为提示性警告进行通报
 	if (action_state.action > _selected_action) {
 		notifyUser(state.user_intended_mode, action_state.action, action_state.delayed_action, action_state.cause);
 
