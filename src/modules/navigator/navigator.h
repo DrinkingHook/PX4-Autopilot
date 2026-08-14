@@ -370,9 +370,9 @@ private:
 	orb_sub_t _mission_sub{ORB_SUB_INVALID};
 	orb_sub_t _vehicle_status_sub{ORB_SUB_INVALID};
 
-	uORB::SubscriptionData<position_controller_status_s>	_position_controller_status_sub{ORB_ID(position_controller_status)};
+	uORB::SubscriptionData<position_controller_status_s> _position_controller_status_sub{ORB_ID(position_controller_status)};
 	uORB::SubscriptionData<fixed_wing_lateral_guidance_status_s> _fw_lateral_guidance_status_sub{ORB_ID(fixed_wing_lateral_guidance_status)};
-	uORB::SubscriptionData<takeoff_status_s>		_takeoff_status_sub{ORB_ID(takeoff_status)};
+	uORB::SubscriptionData<takeoff_status_s> _takeoff_status_sub{ORB_ID(takeoff_status)};
 
 	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
 
@@ -433,7 +433,7 @@ private:
 	bool 		_pos_sp_triplet_published_invalid_once{false};	/**< flags if position SP triplet has been published once to UORB */
 	bool		_mission_result_updated{false};			/**< flags if mission result has seen an update */
 
-	MissionRouteCache _mission_route_cache;
+	MissionRouteCache _mission_route_cache{&_mavlink_log_pub};
 	Mission		_mission;			/**< class that handles the missions */
 	Loiter		_loiter;			/**< class that handles loiter */
 	Takeoff		_takeoff;			/**< class for handling takeoff commands */

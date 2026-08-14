@@ -380,9 +380,12 @@ void FixedwingAttitudeControl::Run()
 
 			}
 
-			// set now yaw setpoint once we're entering the first time
-			// 翻译：设置现在方向舵偏航设置点，一旦我们进入第一次
-			if (!PX4_ISFINITE(_steering_wheel_yaw_setpoint)) {
+			// track the heading commanded by the mode manager (e.g. the runway bearing towards the
+			// takeoff waypoint); if none is provided, hold the heading captured when steering engaged
+			if (PX4_ISFINITE(runway_control.wheel_steering_yaw_setpoint)) {
+				_steering_wheel_yaw_setpoint = runway_control.wheel_steering_yaw_setpoint;
+
+			} else if (!PX4_ISFINITE(_steering_wheel_yaw_setpoint)) {
 				_steering_wheel_yaw_setpoint = euler_angles.psi();
 			}
 
