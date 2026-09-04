@@ -204,21 +204,6 @@ void RtlDirectMissionLand::setActiveMissionItems()
 
 		new_work_item_type = WorkItemType::WORK_ITEM_TYPE_CLIMB;
 
-	} else if (_vehicle_status_sub.get().vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING &&
-		   _vehicle_status_sub.get().is_vtol &&
-		   !_land_detected_sub.get().landed && _work_item_type == WorkItemType::WORK_ITEM_TYPE_DEFAULT) {
-		// 该分支只在 VTOL 处于旋转翼状态（尚未进入固定翼）且已离地、RTL 刚被激活时进入：主动触发向固定翼过渡，避免 VTOL 以悬停姿态直接执行 RTL 的地形回航/下降逻辑。
-		// Transition to fixed wing if necessary.
-		// 翻译：如果必要，转换到固定翼
-		set_vtol_transition_item(&_mission_item, vtol_vehicle_status_s::VEHICLE_VTOL_STATE_FW);
-		_mission_item.yaw = _navigator->get_local_position()->heading;
-
-		// keep current setpoints (FW position controller generates wp to track during transition)
-		// 翻译：保持当前设定点(FW位置控制器在转换期间生成wp来跟踪)
-		pos_sp_triplet->current.type = position_setpoint_s::SETPOINT_TYPE_POSITION;
-
-		new_work_item_type = WorkItemType::WORK_ITEM_TYPE_TRANSITION_AFTER_TAKEOFF;
-
 #if CONFIG_NAVIGATOR_GEOFENCE_AVOIDANCE
 
 	// 然后路径优先跟着地理围栏绕飞点走（队列取完为止）

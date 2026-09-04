@@ -206,6 +206,11 @@ bool FlightTaskAuto::update()
 	_checkEmergencyBraking();
 	Vector3f waypoints[] = {_triplet_previous, _position_setpoint, _triplet_next};
 
+	if (_type == WaypointType::position && _hasPassedCurrentWaypoint()) {
+		// Anchor the leg at the current position to not extrapolate past an unreached waypoint
+		waypoints[0] = _position;
+	}
+
 	if (isTargetModified()) {
 		// In case the target has been modified, we take this as the next waypoints
 		waypoints[2] = _position_setpoint;
@@ -215,6 +220,13 @@ bool FlightTaskAuto::update()
 					       && !_yaw_sp_aligned;
 	const bool force_zero_velocity_setpoint = should_wait_for_yaw_align || _is_emergency_braking_active;
 	_updateTrajConstraints();
+
+	if (_is_emergency_braking_active) {
+		// Re-seed the trajectory to the measured state every cycle so controller saturation doesn't
+		// cause a velocity error inversion during emergency braking.
+		_position_smoothing.forceSetVelocity(_velocity);
+		_position_smoothing.forceSetPosition(_position);
+	}
 
 	PositionSmoothing::PositionSmoothingSetpoints smoothed_setpoints;
 	_position_smoothing.generateSetpoints(
@@ -791,11 +803,10 @@ void FlightTaskAuto::_checkEmergencyBraking()
 		}
 
 	} else {
-		// deactivate emergency braking when the vehicle has come to a full stop
-		// 翻译：车辆完全停止后停用紧急制动
-		if (_position_smoothing.getCurrentVelocityZ() < 0.01f
-		    && _position_smoothing.getCurrentVelocityZ() > -0.01f
-		    && !_position_smoothing.getCurrentVelocityXY().longerThan(0.01f)) {
+		// Deactivate emergency braking once slow enough for ordinary guidance to finish the stop.
+		// Must clear velocity estimate noise, otherwise braking latches and guidance never resumes.
+		if (math::isInRange(_position_smoothing.getCurrentVelocityZ(), -1.f, 1.f)
+		    && !_position_smoothing.getCurrentVelocityXY().longerThan(1.f)) {
 			_is_emergency_braking_active = false;
 		}
 	}
@@ -828,9 +839,12 @@ bool FlightTaskAuto::isTargetModified() const
 	return xy_modified || z_modified;
 }
 
-/**
- * @brief  更新轨迹和约束
- */
+bool FlightTaskAuto::_hasPassedCurrentWaypoint() const
+{
+	const Vector3f u_previous_to_current = (_triplet_current - _triplet_previous).unit_or_zero();
+	return u_previous_to_current * (_triplet_current - _position) < 0.f;
+}
+
 void FlightTaskAuto::_updateTrajConstraints()
 {
 	// update params of the position smoothing
@@ -858,19 +872,6 @@ void FlightTaskAuto::_updateTrajConstraints()
 		// 翻译：当初始速度较大时，允许所有轴在 1 秒内产生 1g 的加速度，以实现快速制动
 		_position_smoothing.setMaxAcceleration({CONSTANTS_ONE_G, CONSTANTS_ONE_G, CONSTANTS_ONE_G});
 		_position_smoothing.setMaxJerk(CONSTANTS_ONE_G);
-
-		// If the current velocity is beyond the usual constraints, tell
-		// the controller to exceptionally increase its saturations to avoid
-		// cutting out the feedforward
-		// 翻译：如果当前速度超出通常的限制范围，则指示控制器异常提高其饱和度，以避免切断前馈。
-
-		// 车辆约束：
-		//  1.垂直向下的最大速度
-		//  2.垂直向上的最大速度
-		_constraints.speed_down = math::max(fabsf(_position_smoothing.getCurrentVelocityZ()), _constraints.speed_down);
-		_constraints.speed_up = math::max(fabsf(_position_smoothing.getCurrentVelocityZ()), _constraints.speed_up);
-
-		// 如果未平滑的设定点速度小于0(PX4 使用 NED（北东地）坐标系，Z 轴负方向表示向上。所以 < 0 意味着飞行器想要向上爬升)
 
 	} else if (_unsmoothed_velocity_setpoint(2) < 0.f) { // up
 		// 从参数获取最大的z轴加速度

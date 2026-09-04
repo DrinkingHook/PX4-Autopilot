@@ -332,7 +332,7 @@ bool VehicleIMU::UpdateAccel()
 
 		_accel_last_generation = _sensor_accel_sub.get_last_generation();
 
-		_accel_calibration.set_device_id(accel.device_id);
+		_accel_calibration.set_device_id(accel.device_id, accel.is_external);
 
 		if (accel.error_count != _status.accel_error_count) {
 			_publish_status = true;
@@ -466,7 +466,7 @@ bool VehicleIMU::UpdateGyro()
 		_gyro_timestamp_sample_last = gyro.timestamp_sample;
 		_gyro_timestamp_last = gyro.timestamp;
 
-		_gyro_calibration.set_device_id(gyro.device_id);
+		_gyro_calibration.set_device_id(gyro.device_id, gyro.is_external);
 
 		if (gyro.error_count != _status.gyro_error_count) {
 			_publish_status = true;

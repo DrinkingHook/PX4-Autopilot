@@ -2022,10 +2022,8 @@ void EKF2::PublishStatus(const hrt_abstime &timestamp)
 	_ekf.getOutputTrackingError().copyTo(status.output_tracking_error);
 
 #if defined(CONFIG_EKF2_GNSS)
-	// only report enabled GPS check failures (the param indexes are shifted by 1 bit, because they don't include
-	// the GPS Fix bit, which is always checked)
-	// 翻译：只报告启用的GPS检查失败（参数索引右移1位，因为它们不包括GPS Fix位，该位始终被检查）
-	status.gps_check_fail_flags = _ekf.gps_check_fail_status().value & (((uint16_t)_params->ekf2_gps_check << 1) | 1);
+	// only report enabled GPS check failures
+	status.gps_check_fail_flags = _ekf.gps_check_fail_status().value & _ekf.gps_check_fail_status_enabled_mask();
 #endif // CONFIG_EKF2_GNSS
 
 	status.control_mode_flags = _ekf.control_status().value;
@@ -2787,8 +2785,8 @@ void EKF2::UpdateGpsSample(ekf2_timestamps_s &ekf2_timestamps)
 			_last_geoid_height_update_us = gnss_sample.time_us;
 
 		} else if (gnss_sample.time_us > _last_geoid_height_update_us) {
-			const float dt = 1e-6f * (gnss_sample.time_us - _last_geoid_height_update_us);
-			_geoid_height_lpf.setParameters(dt, kGeoidHeightLpfTimeConstant);
+			_geoid_height_lpf.setParameters(gnss_sample.time_us - _last_geoid_height_update_us,
+							kGeoidHeightLpfTimeConstant);
 			_geoid_height_lpf.update(geoid_height);
 			_last_geoid_height_update_us = gnss_sample.time_us;
 		}

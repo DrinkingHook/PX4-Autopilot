@@ -188,17 +188,10 @@ MulticopterAttitudeControl::generate_attitude_setpoint(const Quatf &q, float dt)
 	 * This allows a simple limitation of the tilt angle, the vehicle flies towards the direction that the stick
 	 * points to, and changes of the stick input are linear.
 	 */
-	/**
-	 * 翻译：输入映射用于滚转和俯仰设定点
-	 * ----------------------------------------
-	 * 我们控制以下两个角度：
-	 * - 倾斜角，由roll*roll + pitch*pitch的平方根给出
-	 * - 最大倾斜方向在XY平面上，也定义了运动的方向
-	 *
-	 * 这允许简单地限制倾斜角，飞机朝着摇杆指向的方向飞行，并且摇杆输入的变化是线性的。
-	 */
-	_man_roll_input_filter.setParameters(dt, _param_mc_man_tilt_tau.get());
-	_man_pitch_input_filter.setParameters(dt, _param_mc_man_tilt_tau.get());
+	const hrt_abstime dt_us = static_cast<hrt_abstime>(dt * 1e6f);
+	const hrt_abstime man_tilt_tau_us = static_cast<hrt_abstime>(math::max(_param_mc_man_tilt_tau.get(), 0.f) * 1e6f);
+	_man_roll_input_filter.setParameters(dt_us, man_tilt_tau_us);
+	_man_pitch_input_filter.setParameters(dt_us, man_tilt_tau_us);
 
 	// we want to fly towards the direction of (roll, pitch)
 	// 翻译：我们想朝着(roll, pitch)的方向飞行

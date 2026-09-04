@@ -748,6 +748,15 @@ transition_result_t Commander::arm(arm_disarm_reason_t calling_reason, bool run_
 		}
 	}
 
+	// Capture a fresh home position on the ground before the motors spin (prop wash perturbs the
+	// baro), but only at a real mission start: skip a mid-mission re-arm (seq_current > 0) and any
+	// in-air re-arm.
+	if (_param_com_home_en.get() && !_config_overrides.disable_auto_set_home
+	    && _vehicle_land_detected.landed
+	    && (!_mission_in_progress || _mission_result_sub.get().seq_current == 0)) {
+		_home_position.setHomePosition();
+	}
+
 	_vehicle_status.armed_time = hrt_absolute_time();
 	_vehicle_status.arming_state = vehicle_status_s::ARMING_STATE_ARMED;
 	_vehicle_status.latest_arming_reason = (uint8_t)calling_reason;
@@ -755,10 +764,6 @@ transition_result_t Commander::arm(arm_disarm_reason_t calling_reason, bool run_
 	mavlink_log_info(&_mavlink_log_pub, "Armed by %s\t", arm_disarm_reason_str(calling_reason));
 	events::send<events::px4::enums::arm_disarm_reason_t>(events::ID("commander_armed_by"), events::Log::Info,
 			"Armed by {1}", calling_reason);
-
-	if (_param_com_home_en.get() && !_mission_in_progress && !_config_overrides.disable_auto_set_home) {
-		_home_position.setHomePosition();
-	}
 
 	_status_changed = true;
 
@@ -882,7 +887,10 @@ Commander::handle_command(const vehicle_command_s &cmd)
 		return false;
 	}
 
-	/* result of the command */
+	/* result of the command, sent via answer_command() once after the switch below.
+	 * Cases that answer_command() themselves (e.g. because they must reply before an
+	 * irreversible action, or because another module owns the reply) must `return true;`
+	 * instead of `break;`, so they are not answered a second time here. */
 	unsigned cmd_result = vehicle_command_ack_s::VEHICLE_CMD_RESULT_UNSUPPORTED;
 
 	/* request to set different system mode */
@@ -936,12 +944,6 @@ Commander::handle_command(const vehicle_command_s &cmd)
 			} else {
 				cmd_result = vehicle_command_ack_s::VEHICLE_CMD_RESULT_TEMPORARILY_REJECTED;
 			}
-		}
-		break;
-
-	case vehicle_command_s::VEHICLE_CMD_GUIDED_CHANGE_HEADING: {
-			// Navigator handles this command: it acks ACCEPTED when
-			// the vehicle is in course mode with a valid position, DENIED otherwise.
 		}
 		break;
 
@@ -1467,7 +1469,7 @@ Commander::handle_command(const vehicle_command_s &cmd)
 			}
 		}
 
-		break;
+		return true;
 
 	case vehicle_command_s::VEHICLE_CMD_PREFLIGHT_CALIBRATION: {
 
@@ -1495,7 +1497,7 @@ Commander::handle_command(const vehicle_command_s &cmd)
 					   (int)(cmd.param5) == vehicle_command_s::PREFLIGHT_CALIBRATION_TEMPERATURE_CALIBRATION ||
 					   (int)(cmd.param7) == vehicle_command_s::PREFLIGHT_CALIBRATION_TEMPERATURE_CALIBRATION) {
 					/* temperature calibration: handled in events module */
-					break;
+					return true;
 
 				} else if ((int)(cmd.param2) == 1) {
 					/* magnetometer calibration */
@@ -1586,7 +1588,7 @@ Commander::handle_command(const vehicle_command_s &cmd)
 				}
 			}
 
-			break;
+			return true;
 		}
 
 	case vehicle_command_s::VEHICLE_CMD_FIXED_MAG_CAL_YAW: {
@@ -1628,7 +1630,7 @@ Commander::handle_command(const vehicle_command_s &cmd)
 				_worker_thread.startTask(WorkerThread::Request::MagCalibrationQuick);
 			}
 
-			break;
+			return true;
 		}
 
 	case vehicle_command_s::VEHICLE_CMD_PREFLIGHT_STORAGE: {
@@ -1662,7 +1664,7 @@ Commander::handle_command(const vehicle_command_s &cmd)
 				}
 			}
 
-			break;
+			return true;
 		}
 
 	case vehicle_command_s::VEHICLE_CMD_DO_SET_STANDARD_MODE: {
@@ -1682,16 +1684,17 @@ Commander::handle_command(const vehicle_command_s &cmd)
 				}
 			}
 		}
-		break;
+
+		return true;
 
 	case vehicle_command_s::VEHICLE_CMD_RUN_PREARM_CHECKS:
 		_health_and_arming_checks.update(true);
 		answer_command(cmd, vehicle_command_ack_s::VEHICLE_CMD_RESULT_ACCEPTED);
-		break;
+		return true;
 
 	case vehicle_command_s::VEHICLE_CMD_DO_SET_ACTUATOR:
 		answer_command(cmd, vehicle_command_ack_s::VEHICLE_CMD_RESULT_ACCEPTED);
-		break;
+		return true;
 
 	case vehicle_command_s::VEHICLE_CMD_DO_SET_SAFETY_SWITCH_STATE: {
 			// reject if armed, only allow pre or post flight for safety
@@ -1714,8 +1717,10 @@ Commander::handle_command(const vehicle_command_s &cmd)
 				}
 			}
 		}
-		break;
 
+		return true;
+
+	case vehicle_command_s::VEHICLE_CMD_GUIDED_CHANGE_HEADING: // Handled by navigator
 	case vehicle_command_s::VEHICLE_CMD_START_RX_PAIR:
 	case vehicle_command_s::VEHICLE_CMD_CUSTOM_0:
 	case vehicle_command_s::VEHICLE_CMD_CUSTOM_1:
@@ -1764,21 +1769,17 @@ Commander::handle_command(const vehicle_command_s &cmd)
 	case vehicle_command_s::VEHICLE_CMD_DO_AUTOTUNE_ENABLE:
 	case vehicle_command_s::VEHICLE_CMD_ESTIMATOR_SENSOR_ENABLE:
 	case vehicle_command_s::VEHICLE_CMD_ACTUATOR_GROUP_TEST:
-		/* ignore commands that are handled by other parts of the system */
-		break;
+		/* ignore commands that are handled by other parts of the system: no reply from here */
+		return true;
 
 	default:
-		/* Warn about unsupported commands, this makes sense because only commands
+		/* Command not handled above: reply UNSUPPORTED. This makes sense because only commands
 		 * to this component ID (or all) are passed by mavlink. */
-		answer_command(cmd, vehicle_command_ack_s::VEHICLE_CMD_RESULT_UNSUPPORTED);
+		cmd_result = vehicle_command_ack_s::VEHICLE_CMD_RESULT_UNSUPPORTED;
 		break;
 	}
 
-	if (cmd_result != vehicle_command_ack_s::VEHICLE_CMD_RESULT_UNSUPPORTED) {
-		/* already warned about unsupported commands in "default" case */
-		answer_command(cmd, cmd_result);
-	}
-
+	answer_command(cmd, cmd_result);
 	return true;
 }
 

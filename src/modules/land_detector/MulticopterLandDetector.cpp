@@ -175,6 +175,8 @@ bool MulticopterLandDetector::_get_ground_contact_state()
 
 	const bool lpos_available = ((time_now_us - _vehicle_local_position.timestamp) < 1_s);
 
+	bool vertical_movement;
+
 	if (lpos_available) {
 		// Check if we are moving vertically.
 		// Use wider threshold if currently in "maybe landed" state, as estimation for
@@ -192,21 +194,21 @@ bool MulticopterLandDetector::_get_ground_contact_state()
 		}
 
 		if (_vehicle_local_position.v_z_valid && (fabsf(_vehicle_local_position.vz) < vertical_velocity_threshold)) {
-			_vertical_movement = false;
+			vertical_movement = false;
 
 		} else if (_vehicle_local_position.z_valid && (fabsf(_vehicle_local_position.z_deriv) < vertical_velocity_threshold)) {
 			// The Z derivative is often less accurate than VZ but is less affected by biased velocity measurements.
-			// 翻译：Z导数通常不如VZ准确，但受偏置速度测量的影响较小。
-			_vertical_movement = false;
+			vertical_movement = false;
 
 		} else {
-			_vertical_movement = true;
+			vertical_movement = true;
 		}
 
 	} else {
-		_vertical_movement = true;
+		vertical_movement = true;
 	}
 
+	_land_detected.vertical_movement |= vertical_movement;
 
 	// Check if we are moving horizontally.
 	// 翻译：检查我们是否在水平移动。
@@ -217,6 +219,8 @@ bool MulticopterLandDetector::_get_ground_contact_state()
 	} else {
 		_horizontal_movement = false; // not known
 	}
+
+	_land_detected.horizontal_movement |= _horizontal_movement;
 
 	if (lpos_available && _vehicle_local_position.dist_bottom_valid && _param_lndmc_alt_gnd_effect.get() > 0) {
 		_below_gnd_effect_hgt = _vehicle_local_position.dist_bottom < _param_lndmc_alt_gnd_effect.get();
@@ -245,8 +249,9 @@ bool MulticopterLandDetector::_get_ground_contact_state()
 	// so stale data would cause false landed-state detection. This intentionally disables
 	// thrust-based landing detection for that mode — the companion should handle its own
 	// landing logic.
-	_has_low_throttle = _vehicle_thrust_setpoint_valid && (_vehicle_thrust_setpoint_throttle <= sys_low_throttle);
-	bool ground_contact = _has_low_throttle;
+	const bool has_low_throttle = _vehicle_thrust_setpoint_valid && (_vehicle_thrust_setpoint_throttle <= sys_low_throttle);
+	_land_detected.has_low_throttle &= has_low_throttle;
+	bool ground_contact = has_low_throttle;
 
 	// if we have a valid velocity setpoint and the vehicle is demanded to go down but no vertical movement present,
 	// we then can assume that the vehicle hit ground
@@ -270,6 +275,8 @@ bool MulticopterLandDetector::_get_ground_contact_state()
 		_in_descend = false;
 	}
 
+	_land_detected.in_descend &= _in_descend;
+
 	// if there is no distance to ground estimate available then don't enforce using it.
 	// 翻译：如果距离地面估计不可用，则不要强制使用它。
 	// if a distance to the ground estimate is generally available (_dist_bottom_is_observable=true), then
@@ -277,13 +284,14 @@ bool MulticopterLandDetector::_get_ground_contact_state()
 	// 翻译：如果通常可以获得到地面的距离估计值（_dist_bottom_is_observable=true），
 	// 那么我们已经增加了陆地检测状态的滞后，以减少误报的可能性。
 	const bool skip_close_to_ground_check = !_dist_bottom_is_observable || !_vehicle_local_position.dist_bottom_valid;
-	_close_to_ground_or_skipped_check = _is_close_to_ground() || skip_close_to_ground_check;
+	const bool close_to_ground_or_skipped_check = _is_close_to_ground() || skip_close_to_ground_check;
+	_land_detected.close_to_ground_or_skipped_check &= close_to_ground_or_skipped_check;
 
 	// TODO: we need an accelerometer based check for vertical movement for flying without GPS
 	// 翻译：我们需要一个基于加速度计的垂直运动检查，以在没有GPS的情况下飞行。
 	return !_armed ||
-	       (_close_to_ground_or_skipped_check && ground_contact
-		&& !_horizontal_movement && !_vertical_movement);
+	       (close_to_ground_or_skipped_check && ground_contact
+		&& !_horizontal_movement && !vertical_movement);
 }
 
 /**
@@ -321,7 +329,8 @@ bool MulticopterLandDetector::_get_maybe_landed_state()
 		max_rotation_threshold *= 2.5f;
 	}
 
-	_rotational_movement = _angular_velocity.xy().norm() > max_rotation_threshold;
+	const bool rotational_movement = _angular_velocity.xy().norm() > max_rotation_threshold;
+	_land_detected.rotational_movement |= rotational_movement;
 
 	// If vertical velocity is available: ground contact, no thrust, no movement -> landed
 	// 翻译：如果垂直速度可用：地面接触，无推力，无运动->着陆
@@ -330,7 +339,7 @@ bool MulticopterLandDetector::_get_maybe_landed_state()
 	const bool vertical_estimate = local_position_updated && vertical_velocity_valid;
 
 	return !_armed ||
-	       (minimum_thrust_now && !_freefall_hysteresis.get_state() && !_rotational_movement
+	       (minimum_thrust_now && !_freefall_hysteresis.get_state() && !rotational_movement
 		&& ((vertical_estimate && _ground_contact_hysteresis.get_state())
 		    || (!vertical_estimate && _minimum_thrust_8s_hysteresis.get_state())));
 }
