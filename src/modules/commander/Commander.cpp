@@ -701,7 +701,7 @@ transition_result_t Commander::arm(arm_disarm_reason_t calling_reason, bool run_
 	}
 
 	// allow a grace period for re-arming: preflight checks don't need to pass during that time, for example for accidental in-air disarming
-	// 翻译：允许重新武装的宽限期：在此期间，飞行前检查无需通过，例如，对于意外的空中解除武装的情况。
+	// 翻译：允许重新武装的宽限期：在此期间，飞行前检查无需通过，例如，对于意外的空中解除武装的情况
 	if (calling_reason == arm_disarm_reason_t::rc_switch
 	    && ((_last_disarmed_timestamp != 0) && (hrt_elapsed_time(&_last_disarmed_timestamp) < 5_s))) {
 
@@ -1077,7 +1077,7 @@ Commander::handle_command(const vehicle_command_s &cmd)
 				// Special handling for LAND mode: always allow to switch into it such that if used
 				// as emergency mode it is always available. When triggering it the user generally wants
 				// the vehicle to descend immediately, and if that means to switch to DESCEND it is fine.
-				// 翻译：陆地模式的特殊处理：始终允许切换到该模式，以便在用作紧急模式时始终可用。触发该模式时，用户通常希望车辆立即下降，如果这意味着切换到下降模式，则没有问题。
+				// 翻译：陆地模式的特殊处理：始终允许切换到该模式，以便在用作紧急模式时始终可用。触发该模式时，用户通常希望车辆立即下降，如果这意味着切换到下降模式，则没有问题
 
 				const bool force = desired_nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_LAND;
 

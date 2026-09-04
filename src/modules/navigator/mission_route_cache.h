@@ -73,6 +73,7 @@ public:
 	void invalidate();
 
 	/** Full-mission Dataman response subscription while an async read is pending. */
+	// 翻译：在异步读取挂起期间的全任务数据管理器响应订阅
 	orb_sub_t fullMissionResponseSubscription() const
 	{
 		return _full_mission_cache.responseSubscription();

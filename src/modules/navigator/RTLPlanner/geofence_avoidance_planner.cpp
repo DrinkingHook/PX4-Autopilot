@@ -72,9 +72,16 @@ void GeofenceAvoidancePlanner::planPath()
 	_status = ret ? Status::Success : Status::DijkstraFailed;
 }
 
+/**
+ * @brief 从地理围栏接口更新规划器的多边形信息
+ *
+ * @param geofence 地理围栏接口
+ * @param margin 多边形边距
+ */
 void GeofenceAvoidancePlanner::updateGraphFromGeofence(GeofenceInterface &geofence, float margin)
 {
 	// Polygons are about to change; any previously latched fallback start may no longer be valid.
+	// 翻译：多边形即将改变，之前的回退起始点可能不再有效
 	_saved_valid_start = matrix::Vector2<double> {(double)NAN, (double)NAN};
 
 	_polygons_healthy = true;
@@ -123,6 +130,14 @@ void GeofenceAvoidancePlanner::updateGraphFromGeofence(GeofenceInterface &geofen
 	planPath();
 }
 
+/**
+ * @brief 从地理围栏接口更新多边形
+ *
+ * @param geofence 要读取的地理围栏接口
+ * @param margin 更新多边形时使用的边距
+ *
+ * @return 如果多边形更新成功，则返回 true；否则返回 false
+ */
 bool GeofenceAvoidancePlanner::updatePolygonsFromGeofence(
 	GeofenceInterface &geofence, float margin)
 {
@@ -141,6 +156,7 @@ bool GeofenceAvoidancePlanner::updatePolygonsFromGeofence(
 		if (info.fence_type == NAV_CMD_FENCE_POLYGON_VERTEX_INCLUSION || info.fence_type == NAV_CMD_FENCE_POLYGON_VERTEX_EXCLUSION) {
 
 			// Could skip this local copy and pass e.g. a reference to geofence into addPolygon, so it could access directly
+			// 翻译：可以跳过此本地复制步骤，e.g. 将地理围栏的引用传递给 addPolygon，以便直接访问
 			matrix::Vector2f local_in[info.vertex_count];
 
 			for (int vertex_idx = 0; vertex_idx < info.vertex_count; vertex_idx++) {
@@ -202,6 +218,11 @@ void GeofenceAvoidancePlanner::updateEdgeCosts()
 	perf_end(_update_edge_costs_perf);
 }
 
+/**
+ * @brief 更新目标位置
+ *
+ * @param destination 目标位置的经纬度坐标
+ */
 void GeofenceAvoidancePlanner::updateDestination(const matrix::Vector2d &destination)
 {
 	if (!_polygons_healthy) {
@@ -228,6 +249,8 @@ void GeofenceAvoidancePlanner::updateDestination(const matrix::Vector2d &destina
 
 	// PlannerPolygons stores positions in int32-cm, so a setDestination/getDestination
 	// roundtrip introduces up to 0.5cm of error -- hence the comparison tolerance.
+	// 翻译：PlannerPolygons 以 int32-cm 为单位存储位置，因此 setDestination/getDestination
+	// 	往返操作会引入高达 0.5cm 的误差——因此需要比较容差
 	if ((dest_local - _polygons.getDestination()).norm() < 0.1f) {
 		return;
 	}
@@ -245,6 +268,8 @@ void GeofenceAvoidancePlanner::updateDestination(const matrix::Vector2d &destina
 	// refreshing; polygon-polygon edges are independent of the destination. This is
 	// linear in the number of nodes, unlike the quadratic full rebuild, so it is not
 	// worth a perf counter.
+	// 翻译：目标位置已更改——只有与目标相关的边（节点 0）需要刷新
+	// 	多边形-多边形边与目标无关，这与节点数呈线性关系，不像完全重建那样呈二次方关系，因此无需使用性能计数器
 	for (int j = 1; j < _polygons.numNodes(); j++) {
 		_distances[dijkstra::symmetricPairIndex(0, j, _polygons.numNodes())] = _polygons.edgeCost(0, j);
 	}
@@ -252,6 +277,14 @@ void GeofenceAvoidancePlanner::updateDestination(const matrix::Vector2d &destina
 	planPath();
 }
 
+/**
+ * @brief 查找最佳起始节点
+ *
+ * @param start_local 起始位置的本地坐标
+ * @param destination_directly_reachable 目标是否直接可达
+ *
+ * @return 最佳起始节点的索引
+ */
 int GeofenceAvoidancePlanner::findBestStartingNode(const matrix::Vector2f &start_local,
 		bool &destination_directly_reachable) const
 {
@@ -280,6 +313,13 @@ int GeofenceAvoidancePlanner::findBestStartingNode(const matrix::Vector2f &start
 	return best_index;
 }
 
+/**
+ * @brief 更新起始位置并填充路径
+ *
+ * @param start 起始位置的经纬度坐标
+ *
+ * @return 路径中第一个空槽的索引
+ */
 int GeofenceAvoidancePlanner::updateStartAndFillPath(matrix::Vector2d start)
 {
 	// Populate _path so consumers can blindly follow it:

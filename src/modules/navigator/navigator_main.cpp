@@ -233,6 +233,7 @@ void Navigator::run()
 
 	// the reposition triplet is only partially populated by reposition commands,
 	// reset it so unset fields (yaw, course) are NaN instead of zero
+	// 翻译：重定位三元组仅部分由重定位命令填充，请将其重置，以便未设置的字段（偏航角、航向）为NaN而非零
 	reset_position_setpoint(_reposition_triplet.previous);
 	reset_position_setpoint(_reposition_triplet.current);
 	reset_position_setpoint(_reposition_triplet.next);
@@ -256,12 +257,14 @@ void Navigator::run()
 	hrt_abstime last_navigator_update{0};
 
 	// Keep normal Navigator work at the existing 20 Hz local-position cadence.
+	// 翻译：保持导航仪在现有的20赫兹本地位置频率下正常工作
 	static constexpr hrt_abstime kNavigatorUpdatePeriod{50_ms};
 	orb_set_interval(_local_pos_sub, static_cast<unsigned>(kNavigatorUpdatePeriod / 1_ms));
 
 	while (!should_exit()) {
 
 		// Poll Dataman only while the full-mission cache has a pending read.
+		// 翻译：仅当完整任务缓存有挂起的读取请求时，才轮询数据管理器
 		fds[3].fd = _mission_route_cache.fullMissionResponseSubscription();
 
 		/* wait for up to 1000ms for data */
@@ -272,7 +275,7 @@ void Navigator::run()
 
 		} else if (pret < 0) {
 			/* this is undesirable but not much we can do - might want to flag unhappy status */
-			// 翻译：这虽然令人不快，但我们也无能为力——或许应该标记一下不满状态。
+			// 翻译：这虽然令人不快，但我们也无能为力——或许应该标记一下不满状态
 			PX4_ERR("poll error %d, %d", pret, errno);
 			px4_usleep(10000);
 			continue;
@@ -368,11 +371,8 @@ void Navigator::run()
 			vehicle_command_s cmd{};
 			_vehicle_command_sub.copy(&cmd);
 
-			/**
-			 * @brief 打印命令数量丢失情况
-			 * 	  发布者每发布一次 generation 自增一次，在_vehicle_command_sub.copy(&cmd)更新为最新的数据后判断是否丢失数据
-			 *
-			 */
+			// 打印命令数量丢失情况
+			// 发布者每发布一次 generation 自增一次，在_vehicle_command_sub.copy(&cmd)更新为最新的数据后判断是否丢失数据
 			if (_vehicle_command_sub.get_last_generation() != last_generation + 1) {
 				PX4_ERR("vehicle_command lost, generation %d -> %d", last_generation, _vehicle_command_sub.get_last_generation());
 			}
@@ -443,7 +443,7 @@ void Navigator::run()
 					bool only_alt_change_requested = false;
 
 					// If no argument for ground speed, use default value.
-					// 翻译：如果没有地面速度参数，则使用默认值。
+					// 翻译：如果没有地面速度参数，则使用默认值
 					if (cmd.param1 <= 0 || !PX4_ISFINITE(cmd.param1)) {
 						// on entering Loiter mode, reset speed setpoint to default
 						if (_navigation_mode != &_loiter) {
@@ -711,7 +711,7 @@ void Navigator::run()
 				   get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) {
 
 				// for multicopters the orbit command is directly executed by the orbit flighttask
-				// 翻译：对于多旋翼，绕行命令直接由绕行飞行任务执行。
+				// 翻译：对于多旋翼，绕行命令直接由绕行飞行任务执行
 
 				vehicle_global_position_s position_setpoint{};
 				position_setpoint.lat = PX4_ISFINITE(cmd.param5) ? cmd.param5 : get_global_position()->lat;
@@ -719,7 +719,7 @@ void Navigator::run()
 				position_setpoint.alt = PX4_ISFINITE(cmd.param7) ? cmd.param7 : get_global_position()->alt;
 
 				// Wait for vehicle_status before handling the next command, otherwise the setpoint could be overwritten
-				// 翻译：在处理下一个命令之前等待vehicle_status，否则设置点可能会被覆盖。
+				// 翻译：在处理下一个命令之前等待vehicle_status，否则设置点可能会被覆盖
 				_wait_for_vehicle_status_timestamp = hrt_absolute_time();
 
 				if (geofence_allows_position(position_setpoint)) {
@@ -732,7 +732,7 @@ void Navigator::run()
 					rep->current.cruising_throttle = get_cruising_throttle();
 
 					// on entering Loiter mode, reset speed setpoint to default
-					// 翻译：进入Loiter模式时，重置速度设置点为默认值。
+					// 翻译：进入Loiter模式时，重置速度设置点为默认值
 					if (_navigation_mode != &_loiter) {
 						rep->current.cruising_speed = -1.f;
 
@@ -771,7 +771,7 @@ void Navigator::run()
 				position_setpoint.alt = PX4_ISFINITE(cmd.param7) ? cmd.param7 : get_global_position()->alt;
 
 				// Wait for vehicle_status before handling the next command, otherwise the setpoint could be overwritten
-				// 翻译：等待车辆状态，否则设置点可能会被覆盖。
+				// 翻译：等待车辆状态，否则设置点可能会被覆盖
 				_wait_for_vehicle_status_timestamp = hrt_absolute_time();
 
 				if (geofence_allows_position(position_setpoint)) {
@@ -1262,11 +1262,14 @@ void Navigator::run()
 	}
 }
 
+// 地理围栏违反检查
 void Navigator::geofence_breach_check()
 {
+	// 设置检查循环间隔
 	static constexpr hrt_abstime GEOFENCE_CHECK_INTERVAL_US = 200_ms;
 
 	// reset the post-breach loiter latch if we left AUTO_LOITER (and 100ms after it was triggered)
+	// 翻译： 如果我们之前选择了AUTO_LOITER(且在触发后100毫秒内)，则重置突破后悬停锁存
 	if (_vstatus.nav_state != vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER
 	    && hrt_elapsed_time(&_time_loitering_after_gf_breach) > 100_ms) {
 		_time_loitering_after_gf_breach = 0;
@@ -1282,6 +1285,7 @@ void Navigator::geofence_breach_check()
 		bool have_valid_position_for_breach_check = global_position_valid;
 
 		// relying on raw gps is questionable already, but at least check the basics
+		// 翻译：仅依赖原始GPS数据本身就存在问题，但至少应该先检查一下基本情况
 		const bool raw_gps_valid =
 			hrt_elapsed_time(&_gps_pos.timestamp) < 2_s && _gps_pos.fix_type >= 2;
 
@@ -1300,6 +1304,8 @@ void Navigator::geofence_breach_check()
 		if (_time_loitering_after_gf_breach > 0) {
 			// while loitering after a breach, only allow new triggers to be set, never cleared.
 			// Prevents the reposition center from walking outward when the vehicle hovers at the fence boundary.
+			// 翻译：在突破后进行悬停时，只允许设置新的触发器，绝不允许清除
+			// 	防止车辆在围栏边界悬停时，重新定位中心向外移动
 			_geofence_result.geofence_max_dist_triggered |= !_geofence.isCloserThanMaxDistToHome(current_latitude,
 					current_longitude, current_altitude);
 			_geofence_result.geofence_max_alt_triggered |= !_geofence.isBelowMaxAltitude(current_altitude);
@@ -1334,6 +1340,7 @@ void Navigator::geofence_breach_check()
 				double loiter_center_lon = _global_pos.lon;
 
 				// if we are established on a loiter, continue loitering
+				// 翻译：如果我们已在一个地方悬停，就继续悬停
 				if (is_established_on_loiter(current)) {
 					loiter_center_lat = current.lat;
 					loiter_center_lon = current.lon;
