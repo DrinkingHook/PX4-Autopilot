@@ -370,7 +370,7 @@ void EKFGSF_yaw::predictEKF(const uint8_t model_index, const Vector3f &delta_ang
 	}
 
 	// sum delta velocities in earth frame:
-	// 翻译：在地球坐标系中求和速度增量：
+	// 翻译：在地球坐标系中求和速度增量
 	_ekf_gsf[model_index].X(0) += del_vel_NED(0);
 	_ekf_gsf[model_index].X(1) += del_vel_NED(1);
 }

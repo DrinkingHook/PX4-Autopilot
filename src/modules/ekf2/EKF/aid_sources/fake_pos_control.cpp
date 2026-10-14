@@ -44,6 +44,8 @@ void Ekf::controlFakePosFusion()
 
 	// If we aren't doing any aiding, fake position measurements at the last known position to constrain drift
 	// During initial tilt alignment, fake position is used to perform a "quasi-stationary" leveling of the EKF
+	// 翻译：若无外部辅助，则在最后已知位置处使用虚拟位置测量值来约束漂移
+	//	在初始倾斜对准期间，利用虚拟位置对 EKF 进行“准静止”水平校准
 	const bool fake_pos_data_ready = !isHorizontalAidingActive()
 					 && isTimedOut(aid_src.time_last_fuse, (uint64_t)2e5); // Fuse fake position at a limited rate
 

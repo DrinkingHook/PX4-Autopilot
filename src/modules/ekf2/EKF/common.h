@@ -656,6 +656,8 @@ bool bad_sideslip      :
  | 46   | yaw_manual                     | 偏航被手动重置（yaw has been reset manually）                               |
  | 47   | gnss_hgt_fault                 | GNSS 高度测量被声明为故障，不再使用（GNSS measurements (alt) have been declared faulty and are no longer used） |
  | 48   | in_transition_to_fw            | 飞行器正在向固定翼模式过渡（the vehicle is in transition to fw）            |
+ | 49	| heading_observable		 | 当航向可观测时为真	|
+ | 50	| rngbcn_fusion			 | 当测距信标位置融合处于激活状态时为真	|
  */
 // bitmask containing filter control status
 union filter_control_status_u {

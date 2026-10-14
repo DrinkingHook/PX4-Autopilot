@@ -558,7 +558,7 @@ void EKF2::Run()
 
 				if (_ekf.setEkfGlobalOrigin(latitude, longitude, altitude)) {
 					// Validate the ekf origin status.
-					// 翻译：验证ekf原点状态。
+					// 翻译：验证ekf原点状态
 					uint64_t origin_time {};
 					_ekf.getEkfGlobalOrigin(origin_time, latitude, longitude, altitude);
 					PX4_INFO("%d - New NED origin (LLA): %3.10f, %3.10f, %4.3f\n",
@@ -803,11 +803,11 @@ void EKF2::Run()
 		const hrt_abstime now = imu_sample_new.time_us;
 
 		// push imu data into estimator
-		// 翻译：将imu数据推入估计器。
+		// 翻译：将imu数据推入估计器
 		_ekf.setIMUData(imu_sample_new);
 
 		// integrate time to monitor time slippage
-		// 翻译：将时间整合到时间滑动监控中。
+		// 翻译：将时间整合到时间滑动监控中
 		if (_start_time_us > 0) {
 			_integrated_time_us += imu_dt;
 			_last_time_slip_us = (imu_sample_new.time_us - _start_time_us) - _integrated_time_us;
@@ -1231,8 +1231,8 @@ void EKF2::PublishAttitude(const hrt_abstime &timestamp)
 	}  else if (_replay_mode) {
 		// in replay mode we have to tell the replay module not to wait for an update
 		// we do this by publishing an attitude with zero timestamp
-		// 翻译：在回放模式下，我们必须告诉回放模块不要等待更新。
-		// 我们通过发布一个带有零时间戳的姿态来做到这一点。
+		// 翻译：在回放模式下,我们必须告诉回放模块不要等待更新
+		// 	我们通过发布一个带有零时间戳的姿态来做到这一点
 		vehicle_attitude_s att{};
 		_attitude_pub.publish(att);
 	}
@@ -1556,9 +1556,9 @@ void EKF2::PublishInnovations(const hrt_abstime &timestamp)
 /**
  * @brief 发布新息检测比率 (Innovation Test Ratios)
  *
- * 该函数发布归一化的新息比率，用于判断传感器数据是否通过了异常值检测。
- * - ratio < 1.0: 数据有效，进行融合。
- * - ratio > 1.0: 数据异常，拒绝融合。
+ * 该函数发布归一化的新息比率，用于判断传感器数据是否通过了异常值检测
+ * - ratio < 1.0: 数据有效，进行融合
+ * - ratio > 1.0: 数据异常，拒绝融合
  */
 void EKF2::PublishInnovationTestRatios(const hrt_abstime &timestamp)
 {
@@ -1657,8 +1657,8 @@ void EKF2::PublishInnovationTestRatios(const hrt_abstime &timestamp)
 /**
  * @brief 发布新息方差 (Innovation Variances)
  *
- * 该函数发布新息的方差，反映了预测误差和测量噪声的综合不确定度。
- * 主要用于参数调整（如 EKF2_*_NOISE）和滤波器健康度分析。
+ * 该函数发布新息的方差，反映了预测误差和测量噪声的综合不确定度
+ * 主要用于参数调整（如 EKF2_*_NOISE）和滤波器健康度分析
  */
 void EKF2::PublishInnovationVariances(const hrt_abstime &timestamp)
 {
@@ -1940,7 +1940,7 @@ void EKF2::PublishSensorBias(const hrt_abstime &timestamp)
 #endif // CONFIG_EKF2_MAGNETOMETER
 
 	// publish at ~1 Hz, or sooner if there's a change
-	// 翻译：发布频率约为 1 Hz，如有变化则更快。
+	// 翻译：发布频率约为 1 Hz，如有变化则更快
 	if ((gyro_bias - _last_gyro_bias_published).longerThan(0.001f)
 	    || (accel_bias - _last_accel_bias_published).longerThan(0.001f)
 #if defined(CONFIG_EKF2_MAGNETOMETER)
@@ -1952,7 +1952,7 @@ void EKF2::PublishSensorBias(const hrt_abstime &timestamp)
 		bias.timestamp_sample = _ekf.time_delayed_us();
 
 		// take device ids from sensor_selection_s if not using specific vehicle_imu_s
-		// 翻译：如果未使用特定的 vehicle_imu_s，则从 sensor_selection_s 中获取设备 ID。
+		// 翻译：如果未使用特定的 vehicle_imu_s,则从 sensor_selection_s 中获取设备 ID
 		if ((_device_id_gyro != 0) && (_param_ekf2_imu_ctrl.get() & static_cast<int32_t>(ImuCtrl::GyroBias))) {
 			const Vector3f bias_var{_ekf.getGyroBiasVariance()};
 
@@ -2135,7 +2135,7 @@ void EKF2::PublishFusionControl(const hrt_abstime &timestamp)
 void EKF2::PublishStatusFlags(const hrt_abstime &timestamp)
 {
 	// publish at ~ 1 Hz (or immediately if filter control status or fault status changes)
-	// 翻译：以每秒1次的频率发布（或立即发布，如果滤波器控制状态或故障状态发生变化）
+	// 翻译：以每秒1次的频率发布(如果滤波器控制状态或故障状态发生变化则立即发布)
 	bool update = (timestamp >= _last_status_flags_publish + 1_s);
 
 	// filter control status
@@ -2367,7 +2367,7 @@ void EKF2::UpdateAirspeedSample(ekf2_timestamps_s &ekf2_timestamps)
 		if (_airspeed_sub.update(&airspeed)) {
 			// The airspeed measurement received via ORB_ID(airspeed) topic has not been corrected
 			// for scale factor errors and requires the ASPD_SCALE correction to be applied.
-			// 翻译：通过 ORB_ID(airspeed) 主题接收的空速测量值尚未针对比例因子误差进行校正，需要应用 ASPD_SCALE 校正。
+			// 翻译：通过 ORB_ID(airspeed) 主题接收的空速测量值尚未针对比例因子误差进行校正，需要应用 ASPD_SCALE 校正
 			const float true_airspeed_m_s = airspeed.true_airspeed_m_s * _airspeed_scale_factor;
 
 			if (PX4_ISFINITE(airspeed.true_airspeed_m_s)
@@ -2397,7 +2397,7 @@ void EKF2::UpdateAuxVelSample(ekf2_timestamps_s &ekf2_timestamps)
 {
 	// EKF auxiliary velocity sample
 	//  - use the landing target pose estimate as another source of velocity data
-	// 翻译：使用着陆目标姿势估计作为另一个速度数据源。
+	// 翻译：使用着陆目标姿势估计作为另一个速度数据源
 	landing_target_pose_s landing_target_pose;
 
 	if (!_param_ekf2_avel_en.get()) {
@@ -2408,7 +2408,7 @@ void EKF2::UpdateAuxVelSample(ekf2_timestamps_s &ekf2_timestamps)
 
 		if (landing_target_pose.rel_vel_ekf2_valid) {
 			// velocity of vehicle relative to target has opposite sign to target relative to vehicle
-			// 翻译：车辆相对于目标的速度与目标相对于车辆的速度相反。
+			// 翻译：车辆相对于目标的速度与目标相对于车辆的速度相反
 			auxVelSample auxvel_sample{
 				.time_us = landing_target_pose.timestamp,
 				.vel = Vector2f{-landing_target_pose.vx_rel, -landing_target_pose.vy_rel},
@@ -2659,13 +2659,13 @@ bool EKF2::UpdateFlowSample(ekf2_timestamps_s &ekf2_timestamps)
 		if (dt > FLT_EPSILON) {
 			// NOTE: the EKF uses the reverse sign convention to the flow sensor. EKF assumes positive LOS rate
 			// is produced by a RH rotation of the image about the sensor axis.
-			// 翻译：注意：EKF 使用与流量传感器相反的符号约定。EKF 假设图像绕传感器轴向右旋转会产生正的视线方向速率。
+			// 翻译：NOTE: EKF 使用与流量传感器相反的符号约定.EKF 假设图像绕传感器轴向右旋转会产生正的视线方向速率
 			flow_rate = Vector2f(-optical_flow.pixel_flow[0], -optical_flow.pixel_flow[1]) / dt;
 			gyro_rate = Vector3f(-optical_flow.delta_angle[0], -optical_flow.delta_angle[1], -optical_flow.delta_angle[2]) / dt;
 
 		} else if (optical_flow.quality == 0) {
 			// handle special case of SITL and PX4Flow where dt is forced to zero when the quaity is 0
-			// 翻译：处理 SITL 和 PX4Flow 的特殊情况，其中 dt 在质量为 0 时被强制为零。
+			// 翻译：处理 SITL 和 PX4Flow 的特殊情况,其中 dt 在质量为 0 时被强制为零
 			flow_rate.zero();
 			gyro_rate.zero();
 		}
@@ -2680,7 +2680,7 @@ bool EKF2::UpdateFlowSample(ekf2_timestamps_s &ekf2_timestamps)
 		if (Vector2f(optical_flow.pixel_flow).isAllFinite() && optical_flow.integration_timespan_us < 1e6) {
 
 			// Save sensor limits reported by the optical flow sensor
-			// 翻译：保存由光学流传感器报告的传感器限制
+			// 翻译: 保存由光学流传感器报告的传感器限制
 			_ekf.set_optical_flow_limits(optical_flow.max_flow_rate, optical_flow.min_ground_distance,
 						     optical_flow.max_ground_distance);
 
@@ -2692,7 +2692,7 @@ bool EKF2::UpdateFlowSample(ekf2_timestamps_s &ekf2_timestamps)
 #if defined(CONFIG_EKF2_RANGE_FINDER)
 
 		// use optical_flow distance as range sample if distance_sensor unavailable
-		// 翻译：如果距离传感器不可用，则使用光学流距离作为范围样本
+		// 翻译: 如果距离传感器不可用,则使用光学流距离作为范围样本
 		if (PX4_ISFINITE(optical_flow.distance_m) && (ekf2_timestamps.timestamp > _last_range_sensor_update + 1_s)) {
 
 			int8_t quality = static_cast<float>(optical_flow.quality) / static_cast<float>(UINT8_MAX) * 100.f;
@@ -2858,7 +2858,7 @@ void EKF2::UpdateRangeSample(ekf2_timestamps_s &ekf2_timestamps)
 	if (_distance_sensor_selected < 0) {
 
 		// only consider distance sensors that have updated within the last 0.1s
-		// 翻译：只考虑在最近0.1秒内更新的距离传感器
+		// 翻译: 只考虑在最近0.1秒内更新的距离传感器
 		const hrt_abstime timestamp_stale = math::max(ekf2_timestamps.timestamp, 100_ms) - 100_ms;
 
 		if (_distance_sensor_subs.advertised()) {

@@ -70,22 +70,27 @@ void OutputPredictor::print_status()
 	       _output_vert_buffer.entries(), _output_vert_buffer.get_length(), _output_vert_buffer.get_total_size());
 }
 
+// 对齐输出滤波器
 void OutputPredictor::alignOutputFilter(const Quatf &quat_state, const Vector3f &vel_state, const LatLonAlt &gpos_state)
 {
 	const outputSample &output_delayed = _output_buffer.get_oldest();
 
 	// calculate the quaternion rotation delta from the EKF to output observer states at the EKF fusion time horizon
+	// 翻译：计算从 EKF 状态到输出观测器状态的旋转四元数增量(基于 EKF 融合时间点)
 	Quatf q_delta{quat_state * output_delayed.quat_nominal.inversed()};
 	q_delta.normalize();
 
 	// calculate the velocity delta between the output and EKF at the EKF fusion time horizon
+	// 翻译：计算 EKF 融合时刻下，输出状态与 EKF 状态之间的速度增量
 	const Vector3f vel_delta = vel_state - output_delayed.vel;
 
 	// zero the position error at delayed time and reset the global reference
+	// 翻译：将延迟时刻的位置误差归零，并重置全局参考系
 	const Vector3f pos_delta = -output_delayed.pos;
 	_global_ref = gpos_state;
 
 	// loop through the output filter state history and add the deltas
+	// 翻译：遍历输出滤波器的状态历史并累加增量
 	for (uint8_t i = 0; i < _output_buffer.get_length(); i++) {
 		_output_buffer[i].quat_nominal = q_delta * _output_buffer[i].quat_nominal;
 		_output_buffer[i].quat_nominal.normalize();
@@ -175,10 +180,12 @@ void OutputPredictor::resetAltitudeTo(const float new_altitude, const float vert
 	_global_ref.setAltitude(new_altitude);
 }
 
+// 计算输出状态
 void OutputPredictor::calculateOutputStates(const uint64_t time_us, const Vector3f &delta_angle,
 		const float delta_angle_dt, const Vector3f &delta_velocity, const float delta_velocity_dt)
 {
 	// Use full rate IMU data at the current time horizon
+	// 翻译：在当前时间点使用全速率 IMU 数据
 	if (_time_last_update_states_us != 0) {
 		const float dt = math::constrain((time_us - _time_last_update_states_us) * 1e-6f, 0.0001f, 0.03f);
 		_dt_update_states_avg = 0.8f * _dt_update_states_avg + 0.2f * dt;
@@ -188,6 +195,9 @@ void OutputPredictor::calculateOutputStates(const uint64_t time_us, const Vector
 
 	// correct delta angle and delta velocity for bias offsets
 	// Apply corrections to the delta angle required to track the quaternion states at the EKF fusion time horizon
+	// 翻译：针对偏置（bias）偏差修正增量角度和增量速度
+	// 	在 EKF 融合时间点，对用于跟踪四元数状态的增量角度应用修正
+	// IMU偏置补偿
 	const Vector3f delta_angle_bias_scaled = _gyro_bias * delta_angle_dt;
 	const Vector3f delta_angle_corrected(delta_angle - delta_angle_bias_scaled + _delta_angle_corr);
 
@@ -197,25 +207,35 @@ void OutputPredictor::calculateOutputStates(const uint64_t time_us, const Vector
 	_output_new.time_us = time_us;
 	_output_vert_new.time_us = time_us;
 
+	// AxisAnglef 将 3D 角向量转换为等效四元数 dq
 	const Quatf dq(AxisAnglef{delta_angle_corrected});
 
 	// rotate the previous INS quaternion by the delta quaternions
+	// 翻译：利用增量四元数对先前的 INS 四元数进行旋转
 	const Quatf quat_nominal_before_update = _output_new.quat_nominal;
 	_output_new.quat_nominal = _output_new.quat_nominal * dq;
 
 	// the quaternions must always be normalised after modification
+	// 翻译：四元数在修改后必须始终进行归一化处理
 	_output_new.quat_nominal.normalize();
 
 	// calculate the rotation matrix from body to earth frame
+	// 翻译：计算从机体坐标系到地球坐标系的旋转矩阵
+	// 从四元数得到方向余弦矩阵(DCM)用于将体轴坐标系(Body Frame)的向量转换到地球系(NED Frame)
 	_R_to_earth_now = Dcmf(_output_new.quat_nominal);
 
 	// rotate the delta velocity to earth frame
+	// 翻译：将增量速度旋转至地球坐标系
 	Vector3f delta_vel_earth{_R_to_earth_now * delta_velocity_corrected};
 
 	// correct for measured acceleration due to gravity
+	// 翻译：针对测得的重力加速度进行修正
+	// 惯性导航系统(INS)的最基本、最重要的概念之一：
+	//    1)加速度计测的是非重力加速度(specific force)而不是实际的加速度
 	delta_vel_earth(2) += _gravity * delta_velocity_dt;
 
 	// calculate the earth frame velocity derivatives
+	// 翻译：计算地心地固坐标系(或导航坐标系)下的速度导数
 	_delta_vel_sum += delta_vel_earth;
 	_delta_vel_dt += delta_velocity_dt;
 
@@ -264,6 +284,7 @@ void OutputPredictor::calculateOutputStates(const uint64_t time_us, const Vector
 	_delta_angle_sum_dt += delta_angle_dt;
 }
 
+// 修正输出状态
 void OutputPredictor::correctOutputStates(const uint64_t time_delayed_us,
 		const Quatf &quat_state, const Vector3f &vel_state, const LatLonAlt &gpos_state, const matrix::Vector3f &gyro_bias,
 		const matrix::Vector3f &accel_bias)
@@ -355,6 +376,7 @@ void OutputPredictor::correctOutputStates(const uint64_t time_delayed_us,
 	_global_ref = gpos_state;
 }
 
+// 对垂直输出缓冲区应用校正
 void OutputPredictor::applyCorrectionToVerticalOutputBuffer(const float vert_vel_correction, const float pos_ref_change)
 {
 	// loop through the vertical output filter state history starting at the oldest and apply the corrections to the
@@ -390,6 +412,7 @@ void OutputPredictor::applyCorrectionToVerticalOutputBuffer(const float vert_vel
 	_output_vert_new.dt = 0.0f;
 }
 
+// 将校正应用于输出缓冲区
 void OutputPredictor::applyCorrectionToOutputBuffer(const Vector3f &vel_correction, const Vector3f &pos_correction)
 {
 	// loop through the output filter state history and apply the corrections to the velocity and position states

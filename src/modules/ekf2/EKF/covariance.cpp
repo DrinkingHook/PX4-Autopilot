@@ -110,22 +110,27 @@ void Ekf::initialiseCovariance()
 #endif // CONFIG_EKF2_TERRAIN
 }
 
+// 预测协方差
 void Ekf::predictCovariance(const imuSample &imu_delayed)
 {
 	// predict the covariance
+	// 翻译：预测协方差
 	const float dt = 0.5f * (imu_delayed.delta_vel_dt + imu_delayed.delta_ang_dt);
 
 	// gyro noise variance
+	// 翻译：陀螺仪噪声方差
 	float gyro_noise = _params.ekf2_gyr_noise;
 	const float gyro_var = sq(gyro_noise);
 
 	// accel noise variance
+	// 翻译：加速度噪声方差
 	float accel_noise = _params.ekf2_acc_noise;
 	Vector3f accel_var;
 
 	for (unsigned i = 0; i < 3; i++) {
 		if (_fault_status.flags.bad_acc_vertical || imu_delayed.delta_vel_clipping[i]) {
 			// Increase accelerometer process noise if bad accel data is detected
+			// 翻译：若检测到加速度计数据异常，则增大加速度计过程噪声
 			accel_var(i) = sq(BADACC_BIAS_PNOISE);
 
 		} else {
@@ -134,6 +139,7 @@ void Ekf::predictCovariance(const imuSample &imu_delayed)
 	}
 
 	// calculate variances and upper diagonal covariances for quaternion, velocity, position and gyro bias states
+	// 翻译：计算四元数、速度、位置及陀螺仪零偏状态的方差与上三角协方差
 	P = sym::PredictCovariance(_state.vector(), P,
 				   imu_delayed.delta_vel / imu_delayed.delta_vel_dt, accel_var,
 				   imu_delayed.delta_ang / imu_delayed.delta_ang_dt, gyro_var,
@@ -141,11 +147,14 @@ void Ekf::predictCovariance(const imuSample &imu_delayed)
 
 	if (!_control_status.flags.heading_observable) {
 		// Zero heading correlations to prevent unintended heading corrections when heading is not observable
+		// 翻译：将航向相关性置零，以防止在航向不可观测时发生非预期的航向修正
 		uncorrelateAndLimitHeadingCovariance();
 	}
 
 	// Construct the process noise variance diagonal for those states with a stationary process model
 	// These are kinematic states and their error growth is controlled separately by the IMU noise variances
+	// 翻译：为具有静止过程模型的那些状态构建过程噪声方差对角线
+	// 	这些属于运动学状态，其误差增长由 IMU 噪声方差单独控制
 
 	// gyro bias: add process noise
 	{
@@ -227,7 +236,7 @@ void Ekf::predictCovariance(const imuSample &imu_delayed)
 	if (_height_sensor_ref != HeightSensor::RANGE) {
 		// predict the state variance growth where the state is the vertical position of the terrain underneath the vehicle
 		// process noise due to errors in vehicle height estimate
-		// 翻译：预测状态方差的增长，其中状态是车辆下方地形的垂直位置，处理由车辆高度估计误差引起的噪声。
+		// 翻译：预测状态方差的增长，其中状态是车辆下方地形的垂直位置，处理由车辆高度估计误差引起的噪声
 		float terrain_process_noise = sq(imu_delayed.delta_vel_dt * _params.ekf2_terr_noise);
 
 		// process noise due to terrain gradient
@@ -240,6 +249,7 @@ void Ekf::predictCovariance(const imuSample &imu_delayed)
 #endif // CONFIG_EKF2_TERRAIN
 
 	// covariance matrix is symmetrical, so copy upper half to lower half
+	// 翻译：协方差矩阵是对称的，因此将上半部分复制到下半部分
 	for (unsigned row = 0; row < State::size; row++) {
 		for (unsigned column = 0; column < row; column++) {
 			P(row, column) = P(column, row);

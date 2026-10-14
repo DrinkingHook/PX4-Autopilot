@@ -46,7 +46,7 @@
 #include <cstdlib>
 
 /**
- * @brief 判断是否需要重置高度。
+ * @brief 判断是否需要重置高度
  */
 bool Ekf::isHeightResetRequired() const
 {
@@ -62,8 +62,8 @@ bool Ekf::isHeightResetRequired() const
 }
 
 /**
- * @brief 计算地球自转速度在NED坐标系下的向量。
- * @param lat_rad 纬度的弧度表示。
+ * @brief 计算地球自转速度在NED坐标系下的向量
+ * @param lat_rad 纬度的弧度表示
  */
 Vector3f Ekf::calcEarthRateNED(float lat_rad) const
 {
@@ -73,12 +73,12 @@ Vector3f Ekf::calcEarthRateNED(float lat_rad) const
 }
 
 /**
- * @brief 获取EKF的全局原点信息，包括时间、纬度、经度和海拔高度。
+ * @brief 获取EKF的全局原点信息，包括时间、纬度、经度和海拔高度
  *
- * @param origin_time 输出参数，表示原点的时间戳。
- * @param latitude 输出参数，表示原点的纬度。
- * @param longitude 输出参数，表示原点的经度。
- * @param origin_alt 输出参数，表示原点的海拔高度。
+ * @param origin_time 输出参数，表示原点的时间戳
+ * @param latitude 输出参数，表示原点的纬度
+ * @param longitude 输出参数，表示原点的经度
+ * @param origin_alt 输出参数，表示原点的海拔高度
  */
 void Ekf::getEkfGlobalOrigin(uint64_t &origin_time, double &latitude, double &longitude, float &origin_alt) const
 {
@@ -89,12 +89,12 @@ void Ekf::getEkfGlobalOrigin(uint64_t &origin_time, double &latitude, double &lo
 }
 
 /**
- * @brief 检查纬度和经度的有效性。
+ * @brief 检查纬度和经度的有效性
  *
- * @param latitude 输入参数，表示要检查的纬度。
- * @param longitude 输入参数，表示要检查的经度。
+ * @param latitude 输入参数，表示要检查的纬度
+ * @param longitude 输入参数，表示要检查的经度
  *
- * @return true 如果纬度和经度有效，false 否则。
+ * @return true 如果纬度和经度有效，false 否则
  */
 bool Ekf::checkLatLonValidity(const double latitude, const double longitude)
 {
@@ -105,11 +105,11 @@ bool Ekf::checkLatLonValidity(const double latitude, const double longitude)
 }
 
 /**
- * @brief 检查高度的有效性。
+ * @brief 检查高度的有效性
  *
- * @param altitude 输入参数，表示要检查的高度。
+ * @param altitude 输入参数，表示要检查的高度
  *
- * @return true 如果高度有效，false 否则。
+ * @return true 如果高度有效，false 否则
  */
 bool Ekf::checkAltitudeValidity(const float altitude)
 {
@@ -119,15 +119,15 @@ bool Ekf::checkAltitudeValidity(const float altitude)
 }
 
 /**
- * @brief 设置EKF的全局原点。
+ * @brief 设置EKF的全局原点
  *
- * @param latitude 输入参数，表示要设置的纬度。
- * @param longitude 输入参数，表示要设置的经度。
- * @param altitude 输入参数，表示要设置的高度。
- * @param hpos_var 输入参数，表示水平位置方差。
- * @param vpos_var 输入参数，表示垂直位置方差。
+ * @param latitude 输入参数，表示要设置的纬度
+ * @param longitude 输入参数，表示要设置的经度
+ * @param altitude 输入参数，表示要设置的高度
+ * @param hpos_var 输入参数，表示水平位置方差
+ * @param vpos_var 输入参数，表示垂直位置方差
  *
- * @return true 如果设置成功，false 否则。
+ * @return true 如果设置成功，false 否则
  */
 bool Ekf::setEkfGlobalOrigin(const double latitude, const double longitude, const float altitude, const float hpos_var,
 			     const float vpos_var)
@@ -143,13 +143,13 @@ bool Ekf::setEkfGlobalOrigin(const double latitude, const double longitude, cons
 }
 
 /**
- * @brief 设置EKF的纬度和经度原点。
+ * @brief 设置EKF的纬度和经度原点
  *
- * @param latitude 输入参数，表示要设置的纬度。
- * @param longitude 输入参数，表示要设置的经度。
- * @param hpos_var 输入参数，表示水平位置方差。
+ * @param latitude 输入参数，表示要设置的纬度
+ * @param longitude 输入参数，表示要设置的经度
+ * @param hpos_var 输入参数，表示水平位置方差
  *
- * @return true 如果设置成功，false 否则。
+ * @return true 如果设置成功，false 否则
  */
 bool Ekf::setLatLonOrigin(const double latitude, const double longitude, const float hpos_var)
 {
@@ -214,7 +214,7 @@ bool Ekf::setAltOrigin(const float altitude, const float vpos_var)
 }
 
 /**
- * @brief 重置全局位置到指定的经纬度和高度。
+ * @brief 重置全局位置到指定的经纬度和高度
  *
  * @param latitude  纬度（度）
  * @param longitude 经度（度）
@@ -222,7 +222,7 @@ bool Ekf::setAltOrigin(const float altitude, const float vpos_var)
  * @param hpos_var  水平位置方差（米^2）
  * @param vpos_var  垂直位置方差（米^2）
  *
- * @return true 如果重置成功，否则返回false。
+ * @return true 如果重置成功，否则返回false
  */
 bool Ekf::resetGlobalPositionTo(const double latitude, const double longitude, const float altitude,
 				const float hpos_var, const float vpos_var)
@@ -238,13 +238,13 @@ bool Ekf::resetGlobalPositionTo(const double latitude, const double longitude, c
 }
 
 /**
- * @brief 重置纬度和经度到指定的值。
+ * @brief 重置纬度和经度到指定的值
  *
  * @param latitude  纬度（度）
  * @param longitude 经度（度）
  * @param hpos_var  水平位置方差（米^2）
  *
- * @return true 如果重置成功，否则返回false。
+ * @return true 如果重置成功，否则返回false
  */
 bool Ekf::resetLatLonTo(const double latitude, const double longitude, const float hpos_var)
 {
@@ -364,9 +364,9 @@ void Ekf::get_ekf_lpos_accuracy(float *ekf_eph, float *ekf_epv) const
 	// If we are dead-reckoning for too long, use the innovations as a conservative alternate measure of the horizontal position error
 	// The reason is that complete rejection of measurements is often caused by heading misalignment or inertial sensing errors
 	// and using state variances for accuracy reporting is overly optimistic in these situations
-	// 翻译：如果航位推算时间过长，则应使用创新点作为水平位置误差的保守替代指标。
-	// 原因是，完全拒绝测量结果通常是由航向偏差或惯性传感误差引起的。
-	// 在这些情况下，使用状态方差来报告精度过于乐观。
+	// 翻译：如果航位推算时间过长，则应使用创新点作为水平位置误差的保守替代指标
+	// 原因是，完全拒绝测量结果通常是由航向偏差或惯性传感误差引起的
+	// 在这些情况下，使用状态方差来报告精度过于乐观
 	if (_horizontal_deadreckon_time_exceeded) {
 #if defined(CONFIG_EKF2_GNSS)
 
@@ -699,8 +699,8 @@ float Ekf::getHorizontalPositionInnovationTestRatio() const
 /**
  * @brief 获取垂直位置的创新测试比率（Innovation Test Ratio）
  *
- * 该函数计算垂直位置测量（通常为气压高度、GPS高度、范围传感器或EV位置Z）的创新测试比率，
- * 用于评估本次测量的创新（残差）是否在合理范围内（创新门限检查/gating）。
+ * 该函数计算垂直位置测量(通常为气压高度、GPS高度、范围传感器或EV位置Z)的创新测试比率，
+ * 用于评估本次测量的创新(残差)是否在合理范围内(创新门限检查/gating)
  */
 float Ekf::getVerticalPositionInnovationTestRatio() const
 {
@@ -889,27 +889,27 @@ uint16_t Ekf::get_ekf_soln_status() const
 }
 
 /**
- * @brief 执行卡尔曼滤波的状态修正步骤（应用增益和创新更新状态向量）
+ * @brief 执行卡尔曼滤波的状态修正步骤(应用增益和创新更新状态向量)
  *
  * 该函数仅负责测量更新中的状态估计修正部分：
  * 使用预先计算的卡尔曼增益和创新值，直接更新状态向量。
- * 不更新协方差矩阵P（协方差更新通常在调用者或measurementUpdate中完成）。
+ * 不更新协方差矩阵P(协方差更新通常在调用者或measurementUpdate中完成)
  *
  * 典型公式：x = x + K * innovation
  *
- * @param[in] K           卡尔曼增益向量（状态维度×1）
+ * @param[in] K           卡尔曼增益向量(状态维度×1)
  *                        通常由 measurementUpdate() 或类似函数计算得到
  * @param[in] innovation  创新值（标量），即 measurement - H * x_pred
  *
- * @return void           无返回值，直接就地修改成员变量 _state（或等效状态向量）
+ * @return void           无返回值，直接就地修改成员变量 _state(或等效状态向量)
  *
  * @note
  *       - 该函数仅更新状态估计，不涉及协方差更新。
- *       - 常用于标量测量场景，与计算增益和协方差更新的函数配合使用。
- *       - 在某些直接状态测量融合（如fuseDirectStateMeasurement）内部也会调用类似逻辑。
+ *       - 常用于标量测量场景，与计算增益和协方差更新的函数配合使用
+ *       - 在某些直接状态测量融合(如fuseDirectStateMeasurement)内部也会调用类似逻辑。
  *
- * @see measurementUpdate()     完整标量测量更新（计算K并更新状态和协方差）
- * @see fuseDirectStateMeasurement()  直接状态测量的融合函数（内部可能调用fuse）
+ * @see measurementUpdate()     完整标量测量更新(计算K并更新状态和协方差)
+ * @see fuseDirectStateMeasurement()  直接状态测量的融合函数(内部可能调用fuse)
  */
 void Ekf::fuse(const VectorState &K, float innovation)
 {
@@ -1121,23 +1121,22 @@ void Ekf::updateVerticalDeadReckoningStatus()
 }
 
 /**
- * @brief 获取机体坐标系（Body frame）下的姿态旋转误差方差（对角元素）
+ * @brief 获取机体坐标系(Body frame)下的姿态旋转误差方差(对角元素)
+ * 	1)该函数从状态协方差矩阵中提取四元数(quat_nominal)对应的3x3协方差子块
+ * 	2)表示姿态误差在本地导航坐标系(NED/Earth frame)下的协方差
+ * 	3)然后通过当前姿态旋转矩阵将该协方差旋转到机体坐标系(Body frame)
+ * 	4)最后返回旋转后协方差矩阵的对角元素，即roll、pitch、yaw三个轴在机体坐标系下的方差
  *
- * 该函数从状态协方差矩阵中提取四元数（quat_nominal）对应的3x3协方差子块，
- * 表示姿态误差在本地导航坐标系（NED/Earth frame）下的协方差，
- * 然后通过当前姿态旋转矩阵将该协方差旋转到机体坐标系（Body frame），
- * 最后返回旋转后协方差矩阵的对角元素，即roll、pitch、yaw三个轴在机体坐标系下的方差。
- *
- * @return Vector3f 机体坐标系下三个旋转轴的误差方差（rad²）
+ * @return Vector3f 机体坐标系下三个旋转轴的误差方差(rad²)
  *         - x: roll轴方差
  *         - y: pitch轴方差
  *         - z: yaw轴方差
  *
  * @note
- *       - 姿态误差协方差最初定义在NED坐标系中（tilt error + yaw error）。
- *       - 通过相似变换 _R_to_earth^T * cov_ned * _R_to_earth 得到机体坐标系下的协方差。
- *       - 仅返回对角元素（即各轴独立方差），不返回完整协方差矩阵。
- *       - 常用于机载传感器（如磁力计、外部视觉姿态）的创新门限检查或诊断输出。
+ *       - 姿态误差协方差最初定义在NED坐标系中(tilt error + yaw error)
+ *       - 通过相似变换 _R_to_earth^T * cov_ned * _R_to_earth 得到机体坐标系下的协方差
+ *       - 仅返回对角元素(即各轴独立方差)，不返回完整协方差矩阵
+ *       - 常用于机载传感器(如磁力计、外部视觉姿态)的创新门限检查或诊断输出
  *
  * @see getRotVarNed() 获取NED坐标系下的姿态方差
  */
@@ -1148,20 +1147,19 @@ Vector3f Ekf::getRotVarBody() const
 }
 
 /**
- * @brief 获取本地导航坐标系（NED frame）下的姿态旋转误差方差（对角元素）
+ * @brief 获取本地导航坐标系(NED frame)下的姿态旋转误差方差(对角元素)
  *
- * 该函数直接从状态协方差矩阵中提取四元数（quat_nominal）对应的3x3协方差子块，
- * 并返回其对角元素，即roll/pitch tilt误差和yaw误差在NED坐标系下的方差。
+ * 该函数直接从状态协方差矩阵中提取四元数(quat_nominal)对应的3x3协方差子块，并返回其对角元素，即roll/pitch tilt误差和yaw误差在NED坐标系下的方差
  *
- * @return Vector3f NED坐标系下三个旋转轴的误差方差（rad²）
- *         - x: roll轴方差（或对应tilt误差分量）
- *         - y: pitch轴方差（或对应tilt误差分量）
+ * @return Vector3f NED坐标系下三个旋转轴的误差方差(rad²)
+ *         - x: roll轴方差(或对应tilt误差分量)
+ *         - y: pitch轴方差(或对应tilt误差分量)
  *         - z: yaw轴方差
  *
  * @note
- *       - 姿态误差协方差在EKF中天然定义在NED/Earth坐标系中。
- *       - 仅返回对角元素，不包含交叉协方差项。
- *       - 常用于整体姿态不确定性评估、yaw对齐检查或estimator_status输出。
+ *       - 姿态误差协方差在EKF中天然定义在NED/Earth坐标系中
+ *       - 仅返回对角元素，不包含交叉协方差项
+ *       - 常用于整体姿态不确定性评估、yaw对齐检查或estimator_status输出
  *
  * @see getRotVarBody() 获取旋转到机体坐标系后的姿态方差
  */
@@ -1221,12 +1219,22 @@ void Ekf::updateGroundEffect()
 
 /**
  * @brief 更新IMU偏置抑制
+ * 	偏置(bias)是传感器的零点误差，不是随机噪声：
+ * 	   噪声：每秒抖动几千次，均值为零，平均后消失
+ * 	   偏置：持续存在的固定偏差，比如静止时加速度计读数不是恰好 9.81 而是 9.83，那 0.02 就是偏置，并且偏置会随温度、电压、老化缓慢漂移，所以EKF把偏置作为状态变量一起估计
+ *	偏置抑制:
+ * 	   正是因为偏置是间接估计的(通过观测偏差推断)，所以在不可靠时刻需抑制偏置估计：
+ * 	      1.高机动时不可靠：剧烈运动时，加速度计测的是运动加速度，无法区分"运动引起的加速度"和"偏置误差"
+ *	      2.可观测性差的轴不可靠：重力只沿 z 轴，xy 轴的加速度偏置无法从重力观测中分离
+ *	      3.传感器饱和时不可靠：数据被截断，信息丢失
  * @param imu_delayed 延迟的IMU数据
  */
 void Ekf::updateIMUBiasInhibit(const imuSample &imu_delayed)
 {
 	// inhibit learning of imu accel bias if the manoeuvre levels are too high to protect against the effect of sensor nonlinearities or bad accel data is detected
 	// xy accel bias learning is also disabled on ground as those states are poorly observable when perpendicular to the gravity vector
+	// 翻译：若机动强度过高（以防传感器非线性特性产生影响）或检测到错误的加速度数据，则禁止学习 IMU 加速度计零偏；
+	// 	此外，在地面静止状态下也会禁用 xy 轴加速度计零偏的学习，因为当传感器轴向垂直于重力矢量时，这些状态的可观测性较差
 	{
 		const Vector3f gyro_corrected = imu_delayed.delta_ang / imu_delayed.delta_ang_dt - _state.gyro_bias;
 
@@ -1348,23 +1356,22 @@ void Ekf::fuseDirectStateMeasurement(const float innov, const float innov_var, c
 }
 
 /**
- * @brief 执行标量测量的卡尔曼滤波更新（约瑟夫形式）
+ * @brief 执行标量测量的卡尔曼滤波更新(约瑟夫形式)
  *
- * 该函数针对单个标量测量值执行卡尔曼滤波的测量更新步骤，
- * 使用数值稳定的约瑟夫形式（Joseph stabilized form）更新协方差矩阵。
+ * 该函数针对单个标量测量值执行卡尔曼滤波的测量更新步骤，使用数值稳定的约瑟夫形式(Joseph stabilized form)更新协方差矩阵
  *
- * @param[out] k   计算得到的卡尔曼增益（标量，状态维度中对应维度的增益）
- * @param[in]  H   测量矩阵的对应行向量（状态向量，1×n），将状态映射到该标量测量
- * @param[in]  R   测量噪声方差（标量）
- * @param[in]  innovation  创新（残差），即 measurement - H * x_pred
+ * @param[out] k   计算得到的卡尔曼增益(标量，状态维度中对应维度的增益)
+ * @param[in]  H   测量矩阵的对应行向量(状态向量，1×n)，将状态映射到该标量测量
+ * @param[in]  R   测量噪声方差(标量)
+ * @param[in]  innovation  创新(残差)，即 measurement - H * x_pred
  *
  * @return bool 更新是否成功
  *         - true:  更新成功，状态和协方差已更新
- *         - false: 更新失败（如创新方差为非正、数值异常等）
+ *         - false: 更新失败(如创新方差为非正、数值异常等)
  *
  * @note 该函数会就地修改成员变量：
  *       - 状态估计: _state += k * innovation
- *       - 协方差:    P = (I - k*H^T) * P * (I - k*H^T)^T + k² * R   （约瑟夫形式）
+ *       - 协方差:    P = (I - k*H^T) * P * (I - k*H^T)^T + k² * R   (约瑟夫形式)
  *
  * @see 向量测量版本的 measurementUpdate()
  */
@@ -1377,7 +1384,7 @@ bool Ekf::measurementUpdate(VectorState &K, const VectorState &H, const float R,
 	// Matrix implementation of the Joseph stabilized covariance update
 	// 翻译：约瑟夫稳定协方差更新的矩阵实现
 	// This is extremely expensive to compute. Use for debugging purposes only.
-	// 翻译：这计算起来非常昂贵。 仅用于调试目的。
+	// 翻译：这计算起来非常昂贵。 仅用于调试目的
 	auto A = matrix::eye<float, State::size>();
 	A -= K.multiplyByTranspose(H);
 	P = A * P;
@@ -1397,14 +1404,14 @@ bool Ekf::measurementUpdate(VectorState &K, const VectorState &H, const float R,
 	// P is symmetric, so PH == H.T * P.T == H.T * P. Taking the row is faster as matrices are row-major
 
 	// 翻译：约瑟夫稳定协方差更新的高效实现
-	// 基于“G. J. Bierman。离散序列估计的因式分解方法。学术出版社，多佛出版社，纽约，1977 年，2006 年”
+	// 基于“G. J. Bierman 离散序列估计的因式分解方法 学术出版社，多佛出版社，纽约，1977 年，2006 年”
 	// P = (I - K * H) * P * (I - K * H).T K * R * K.T
 	// = P_temp * (I - H.T * K.T) K * R * K.T
 	// = P_temp - P_temp * H.T * K.T K * R * K.T
 
 	// 步骤1：常规更新
 	// 计算 P_temp 并将其存储在 P 中以避免分配更多内存
-	// P 是对称的，因此 PH == H.T * P.T == H.T * P。由于矩阵是行优先的，所以取行速度更快
+	// P 是对称的 因此 PH == H.T * P.T == H.T * P 由于矩阵是行优先的，所以取行速度更快
 	VectorState PH = P * H; // H is stored as a column vector. H is in fact H.T
 
 	for (unsigned i = 0; i < State::size; i++) {

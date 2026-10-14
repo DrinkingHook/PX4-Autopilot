@@ -384,10 +384,15 @@ void Ekf::updateGnssVel(const imuSample &imu_sample, const gnssSample &gnss_samp
 void Ekf::updateGnssPos(const gnssSample &gnss_sample, estimator_aid_source2d_s &aid_src)
 {
 	// correct position and height for offset relative to IMU
+	// 翻译：针对相对于 IMU 的偏移量校正位置和高度
+	// GPS接收器和IMU在飞行器上的位置不同，计算相对偏移
 	const Vector3f pos_offset_body = gnss_sample.pos_body - _params.imu_pos_body;
+	// 将偏移量从"机体坐标系"(body frame) 转换为"地球坐标系"(earth frame)
 	const Vector3f pos_offset_earth = Vector3f(_R_to_earth * pos_offset_body);
+	// 用偏移量校正GPS测量值，使其代表IMU的真实位置
 	const LatLonAlt measurement(gnss_sample.lat, gnss_sample.lon, gnss_sample.alt);
 	const LatLonAlt measurement_corrected = measurement + (-pos_offset_earth);
+	// 计算EKF估计值与GPS测量值的差异(用于反馈滤波)	
 	const Vector2f innovation = (_gpos - measurement_corrected).xy();
 
 	// relax the upper observation noise limit which prevents bad GPS perturbing the position estimate
@@ -397,7 +402,7 @@ void Ekf::updateGnssPos(const gnssSample &gnss_sample, estimator_aid_source2d_s 
 	if (!isOtherSourceOfHorizontalAidingThan(_control_status.flags.gnss_pos)) {
 		// if we are not using another source of aiding, then we are reliant on the GNSS
 		// observations to constrain attitude errors and must limit the observation noise value.
-		// 翻译：如果我们在使用其他水平辅助源，那么我们依赖GNSS观测来约束姿态误差，必须限制观测噪声值。
+		// 翻译：如果我们在使用其他水平辅助源，那么我们依赖GNSS观测来约束姿态误差，必须限制观测噪声值
 		if (pos_noise > _params.ekf2_noaid_noise) {
 			pos_noise = _params.ekf2_noaid_noise;
 		}
@@ -407,6 +412,7 @@ void Ekf::updateGnssPos(const gnssSample &gnss_sample, estimator_aid_source2d_s 
 	const Vector2f pos_obs_var(pos_var, pos_var);
 	const matrix::Vector2d observation(measurement_corrected.latitude_deg(), measurement_corrected.longitude_deg());
 
+	// 将创新值、方差、噪声等信息提交给EKF进行融合
 	updateAidSourceStatus(aid_src,
 			      gnss_sample.time_us,                                    // sample timestamp
 			      observation,                                            // observation
@@ -468,6 +474,7 @@ bool Ekf::tryYawEmergencyReset()
 
 		// in-flight yaw rescue is a signal that gyro_bias_z could be wrong
 		// bump its variance so new observations will correct it faster
+		// 翻译：飞行中偏航角(yaw)恢复信号表明 Z 轴陀螺仪零偏(gyro_bias_z)可能存在误差；增大其方差，以便新观测值能更快地对其进行修正
 		resetGyroBiasZCov();
 
 		if (_control_status.flags.mag_hdg || _control_status.flags.mag_3D) {
@@ -581,19 +588,20 @@ bool Ekf::isYawEmergencyEstimateAvailable() const
 
 bool Ekf::isYawFailure() const
 {
+	// 前置条件: GSF 偏航估计必须可用
 	if (!isYawEmergencyEstimateAvailable()) {
+		// 不可用，无法判断，返回"没失败"
 		return false;
 	}
 
 	const float euler_yaw = getEulerYaw(_R_to_earth);
 	const float yaw_error = wrap_pi(euler_yaw - _yawEstimator.getYaw());
 
+	// 偏差超过 25° 则判定为偏航失败
 	return fabsf(yaw_error) > math::radians(25.f);
 }
 
-/**
- * @brief 尝试紧急重置偏航角
- */
+// 尝试紧急重置偏航角
 bool Ekf::resetYawToEKFGSF()
 {
 	if (!isYawEmergencyEstimateAvailable()) {

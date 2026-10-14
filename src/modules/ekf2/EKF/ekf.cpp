@@ -157,19 +157,23 @@ bool Ekf::update()
 		// limit input between -50% and +100% of nominal value
 		// 翻译：计算平均滤波器更新时间
 		//      将输入限制在标称值的 -50% 到 +100% 之间
+		// (1e-6f *)为单位换算 us -> s
 		const float filter_update_s = 1e-6f * _params.ekf2_predict_us;
 		const float input = math::constrain(0.5f * (imu_sample_delayed.delta_vel_dt + imu_sample_delayed.delta_ang_dt),
 						    0.5f * filter_update_s,
 						    2.f * filter_update_s);
 
 		if (_is_first_imu_sample) {
+			// 用于校准倾角的经滤波加速度计测量值
 			_accel_lpf.reset(imu_sample_delayed.delta_vel / imu_sample_delayed.delta_vel_dt);
+			// 用于对准期间过量运动检测的滤波陀螺仪测量值 (rad/s)
 			_gyro_lpf.reset(imu_sample_delayed.delta_ang / imu_sample_delayed.delta_ang_dt);
 			_dt_ekf_avg = input;
 
 			_is_first_imu_sample = false;
 
 		} else {
+			// 低通滤波器
 			_accel_lpf.update(imu_sample_delayed.delta_vel / imu_sample_delayed.delta_vel_dt);
 			_gyro_lpf.update(imu_sample_delayed.delta_ang / imu_sample_delayed.delta_ang_dt);
 			_dt_ekf_avg = 0.99f * _dt_ekf_avg + 0.01f * input;
@@ -183,6 +187,7 @@ bool Ekf::update()
 			}
 		}
 
+		// 更新IMU偏置抑制
 		updateIMUBiasInhibit(imu_sample_delayed);
 
 		// perform state and covariance prediction for the main filter
@@ -194,6 +199,7 @@ bool Ekf::update()
 		// 翻译：控制观测数据的融合
 		controlFusionModes(imu_sample_delayed);
 
+		// 快速预测 修正输出状态
 		_output_predictor.correctOutputStates(imu_sample_delayed.time_us, _state.quat_nominal, _state.vel, _gpos,
 						      _state.gyro_bias, _state.accel_bias);
 
@@ -210,16 +216,23 @@ bool Ekf::initialiseFilter()
 	}
 
 	// initialise the state covariance matrix now we have starting values for all the states
+	// 翻译：初始化状态协方差矩阵——此时我们已获得所有状态的初始值
+	// 协方差矩阵：它记录了每个状态变量的不确定程度
+	// 	1. 告诉 EKF "我初始时有多不确定" —— 如果 P 初始化太大，EKF 会过度信任观测、过度修正；如果太小，EKF 会忽略观测、固执己见
+	//	2. 对角线元素的比值决定了卡尔曼增益 —— P 大的状态会被观测大幅修正，P 小的状态几乎不变
 	initialiseCovariance();
 
 	// reset the output predictor state history to match the EKF initial values
+	// 翻译：重置输出预测器的状态历史记录，使其与 EKF 的初始值相匹配
 	_output_predictor.alignOutputFilter(_state.quat_nominal, _state.vel, _gpos);
 
 	return true;
 }
 
+// 初始化倾斜度
 bool Ekf::initialiseTilt()
 {
+	// 检查IMU数据是否合理
 	const float accel_norm = _accel_lpf.getState().norm();
 	const float gyro_norm = _gyro_lpf.getState().norm();
 
@@ -230,15 +243,17 @@ bool Ekf::initialiseTilt()
 	}
 
 	// get initial tilt estimate from delta velocity vector, assuming vehicle is static
+	// 翻译：基于增量速度矢量获取初始倾角估计值(假设载具处于静止状态)
 	_state.quat_nominal = Quatf(_accel_lpf.getState(), Vector3f(0.f, 0.f, -1.f));
+	// _R_to_earth 在初始化时捕获了机体当前的倾斜姿态，之后所有运算都在这个基础上进行，_R_to_earth × 机体坐标系下的量 → 世界坐标系下的量(每次都带着这 30° 的转换)
 	_R_to_earth = Dcmf(_state.quat_nominal);
 
 	return true;
 }
 
 /**
- * @brief 预测状态：
- * 将imu数据推入估计器。
+ * @brief 预测状态
+ * 将imu数据推入估计器
  * @param imu_delayed imu数据
  */
 void Ekf::predictState(const imuSample &imu_delayed)
@@ -296,6 +311,7 @@ void Ekf::predictState(const imuSample &imu_delayed)
 	_state.vel = matrix::constrain(_state.vel, -_params.ekf2_vel_lim, _params.ekf2_vel_lim);
 
 	// calculate a filtered horizontal acceleration this are used for manoeuvre detection elsewhere
+	// 翻译：计算经滤波处理的水平加速度，该数据将用于其他环节的机动检测
 	_accel_horiz_lpf.update(corrected_delta_vel_ef.xy() / imu_delayed.delta_vel_dt,
 				static_cast<uint64_t>(imu_delayed.delta_vel_dt * 1e6f));
 }
@@ -375,6 +391,9 @@ bool Ekf::resetGlobalPosToExternalObservation(const double latitude, const doubl
 			// When on ground or accuracy chosen to be very low, we hard reset position
 			// this allows the user to still send hard resets at any time
 			// Also hard reset when a position aiding source is active
+			// 翻译：当处于地面或选择极低精度模式时，强制重置位置
+			// 	这允许用户随时发送强制重置指令
+			// 	此外，当位置辅助源处于激活状态时，也会执行强制重置
 			ECL_INFO("reset position to external observation");
 			_information_events.flags.reset_pos_to_ext_obs = true;
 
@@ -385,6 +404,7 @@ bool Ekf::resetGlobalPosToExternalObservation(const double latitude, const doubl
 
 			// bump up wind uncertainty to ensure velocity remains correct
 			// eventual reset-by-fusion will have larger effect on wind state
+			// 翻译：调高风速不确定度以确保速度估计的准确性;这样一来，后续的融合重置(fusion reset)将对风速状态产生更大的影响
 			P.uncorrelateCovarianceSetVariance<2>(State::wind_vel.idx, 10.f);
 			_state.wind_vel.setZero();
 			_last_known_gpos.setLatLon(gpos_corrected);

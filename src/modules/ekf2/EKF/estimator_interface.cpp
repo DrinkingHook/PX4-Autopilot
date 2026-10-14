@@ -120,7 +120,7 @@ void EstimatorInterface::setIMUData(const imuSample &imu_sample)
 
 		// calculate the minimum interval between observations required to guarantee no loss of data
 		// this will occur if data is overwritten before its time stamp falls behind the fusion time horizon
-		// 翻译：计算保证数据不丢失所需的最小观测间隔。如果数据在时间戳落后于融合时间范围之前被覆盖，则会发生数据丢失。
+		// 翻译：计算保证数据不丢失所需的最小观测间隔。如果数据在时间戳落后于融合时间范围之前被覆盖，则会发生数据丢失
 		_min_obs_interval_us = (imu_sample.time_us - _time_delayed_us) / (_obs_buffer_length - 1);
 	}
 

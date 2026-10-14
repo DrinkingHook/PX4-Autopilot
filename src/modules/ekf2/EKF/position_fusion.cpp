@@ -54,7 +54,7 @@ void Ekf::updateVerticalPositionAidStatus(estimator_aid_source1d_s &aid_src, con
 
 	// z special case if there is bad vertical acceleration data, then don't reject measurement,
 	// but limit innovation to prevent spikes that could destabilise the filter
-	// 翻译：z 轴特殊情况：如果垂直加速度数据质量差，则不要拒绝测量结果，但要限制创新，以防止出现可能导致滤波器不稳定的尖峰。
+	// trans.z 轴特殊情况：如果垂直加速度数据质量差，则不要拒绝测量结果，但要限制创新，以防止出现可能导致滤波器不稳定的尖峰。
 	if (_fault_status.flags.bad_acc_vertical && aid_src.innovation_rejected) {
 		const float innov_limit = innovation_gate * sqrtf(aid_src.innovation_variance);
 		aid_src.innovation = math::constrain(aid_src.innovation, -innov_limit, innov_limit);
@@ -126,8 +126,10 @@ bool Ekf::fuseVerticalPosition(estimator_aid_source1d_s &aid_src)
 void Ekf::resetHorizontalPositionTo(const double &new_latitude, const double &new_longitude,
 				    const Vector2f &new_horz_pos_var)
 {
+	// 计算相对于旧原点的位移量
 	const Vector2f delta_horz_pos = computeDeltaHorizontalPosition(new_latitude, new_longitude);
 
+	// 更新水平位置重置状态
 	updateHorizontalPositionResetStatus(delta_horz_pos);
 
 #if defined(CONFIG_EKF2_EXTERNAL_VISION)
@@ -138,9 +140,12 @@ void Ekf::resetHorizontalPositionTo(const double &new_latitude, const double &ne
 
 #endif // CONFIG_EKF2_EXTERNAL_VISION
 
+	// 将 NED 原点更新到新的 WGS-84 位置（度数→弧度内部转换）
 	_gpos.setLatLonDeg(new_latitude, new_longitude);
+	// 同步更新输出预测器中的原点
 	_output_predictor.resetLatLonTo(new_latitude, new_longitude);
 
+	// 更新协方差矩阵中的位置不确定性
 	if (PX4_ISFINITE(new_horz_pos_var(0))) {
 		P.uncorrelateCovarianceSetVariance<1>(State::pos.idx, math::max(sq(0.01f), new_horz_pos_var(0)));
 	}
@@ -153,6 +158,7 @@ void Ekf::resetHorizontalPositionTo(const double &new_latitude, const double &ne
 	_time_last_hor_pos_fuse = _time_delayed_us;
 }
 
+// 计算水平位置增量
 Vector2f Ekf::computeDeltaHorizontalPosition(const double &new_latitude, const double &new_longitude) const
 {
 	Vector2f pos;
@@ -303,6 +309,7 @@ void Ekf::updateTerrainResetStatus(const float delta_z)
 }
 #endif // CONFIG_EKF2_TERRAIN
 
+// 将水平位置重置为最后已知位置
 void Ekf::resetHorizontalPositionToLastKnown()
 {
 	ECL_INFO("reset position to last known (%.3f, %.3f)", (double)_last_known_gpos.latitude_deg(),
@@ -310,6 +317,7 @@ void Ekf::resetHorizontalPositionToLastKnown()
 	_information_events.flags.reset_pos_to_last_known = true;
 
 	// Used when falling back to non-aiding mode of operation
+	// 翻译：在回退至非辅助操作模式时使用
 	resetHorizontalPositionTo(_last_known_gpos.latitude_deg(), _last_known_gpos.longitude_deg(),
 				  sq(_params.ekf2_noaid_noise));
 }

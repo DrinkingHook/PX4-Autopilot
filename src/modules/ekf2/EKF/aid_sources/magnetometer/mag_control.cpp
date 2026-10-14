@@ -50,7 +50,7 @@ void Ekf::controlMagFusion(const imuSample &imu_sample)
 
 	// reset the flight alignment flag so that the mag fields will be
 	//  re-initialised next time we achieve flight altitude
-	// 翻译：重置飞行对准标志，以便下次达到飞行高度时重新初始化磁场。
+	// 翻译：重置飞行对准标志，以便下次达到飞行高度时重新初始化磁场
 	if (!_control_status_prev.flags.in_air && _control_status.flags.in_air) {
 		_control_status.flags.mag_aligned_in_flight = false;
 	}
@@ -68,7 +68,7 @@ void Ekf::controlMagFusion(const imuSample &imu_sample)
 
 		if (mag_sample.reset || (_mag_counter == 0)) {
 			// sensor or calibration has changed, reset low pass filter
-			// 翻译：传感器或校准已更改，重置低通滤波器。
+			// 翻译：传感器或校准已更改，重置低通滤波器
 			_control_status.flags.mag_fault = false;
 
 			_state.mag_B.zero();
@@ -82,7 +82,7 @@ void Ekf::controlMagFusion(const imuSample &imu_sample)
 			if (!_control_status.flags.in_air && !_control_status.flags.yaw_manual) {
 				// Assume that a reset on the ground is caused by a change in mag calibration
 				// Clear alignment to force a clean reset
-				// 翻译：假设地面重置是由磁校准更改引起的，清除对准以强制执行干净的重置。
+				// 翻译：假设地面重置是由磁校准更改引起的，清除对准以强制执行干净的重置
 				_control_status.flags.yaw_align = false;
 			}
 
@@ -92,7 +92,7 @@ void Ekf::controlMagFusion(const imuSample &imu_sample)
 		}
 
 		// check for WMM update periodically or if global origin has changed
-		// 翻译：检查WMM更新是否定期发生或如果全球原点已更改。
+		// 翻译：检查WMM更新是否定期发生或如果全球原点已更改
 		bool wmm_updated = false;
 
 		if (global_origin().isInitialized()) {
@@ -110,7 +110,7 @@ void Ekf::controlMagFusion(const imuSample &imu_sample)
 
 			} else if (origin_newer_than_last_mag) {
 				// use global origin to update WMM
-				// 翻译：使用全球原点更新WMM。
+				// 翻译：使用全球原点更新WMM
 				if (updateWorldMagneticModel(global_origin().getProjectionReferenceLat(),
 							     global_origin().getProjectionReferenceLon())
 				   ) {
@@ -121,7 +121,7 @@ void Ekf::controlMagFusion(const imuSample &imu_sample)
 
 		// if enabled, use knowledge of theoretical magnetic field vector to calculate a synthetic magnetomter Z component value.
 		// this is useful if there is a lot of interference on the sensor measurement.
-		// 翻译：如果启用此功能，则利用理论磁场矢量信息计算合成磁力计 Z 分量值。当传感器测量受到大量干扰时，此功能非常有用。
+		// 翻译：如果启用此功能，则利用理论磁场矢量信息计算合成磁力计 Z 分量值。当传感器测量受到大量干扰时，此功能非常有用
 		if (_params.ekf2_synt_mag_z && (_params.ekf2_decl_type & GeoDeclinationMask::USE_GEO_DECL)
 		    && (_wmm_earth_field_gauss.isAllFinite() && _wmm_earth_field_gauss.longerThan(0.f))
 		   ) {
@@ -139,11 +139,11 @@ void Ekf::controlMagFusion(const imuSample &imu_sample)
 		_fault_status.flags.bad_mag_z = false;
 
 		// XYZ Measurement uncertainty. Need to consider timing errors for fast rotations
-		// 翻译：磁力计测量的不确定性。需要考虑快速旋转时的时间误差。
+		// 翻译：磁力计测量的不确定性。需要考虑快速旋转时的时间误差
 		const float R_MAG = math::max(sq(_params.ekf2_mag_noise), sq(0.01f));
 
 		// calculate intermediate variables used for X axis innovation variance, observation Jacobians and Kalman gains
-		// 翻译：计算用于X轴创新方差、观测雅可比矩阵和卡尔曼增益的中间变量。
+		// 翻译：计算用于X轴创新方差、观测雅可比矩阵和卡尔曼增益的中间变量
 		Vector3f mag_innov;
 		Vector3f innov_var;
 
@@ -210,6 +210,7 @@ void Ekf::controlMagFusion(const imuSample &imu_sample)
 
 			// if we are using 3-axis magnetometer fusion, but without external NE aiding,
 			// then the declination must be fused as an observation to prevent long term heading drift
+			// 翻译：若使用三轴磁力计融合但没有外部 NE（北-东）辅助，则必须将磁偏角作为观测值进行融合，以防止出现长期的航向漂移
 			_control_status.flags.mag_dec = _control_status.flags.mag && no_ne_aiding_or_not_moving;
 		}
 
@@ -251,7 +252,7 @@ void Ekf::controlMagFusion(const imuSample &imu_sample)
 					// The normal sequence is to fuse the magnetometer data first before fusing
 					// declination angle at a higher uncertainty to allow some learning of
 					// declination angle over time.
-					// 翻译：通常的顺序是先融合磁力计数据，然后再融合磁偏角，磁偏角的不确定度较高，以便随着时间的推移学习磁偏角。
+					// 翻译：通常的顺序是先融合磁力计数据，然后再融合磁偏角，磁偏角的不确定度较高，以便随着时间的推移学习磁偏角
 					const bool update_all_states = _control_status.flags.mag_3D || _control_status.flags.mag_hdg;
 					const bool update_tilt = _control_status.flags.mag_3D;
 					fuseMag(mag_sample.mag, R_MAG, H, aid_src, update_all_states, update_tilt);
@@ -407,11 +408,11 @@ bool Ekf::checkHaglYawResetReq() const
 
 	// We need to reset the yaw angle after climbing away from the ground to enable
 	// recovery from ground level magnetic interference.
-	// 翻译：我们需要在爬离地面后重置航向角，以使从地面磁干扰中恢复。
+	// 翻译：我们需要在爬离地面后重置航向角，以使从地面磁干扰中恢复
 	if (_control_status.flags.in_air && _control_status.flags.yaw_align && !_control_status.flags.mag_aligned_in_flight) {
 		// Check if height has increased sufficiently to be away from ground magnetic anomalies
 		// and request a yaw reset if not already requested.
-		// 翻译：检查高度是否已增加到足以远离地面磁异常，如果尚未请求，则请求偏航重置。
+		// 翻译：检查高度是否已增加到足以远离地面磁异常，如果尚未请求，则请求偏航重置
 		static constexpr float mag_anomalies_max_hagl = 1.5f;
 		const bool above_mag_anomalies = (getTerrainVPos() + _gpos.altitude()) > mag_anomalies_max_hagl;
 		return above_mag_anomalies;
@@ -437,7 +438,7 @@ void Ekf::resetMagStates(const Vector3f &mag, bool reset_heading)
 	static constexpr float kMagEarthMinGauss = 0.01f; // minimum difference in mag earth field strength for reset (Gauss)
 
 	// if world magnetic model (inclination, declination, strength) available then use it to reset mag states
-	// 翻译：如果世界磁力场模型（倾角、磁偏角、强度）可用，则使用它来重置磁力计状态。
+	// 翻译：如果世界磁力场模型（倾角、磁偏角、强度）可用，则使用它来重置磁力计状态
 	if (_wmm_earth_field_gauss.longerThan(0.f) && _wmm_earth_field_gauss.isAllFinite()) {
 		// use expected earth field to reset states
 
@@ -524,7 +525,7 @@ void Ekf::checkMagHeadingConsistency(const magSample &mag_sample)
 
 	// the angle of the projection onto the horizontal gives the yaw angle
 	// calculate the yaw innovation and wrap to the interval between +-pi
-	// 翻译：投影到水平面上的角度即为偏航角，计算偏航角创新值并将其包络到±π区间内。
+	// 翻译：投影到水平面上的角度即为偏航角，计算偏航角创新值并将其包络到±π区间内
 	const Vector3f mag_earth_pred = R_to_earth * (mag_sample.mag - mag_bias);
 	const float declination = getMagDeclination();
 	const float measured_hdg = -atan2f(mag_earth_pred(1), mag_earth_pred(0)) + declination;
@@ -540,11 +541,11 @@ void Ekf::checkMagHeadingConsistency(const magSample &mag_sample)
 
 	if ((fabsf(_mag_heading_innov_lpf.getState()) < _params.ekf2_head_noise) && (fabsf(innovation) < _params.ekf2_head_noise)) {
 		// Check if there has been enough change in horizontal velocity to make yaw observable
-		// 翻译：检查水平速度是否发生了足够的变化，以使偏航角可观察到。
+		// 翻译：检查水平速度是否发生了足够的变化，以使偏航角可观察到
 
 		if (isNorthEastAidingActive() && (_accel_horiz_lpf.getState().longerThan(_params.ekf2_mag_acclim))) {
 			// yaw angle must be observable to consider consistency
-			// 翻译：偏航角必须可观察到才能考虑一致性。
+			// 翻译：偏航角必须可观察到才能考虑一致性
 			_control_status.flags.mag_heading_consistent = true;
 		}
 
@@ -691,7 +692,7 @@ float Ekf::getMagDeclination()
 bool Ekf::updateWorldMagneticModel(const double latitude_deg, const double longitude_deg)
 {
 	// set the magnetic field data returned by the geo library using the current GPS position
-	// 翻译：使用当前 GPS 位置设置 geo 库返回的磁场数据。
+	// 翻译：使用当前 GPS 位置设置 geo 库返回的磁场数据
 	const float declination_rad = math::radians(get_mag_declination_degrees(latitude_deg, longitude_deg));
 	const float inclination_rad = math::radians(get_mag_inclination_degrees(latitude_deg, longitude_deg));
 	const float strength_gauss = get_mag_strength_gauss(latitude_deg, longitude_deg);

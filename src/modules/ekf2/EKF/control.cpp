@@ -43,6 +43,7 @@
 #include "ekf.h"
 #include <mathlib/mathlib.h>
 
+// 控制融合模式
 void Ekf::controlFusionModes(const imuSample &imu_delayed)
 {
 	// Store the status to enable change detection
@@ -75,8 +76,8 @@ void Ekf::controlFusionModes(const imuSample &imu_delayed)
 		// whilst we are aligning the tilt, monitor the variances
 		// Once the tilt variances have reduced to equivalent of 3 deg uncertainty
 		// and declare the tilt alignment complete
-		// 翻译：在调整倾斜角度的过程中，监测偏差。
-		//      一旦倾斜偏差减小到相当于 3 度不确定度，即可宣布倾斜角度调整完成。
+		// 翻译：在调整倾斜角度的过程中，监测偏差
+		//      一旦倾斜偏差减小到相当于 3 度不确定度，即可宣布倾斜角度调整完成
 		if (getTiltVariance() < sq(math::radians(3.f))) {
 			_control_status.flags.tilt_align = true;
 
@@ -143,7 +144,7 @@ void Ekf::controlFusionModes(const imuSample &imu_delayed)
 	controlBetaFusion(imu_delayed);
 #endif // CONFIG_EKF2_SIDESLIP
 
-// 启用基于空气动力学阻力模型的融合。主要用于多旋翼的风估计和改进水平速度估计。
+// 启用基于空气动力学阻力模型的融合。主要用于多旋翼的风估计和改进水平速度估计
 #if defined(CONFIG_EKF2_DRAG_FUSION)
 	controlDragFusion(imu_delayed);
 #endif // CONFIG_EKF2_DRAG_FUSION
@@ -167,7 +168,7 @@ void Ekf::controlFusionModes(const imuSample &imu_delayed)
 	controlAuxVelFusion(imu_delayed);
 #endif // CONFIG_EKF2_AUXVEL
 
-// 启用基于测距仪或 GNSS 地形数据的 地形高度 估计和跟踪。
+// 启用基于测距仪或 GNSS 地形数据的 地形高度 估计和跟踪
 #if defined(CONFIG_EKF2_TERRAIN)
 	controlTerrainFakeFusion();
 	updateTerrainValidity();
