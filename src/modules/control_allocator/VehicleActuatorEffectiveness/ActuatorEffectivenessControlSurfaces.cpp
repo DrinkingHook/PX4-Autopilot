@@ -36,6 +36,7 @@
  */
 #include <px4_platform_common/log.h>
 #include <px4_platform_common/events.h>
+#include <lib/mathlib/mathlib.h>
 
 #include "ActuatorEffectivenessControlSurfaces.hpp"
 
@@ -77,6 +78,14 @@ void ActuatorEffectivenessControlSurfaces::updateParams()
 	if (param_get(_count_handle, &_count) != PX4_OK) {
 		PX4_ERR("param_get failed");
 		return;
+	}
+
+	// The parameter range is not enforced when it is set
+	if (_count < 0) {
+		_count = 0;
+
+	} else if (_count > MAX_COUNT) {
+		_count = MAX_COUNT;
 	}
 
 	// Update flap slewrates

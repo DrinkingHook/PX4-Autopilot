@@ -33,7 +33,7 @@
 /**
  * @file rtl_mission_fast.cpp
  *
- * Helper class for RTL
+ * Helper class for Return
  *
  * @author Julian Oes <julian@oes.ch>
  * @author Anton Babushkin <anton.babushkin@me.com>
@@ -59,11 +59,17 @@ void RtlMissionFast::on_inactive()
 	_vehicle_status_sub.update();
 	_mission_index_prior_rtl = _vehicle_status_sub.get().nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION ?
 				   _mission.current_seq : INT32_C(-1);
+	_mission_id_prior_rtl = _mission.mission_id;
 }
 
 void RtlMissionFast::on_activation()
 {
 	_home_pos_sub.update();
+
+	// Discard the saved index if the mission was replaced.
+	if (_mission.mission_id != _mission_id_prior_rtl) {
+		_mission_index_prior_rtl = INT32_C(-1);
+	}
 
 	// set mission item to closest item if not already in mission
 	// 翻译注释：如果当前任务索引小于0，则将任务设置为最近的项目

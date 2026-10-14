@@ -229,18 +229,18 @@ void GotoControl::setPositionSmootherLimits(const goto_setpoint_s &goto_setpoint
  */
 void GotoControl::setHeadingSmootherLimits(const goto_setpoint_s &goto_setpoint)
 {
-	float max_heading_rate = _param_mpc_yawrauto_max;
-	float max_heading_accel = _param_mpc_yawrauto_acc;
+	float max_heading_rate = _yaw_rate_max;
+	float max_heading_accel = _yaw_acceleration_max;
 
 	if (goto_setpoint.flag_set_max_heading_rate && PX4_ISFINITE(goto_setpoint.max_heading_rate)) {
-		max_heading_rate = math::constrain(goto_setpoint.max_heading_rate, 0.f, _param_mpc_yawrauto_max);
+		max_heading_rate = math::constrain(goto_setpoint.max_heading_rate, 0.f, _yaw_rate_max);
 
 		// linearly scale heading acceleration limit with heading rate limit to maintain smoothing dynamic
 		// only limit acceleration once within velocity constraints
 		// 翻译：根据航向角速率限制线性调整航向加速度限制，以保持动态平滑；仅在速度限制范围内限制加速度
 		if (fabsf(_heading_smoothing.getSmoothedHeadingRate()) <= max_heading_rate) {
-			const float rate_scale = max_heading_rate / _param_mpc_yawrauto_max;
-			max_heading_accel = math::constrain(_param_mpc_yawrauto_acc * rate_scale, 0.f, _param_mpc_yawrauto_acc);
+			const float rate_scale = max_heading_rate / _yaw_rate_max;
+			max_heading_accel = math::constrain(_yaw_acceleration_max * rate_scale, 0.f, _yaw_acceleration_max);
 		}
 	}
 

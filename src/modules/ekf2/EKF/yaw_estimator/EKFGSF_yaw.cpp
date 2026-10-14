@@ -59,6 +59,7 @@ EKFGSF_yaw::EKFGSF_yaw()
 void EKFGSF_yaw::reset()
 {
 	_ekf_gsf_vel_fuse_started = false;
+	_time_since_last_vel_fusion = 0.f;
 
 	_gsf_yaw_variance = INFINITY;
 }
@@ -113,6 +114,17 @@ void EKFGSF_yaw::predict(const matrix::Vector3f &delta_ang, const float delta_an
 	for (uint8_t model_index = 0; model_index < N_MODELS_EKFGSF; model_index ++) {
 		predictEKF(model_index, delta_ang, delta_ang_dt, delta_vel, delta_vel_dt, in_air);
 	}
+
+	if (_ekf_gsf_vel_fuse_started) {
+		_time_since_last_vel_fusion += delta_vel_dt;
+
+		if (_time_since_last_vel_fusion > kVelFusionTimeout) {
+			reset();
+
+		} else {
+			updateComposite();
+		}
+	}
 }
 
 /**
@@ -123,6 +135,8 @@ void EKFGSF_yaw::predict(const matrix::Vector3f &delta_ang, const float delta_an
  */
 void EKFGSF_yaw::fuseVelocity(const Vector2f &vel_NE, const float vel_accuracy, const bool in_air)
 {
+	_time_since_last_vel_fusion = 0.f;
+
 	// we don't start running the EKF part of the algorithm until there are regular velocity observations
 	// 翻译：我们不会开始运行EKF部分的算法，直到有常规的观测值
 	if (!_ekf_gsf_vel_fuse_started) {
@@ -171,33 +185,35 @@ void EKFGSF_yaw::fuseVelocity(const Vector2f &vel_NE, const float vel_accuracy, 
 			_model_weights /= total_weight;
 		}
 
-		// Calculate a composite yaw vector as a weighted average of the states for each model.
-		// To avoid issues with angle wrapping, the yaw state is converted to a vector with length
-		// equal to the weighting value before it is summed.
-		// 翻译：计算每个模型状态的加权平均值，得到复合偏航向量。
-		// 	为避免角度缠绕问题，在求和之前，将偏航状态转换为长度等于权重值的向量。
-		Vector2f yaw_vector;
+		updateComposite();
+	}
+}
 
-		for (uint8_t model_index = 0; model_index < N_MODELS_EKFGSF; model_index ++) {
-			yaw_vector(0) += _model_weights(model_index) * cosf(_ekf_gsf[model_index].X(2));
-			yaw_vector(1) += _model_weights(model_index) * sinf(_ekf_gsf[model_index].X(2));
-		}
+void EKFGSF_yaw::updateComposite()
+{
+	// Calculate a composite yaw vector as a weighted average of the states for each model.
+	// To avoid issues with angle wrapping, the yaw state is converted to a vector with length
+	// equal to the weighting value before it is summed.
+	Vector2f yaw_vector;
 
-		_gsf_yaw = atan2f(yaw_vector(1), yaw_vector(0));
+	for (uint8_t model_index = 0; model_index < N_MODELS_EKFGSF; model_index ++) {
+		yaw_vector(0) += _model_weights(model_index) * cosf(_ekf_gsf[model_index].X(2));
+		yaw_vector(1) += _model_weights(model_index) * sinf(_ekf_gsf[model_index].X(2));
+	}
 
-		// calculate a composite variance for the yaw state from a weighted average of the variance for each model
-		// models with larger innovations are weighted less
-		// 翻译：根据每个模型方差的加权平均值，计算偏航状态的复合方差。创新值较大的模型权重较小
-		_gsf_yaw_variance = 0.0f;
+	_gsf_yaw = atan2f(yaw_vector(1), yaw_vector(0));
 
-		for (uint8_t model_index = 0; model_index < N_MODELS_EKFGSF; model_index ++) {
-			const float yaw_delta = wrap_pi(_ekf_gsf[model_index].X(2) - _gsf_yaw);
-			_gsf_yaw_variance += _model_weights(model_index) * (_ekf_gsf[model_index].P(2, 2) + yaw_delta * yaw_delta);
-		}
+	// calculate a composite variance for the yaw state from a weighted average of the variance for each model
+	// models with larger innovations are weighted less
+	_gsf_yaw_variance = 0.0f;
 
-		if (_gsf_yaw_variance <= 0.f || !PX4_ISFINITE(_gsf_yaw_variance)) {
-			reset();
-		}
+	for (uint8_t model_index = 0; model_index < N_MODELS_EKFGSF; model_index ++) {
+		const float yaw_delta = wrap_pi(_ekf_gsf[model_index].X(2) - _gsf_yaw);
+		_gsf_yaw_variance += _model_weights(model_index) * (_ekf_gsf[model_index].P(2, 2) + yaw_delta * yaw_delta);
+	}
+
+	if (_gsf_yaw_variance <= 0.f || !PX4_ISFINITE(_gsf_yaw_variance)) {
+		reset();
 	}
 }
 

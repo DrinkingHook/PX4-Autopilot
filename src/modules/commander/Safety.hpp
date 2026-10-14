@@ -41,6 +41,12 @@
 #include <uORB/Publication.hpp>
 #include <uORB/topics/button_event.h>
 
+enum class SafetyMode {
+	ALWAYS_OFF = 0,
+	BUTTON_OR_MAVLINK = 1,
+	BUTTON_ONLY = 2,
+	MAVLINK_ONLY = 3
+};
 class Safety
 {
 public:
@@ -59,6 +65,7 @@ private:
 
 	// 如果连接了安全开关则设置为true
 	bool _button_available{false};///< Set to true if a safety button is connected
+	bool _button_disabled{false};///< Set to true if the safety button should be ignored
 	bool _safety_off{false}; ///< Set to true if safety is off
 	bool _previous_safety_off{false}; ///< Previous safety value
 	// 如果安全功能被禁用，则设置为 true

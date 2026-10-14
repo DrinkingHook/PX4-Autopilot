@@ -748,10 +748,7 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 
 	// 下方的作用是,如果在用户期望的模式为特殊模式如(LAND,RTL等)，但是由于安全故障导致action为其他任务,而导致的不安全行为，提前预防
 	// UX improvement (this is optional for safety): change failsafe to a warning in certain situations.
-	// If already landing, do not go into RTL
-
-	// 翻译：用户体验改进（出于安全考虑，此项为可选）：在某些情况下将故障保护更改为警告。
-	// 	如果已在着陆，则不要进入返航状态
+	// If already landing, do not go into Return
 	if (returned_state.updated_user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_LAND) {
 		if ((selected_action == Action::RTL || returned_state.delayed_action == Action::RTL)
 		    && modeCanRun(status_flags, vehicle_status_s::NAVIGATION_STATE_AUTO_LAND)) {
@@ -760,9 +757,7 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 		}
 	}
 
-	// If already in RTL, do not go into RTL again (would cause a Hold delay first, then re-start RTL)
-	// 翻译：如果已处于 RTL 模式，请勿再次进入 RTL 模式（这将导致先进入锁定延迟，然后再重新启动 RTL 模式）
-	// 这样做是因为触发RTL后通常伴随着先爬升到指定高度，若已经触发RTL再次因故障保护触发RTL会导致不必要的爬升出现
+	// If already in Return, do not go into Return again (would cause a Hold delay first, then re-start Return)
 	if (returned_state.updated_user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_RTL) {
 		if ((selected_action == Action::RTL || returned_state.delayed_action == Action::RTL)
 		    && modeCanRun(status_flags, vehicle_status_s::NAVIGATION_STATE_AUTO_RTL)) {
@@ -771,7 +766,7 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 		}
 	}
 
-	// If already precision landing, do not go into RTL or Land
+	// If already precision landing, do not go into Return or Land
 	if (returned_state.updated_user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_PRECLAND) {
 		if ((selected_action == Action::RTL || selected_action == Action::Land ||
 		     returned_state.delayed_action == Action::RTL || returned_state.delayed_action == Action::Land)

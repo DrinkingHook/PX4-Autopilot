@@ -290,7 +290,7 @@ void MissionRouteCache::updateMissionLandItemCache(const mission_s &mission)
 		_dataman_cache_land_item.invalidate();
 
 		if (valid_land_index && !valid_dataman_id) {
-			PX4_ERR("Mission land cache: invalid dataman id");
+			PX4_ERR("Land cache: bad dataman id");
 		}
 
 		if (state.index >= 0) {
@@ -320,7 +320,7 @@ void MissionRouteCache::updateMissionLandItemCache(const mission_s &mission)
 			state.retry.clear();
 
 		} else {
-			PX4_WARN("Mission land cache retry");
+			PX4_WARN("Land cache retry");
 			_dataman_cache_land_item.invalidate();
 			state.retry.scheduleRetry(now);
 		}
@@ -351,7 +351,7 @@ bool MissionRouteCache::queueMissionLandItem()
 		return true;
 	}
 
-	PX4_WARN("Mission land cache retry");
+	PX4_WARN("Land cache retry");
 	return false;
 }
 
