@@ -123,7 +123,6 @@ EKF2::EKF2(bool multi_mode, const px4::wq_config_t &config, bool replay_mode):
 	_param_ekf2_gps_p_noise(_params->ekf2_gps_p_noise),
 	_param_ekf2_gps_p_gate(_params->ekf2_gps_p_gate),
 	_param_ekf2_gps_v_gate(_params->ekf2_gps_v_gate),
-	_param_ekf2_req_sacc(_params->ekf2_req_sacc),
 	_param_ekf2_gsf_tas(_params->ekf2_gsf_tas),
 #endif // CONFIG_EKF2_GNSS
 // CONFIG_EKF2_BAROMETER：气压计
@@ -518,7 +517,7 @@ void EKF2::Run()
 		AdvertiseTopics();
 
 #if defined(CONFIG_EKF2_GNSS)
-		_ekf.set_min_required_gps_health_time(_param_ekf2_req_gps_h.get() * 1_s);
+		_ekf.set_gnss_yaw_reset_wait(_param_ekf2_gps_yaw_rst.get() * 1_s);
 #endif // CONFIG_EKF2_GNSS
 
 		const matrix::Vector3f imu_pos_body(_param_ekf2_imu_pos_x.get(),
@@ -892,9 +891,13 @@ void EKF2::Run()
 		if (_ekf.update()) {
 			perf_set_elapsed(_ekf_update_perf, hrt_elapsed_time(&ekf_update_start));
 
-			PublishLocalPosition(now);
-			PublishOdometry(now, imu_sample_new);
-			PublishGlobalPosition(now);
+			// the output position, reconstructed once for all position publications
+			const LatLonAlt lla = _ekf.getLatLonAlt();
+			const Vector3f position = _ekf.globalToLocalPosition(lla);
+
+			PublishLocalPosition(now, position);
+			PublishOdometry(now, imu_sample_new, position);
+			PublishGlobalPosition(now, lla);
 			PublishSensorBias(now);
 
 #if defined(CONFIG_EKF2_WIND)
@@ -1167,6 +1170,22 @@ void EKF2::syncSensEnParam()
 	_param_ekf2_sens_en.commit_no_notification();
 }
 
+template <typename T>
+void EKF2::PublishAidSourceStatus(const hrt_abstime &timestamp, const T &status, hrt_abstime &status_publish_last,
+				  uORB::PublicationMulti<T> &pub)
+{
+	if (status.timestamp_sample > status_publish_last) {
+		// publish if updated
+		T status_out{status};
+		status_out.estimator_instance = _instance;
+		status_out.timestamp = _replay_mode ? timestamp : hrt_absolute_time();
+		pub.publish(status_out);
+
+		// record timestamp sample
+		status_publish_last = status.timestamp_sample;
+	}
+}
+
 void EKF2::PublishAidSourceStatus(const hrt_abstime &timestamp)
 {
 #if defined(CONFIG_EKF2_AIRSPEED)
@@ -1388,7 +1407,7 @@ void EKF2::PublishEventFlags(const hrt_abstime &timestamp)
 	}
 }
 
-void EKF2::PublishGlobalPosition(const hrt_abstime &timestamp)
+void EKF2::PublishGlobalPosition(const hrt_abstime &timestamp, const LatLonAlt &lla)
 {
 	if (_ekf.global_origin_valid() && _ekf.control_status().flags.yaw_align) {
 		// generate and publish global position data
@@ -1396,7 +1415,6 @@ void EKF2::PublishGlobalPosition(const hrt_abstime &timestamp)
 		global_pos.timestamp_sample = timestamp;
 
 		// Position GPS / WGS84 frame
-		const LatLonAlt lla = _ekf.getLatLonAlt();
 		global_pos.lat = lla.latitude_deg();
 		global_pos.lon = lla.longitude_deg();
 		global_pos.lat_lon_valid = _ekf.isGlobalHorizontalPositionValid();
@@ -1734,14 +1752,13 @@ void EKF2::PublishInnovationVariances(const hrt_abstime &timestamp)
 	_estimator_innovation_variances_pub.publish(variances);
 }
 
-void EKF2::PublishLocalPosition(const hrt_abstime &timestamp)
+void EKF2::PublishLocalPosition(const hrt_abstime &timestamp, const Vector3f &position)
 {
 	vehicle_local_position_s lpos{};
 	// generate vehicle local position data
 	lpos.timestamp_sample = timestamp;
 
 	// Position of body origin in local NED frame
-	const Vector3f position{_ekf.getPosition()};
 	lpos.x = position(0);
 	lpos.y = position(1);
 	lpos.z = position(2);
@@ -1857,12 +1874,7 @@ void EKF2::PublishLocalPosition(const hrt_abstime &timestamp)
 	_local_position_pub.publish(lpos);
 }
 
-/**
- * @brief 发布车辆里程计数据
- * @param timestamp 时间戳
- * @param imu_sample IMU数据
- */
-void EKF2::PublishOdometry(const hrt_abstime &timestamp, const imuSample &imu_sample)
+void EKF2::PublishOdometry(const hrt_abstime &timestamp, const imuSample &imu_sample, const Vector3f &position)
 {
 	// generate vehicle odometry data
 	vehicle_odometry_s odom;
@@ -1870,7 +1882,7 @@ void EKF2::PublishOdometry(const hrt_abstime &timestamp, const imuSample &imu_sa
 
 	// position
 	odom.pose_frame = vehicle_odometry_s::POSE_FRAME_NED;
-	_ekf.getPosition().copyTo(odom.position);
+	position.copyTo(odom.position);
 
 	// orientation quaternion
 	_ekf.getQuaternion().copyTo(odom.q);
@@ -2716,7 +2728,7 @@ void EKF2::UpdateGnssSample(ekf2_timestamps_s &ekf2_timestamps)
 
 	if (_vehicle_gnss_sub.update(&vehicle_gnss)) {
 
-		_gnss_failed_checks = vehicle_gnss.failed_checks;
+		_gnss_failed_checks = vehicle_gnss.strict ? vehicle_gnss.failed_strict_checks : vehicle_gnss.failed_relaxed_checks;
 
 		Vector3f vel_ned;
 
@@ -2752,6 +2764,7 @@ void EKF2::UpdateGnssSample(ekf2_timestamps_s &ekf2_timestamps)
 					     vehicle_gnss.antenna_offset[1],
 					     vehicle_gnss.antenna_offset[2]),
 			.usable = vehicle_gnss.usable,
+			.sacc_passes_strict = !(vehicle_gnss.failed_strict_checks & vehicle_gnss_s::CHECK_SACC),
 			.selection_count = vehicle_gnss.selection_count,
 		};
 

@@ -229,14 +229,12 @@ void Ekf::controlMagFusion(const imuSample &imu_sample)
 			// 持续条件通过 && 滤波器偏航对准已完成
 			if (continuing_conditions_passing && _control_status.flags.yaw_align) {
 
-				// 检查是否需要重置高度、航向和磁性故障 && （打算进行简单的磁航向融合 || 打算融合三轴磁力计测量 || 偏航被手动重置）
-				if (checkHaglYawResetReq() && (_control_status.flags.mag_hdg || _control_status.flags.mag_3D
-							       || _control_status.flags.yaw_manual)) {
-					ECL_INFO("reset to %s", AID_SRC_NAME);
-					const bool reset_heading = isHeadingResetToMagAllowed()
-								   && !isNorthEastAidingActive(); // NE aiding makes heading observable
-
-					resetMagStates(_mag_lpf.getState(), reset_heading);
+				if (isMagInFlightAlignmentRequired() && (_control_status.flags.mag_hdg || _control_status.flags.mag_3D
+						|| _control_status.flags.yaw_manual)) {
+					ECL_INFO("%s in-flight alignment", AID_SRC_NAME);
+					// Keep the heading: at launch, onboard sources can disturb the field. The mag states
+					// absorb the error, which declination fusion or North-East aiding corrects over time.
+					resetMagStates(_mag_lpf.getState(), false);
 
 					// record the start time for the magnetic field alignment
 					// 翻译：记录磁场对准的启动时间
@@ -401,21 +399,13 @@ void Ekf::stopMagFusion()
 	}
 }
 
-/**
- * @brief 检查是否需要重置高度、航向和磁性故障
- * 	目的是摆脱起飞前/地面附近受到的局部磁场干扰（尤其是地面磁异常）对磁力计航向估计的影响
- */
-bool Ekf::checkHaglYawResetReq() const
+bool Ekf::isMagInFlightAlignmentRequired() const
 {
 #if defined(CONFIG_EKF2_TERRAIN)
 
-	// We need to reset the yaw angle after climbing away from the ground to enable
-	// recovery from ground level magnetic interference.
-	// 翻译：我们需要在爬离地面后重置航向角，以使从地面磁干扰中恢复
+	// Re-align the mag field states once away from ground level magnetic interference
+	// learned before takeoff
 	if (_control_status.flags.in_air && _control_status.flags.yaw_align && !_control_status.flags.mag_aligned_in_flight) {
-		// Check if height has increased sufficiently to be away from ground magnetic anomalies
-		// and request a yaw reset if not already requested.
-		// 翻译：检查高度是否已增加到足以远离地面磁异常，如果尚未请求，则请求偏航重置
 		static constexpr float mag_anomalies_max_hagl = 1.5f;
 		const bool above_mag_anomalies = (getTerrainVPos() + _gpos.altitude()) > mag_anomalies_max_hagl;
 		return above_mag_anomalies;
@@ -447,22 +437,17 @@ void Ekf::resetMagStates(const Vector3f &mag, bool reset_heading)
 
 		// mag_I: reset, skipped if negligible change in state
 		const Vector3f mag_I = _wmm_earth_field_gauss;
-		bool mag_I_reset = false;
 
 		if ((_state.mag_I - mag_I).longerThan(kMagEarthMinGauss)) {
 			_state.mag_I = mag_I;
 			resetMagEarthCov();
-			mag_I_reset = true;
 		}
 
-		// mag_B: reset, skipped if mag_I didn't change
 		if (!reset_heading && _control_status.flags.yaw_align) {
-			if (mag_I_reset) {
-				// mag_B: reset using WMM
-				const Dcmf R_to_body = quatToInverseRotMat(_state.quat_nominal);
-				_state.mag_B = mag - (R_to_body * _wmm_earth_field_gauss);
-				resetMagBiasCov();
-			} // otherwise keep existing mag_B state (!mag_I_reset)
+			// trust the heading: attribute the field error to the body
+			const Dcmf R_to_body = quatToInverseRotMat(_state.quat_nominal);
+			_state.mag_B = mag - (R_to_body * _state.mag_I);
+			resetMagBiasCov();
 
 		} else {
 			_state.mag_B.zero();

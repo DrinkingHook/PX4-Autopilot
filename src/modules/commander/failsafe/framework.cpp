@@ -731,6 +731,14 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 
 		returned_state.cause = Cause::Generic;
 
+		// If descend is not supported (e.g. for rovers), safely disarm instead of terminating.
+		// However, if the user explicitly configured the position failsafe action to Terminate, honor it.
+		if ((status_flags.mode_not_supported & (1u << vehicle_status_s::NAVIGATION_STATE_DESCEND))
+		    && _param_com_pos_fs_act.get() != (int32_t)PositionFailsafeAction::Terminate) {
+			selected_action = Action::Disarm;
+			break;
+		}
+
 	// fallthrough
 	case Action::Terminate:
 		selected_action = Action::Terminate;
@@ -853,7 +861,8 @@ bool FailsafeBase::modeCanRun(const failsafe_flags_s &status_flags, uint8_t mode
 		(!status_flags.auto_mission_missing || ((status_flags.mode_req_mission & mode_mask) == 0)) &&
 		(!status_flags.offboard_control_signal_lost || ((status_flags.mode_req_offboard_signal & mode_mask) == 0)) &&
 		(!status_flags.home_position_invalid || ((status_flags.mode_req_home_position & mode_mask) == 0)) &&
-		((status_flags.mode_req_other & mode_mask) == 0);
+		((status_flags.mode_req_other & mode_mask) == 0) &&
+		((status_flags.mode_not_supported & mode_mask) == 0);
 }
 
 // 延迟所有可以延迟的故障保护机制，避免在紧急情况下触发故障保护

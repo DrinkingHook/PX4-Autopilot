@@ -45,9 +45,46 @@
 #include <lib/world_magnetic_model/geo_mag_declination.h>
 #include <cstdlib>
 
-/**
- * @brief 判断是否需要重置高度
- */
+namespace
+{
+// Indices of the non-zero entries of an observation Jacobian, in increasing order.
+// Most observations depend on a handful of states only. Skipping the zero terms
+// of P * H while keeping the summation order leaves every partial sum unchanged
+// (s + P(i, j) * 0 == s for finite P), so the sparse product is bit-identical
+// to the dense one.
+struct NonZeroIndices {
+	explicit NonZeroIndices(const Ekf::VectorState &v)
+	{
+		for (unsigned i = 0; i < State::size; i++) {
+			// excludes +0 and -0 only: NaN entries are kept, as in the dense product
+			if (!(fabsf(v(i)) <= 0.f)) {
+				idx[count++] = i;
+			}
+		}
+	}
+
+	uint8_t idx[State::size];
+	uint8_t count{0};
+};
+
+Ekf::VectorState multiplySparse(const Ekf::SquareMatrixState &P, const Ekf::VectorState &H, const NonZeroIndices &nz)
+{
+	Ekf::VectorState PH;
+
+	for (unsigned i = 0; i < State::size; i++) {
+		float sum = 0.f;
+
+		for (unsigned k = 0; k < nz.count; k++) {
+			sum += P(i, nz.idx[k]) * H(nz.idx[k]);
+		}
+
+		PH(i) = sum;
+	}
+
+	return PH;
+}
+} // namespace
+
 bool Ekf::isHeightResetRequired() const
 {
 	// check if height is continuously failing because of accel errors
@@ -157,15 +194,21 @@ bool Ekf::setLatLonOrigin(const double latitude, const double longitude, const f
 		return false;
 	}
 
-	if (!_local_origin_lat_lon.isInitialized() && isLocalHorizontalPositionValid()) {
-		// Already navigating in a local frame, use the origin to initialize global position
-		// 翻译：如果已经处于局部坐标系中，使用原点来初始化全局位置
+	if (!_local_origin_lat_lon.isInitialized()) {
+		// Until the first origin the local frame is referenced to lat/lon (0, 0). Keep the local position
+		// and place the global position where the new origin puts it: the latitude feeds the Earth rate,
+		// gravity and magnetic field model before any position aiding, and no reset needs reporting.
 		const Vector2f pos_prev = getLocalHorizontalPosition();
 		_local_origin_lat_lon.initReference(latitude, longitude, _time_delayed_us);
 		double new_latitude;
 		double new_longitude;
 		_local_origin_lat_lon.reproject(pos_prev(0), pos_prev(1), new_latitude, new_longitude);
-		resetHorizontalPositionTo(new_latitude, new_longitude, hpos_var);
+		_gpos.setLatLonDeg(new_latitude, new_longitude);
+		_output_predictor.resetLatLonTo(new_latitude, new_longitude);
+
+		if (PX4_ISFINITE(hpos_var)) {
+			P.uncorrelateCovarianceSetVariance<2>(State::pos.idx, math::max(sq(0.01f), hpos_var));
+		}
 
 	} else {
 		// Simply move the origin and compute the change in local position
@@ -1318,24 +1361,22 @@ void Ekf::fuseDirectStateMeasurement(const float innov, const float innov_var, c
 	//   =      P_temp     * (I - H.T * K.T) + K * R * K.T
 	//   =      P_temp - P_temp * H.T * K.T  + K * R * K.T
 
-	// Step 1: conventional update
-	// Compute P_temp and store it in P to avoid allocating more memory
+	// P_temp = P - K * PH^T is never stored: each entry is evaluated where it is used, first in
+	// P_temp * H (its column state_index), then in the stabilized update of the lower triangle,
+	// which is mirrored to the upper one. This is the same arithmetic as storing P_temp first.
 	// P is symmetric, so PH == H.T * P.T == H.T * P. Taking the row is faster as matrices are row-major
-	VectorState PH = P.row(state_index);
+	const VectorState PH = P.row(state_index);
+	VectorState P_temp_H;
 
 	for (unsigned i = 0; i < State::size; i++) {
-		for (unsigned j = 0; j < State::size; j++) {
-			P(i, j) -= K(i) * PH(j); // P is now not symmetric if K is not optimal (e.g.: some gains have been zeroed)
-		}
+		P_temp_H(i) = P(i, state_index) - K(i) * PH(state_index);
 	}
-
-	// Step 2: stabilized update
-	// P (or "P_temp") is not symmetric so we must take the column
-	PH = P.col(state_index);
 
 	for (unsigned i = 0; i < State::size; i++) {
 		for (unsigned j = 0; j <= i; j++) {
-			P(i, j) = P(i, j) - PH(i) * K(j) + K(i) * R * K(j);
+			// P_temp is not symmetric if K is not optimal (e.g.: some gains have been zeroed)
+			const float P_temp = P(i, j) - K(i) * PH(j);
+			P(i, j) = P_temp - P_temp_H(i) * K(j) + K(i) * R * K(j);
 			P(j, i) = P(i, j);
 		}
 	}
@@ -1351,26 +1392,12 @@ void Ekf::fuseDirectStateMeasurement(const float innov, const float innov_var, c
 	fuse(K, innov);
 }
 
-/**
- * @brief 执行标量测量的卡尔曼滤波更新(约瑟夫形式)
- *
- * 该函数针对单个标量测量值执行卡尔曼滤波的测量更新步骤，使用数值稳定的约瑟夫形式(Joseph stabilized form)更新协方差矩阵
- *
- * @param[out] k   计算得到的卡尔曼增益(标量，状态维度中对应维度的增益)
- * @param[in]  H   测量矩阵的对应行向量(状态向量，1×n)，将状态映射到该标量测量
- * @param[in]  R   测量噪声方差(标量)
- * @param[in]  innovation  创新(残差)，即 measurement - H * x_pred
- *
- * @return bool 更新是否成功
- *         - true:  更新成功，状态和协方差已更新
- *         - false: 更新失败(如创新方差为非正、数值异常等)
- *
- * @note 该函数会就地修改成员变量：
- *       - 状态估计: _state += k * innovation
- *       - 协方差:    P = (I - k*H^T) * P * (I - k*H^T)^T + k² * R   (约瑟夫形式)
- *
- * @see 向量测量版本的 measurementUpdate()
- */
+Ekf::VectorState Ekf::computeKalmanGain(const VectorState &H, const float innov_var) const
+{
+	// K = P * H / innov_var
+	return multiplySparse(P, H, NonZeroIndices(H)) / innov_var;
+}
+
 bool Ekf::measurementUpdate(VectorState &K, const VectorState &H, const float R, const float innovation)
 {
 	// 清除抑制状态下的卡尔曼增益
@@ -1395,34 +1422,31 @@ bool Ekf::measurementUpdate(VectorState &K, const VectorState &H, const float R,
 	//   =      P_temp     * (I - H.T * K.T) + K * R * K.T
 	//   =      P_temp - P_temp * H.T * K.T  + K * R * K.T
 
-	// Step 1: conventional update
-	// Compute P_temp and store it in P to avoid allocating more memory
-	// P is symmetric, so PH == H.T * P.T == H.T * P. Taking the row is faster as matrices are row-major
-
-	// 翻译：约瑟夫稳定协方差更新的高效实现
-	// 基于“G. J. Bierman 离散序列估计的因式分解方法 学术出版社，多佛出版社，纽约，1977 年，2006 年”
-	// P = (I - K * H) * P * (I - K * H).T K * R * K.T
-	// = P_temp * (I - H.T * K.T) K * R * K.T
-	// = P_temp - P_temp * H.T * K.T K * R * K.T
-
-	// 步骤1：常规更新
-	// 计算 P_temp 并将其存储在 P 中以避免分配更多内存
-	// P 是对称的 因此 PH == H.T * P.T == H.T * P 由于矩阵是行优先的，所以取行速度更快
-	VectorState PH = P * H; // H is stored as a column vector. H is in fact H.T
+	// P_temp = P - K * PH^T is never stored: each entry is evaluated where it is used, first in
+	// P_temp * H (only its columns selected by H), then in the stabilized update of the lower
+	// triangle, which is mirrored to the upper one. This is the same arithmetic as storing P_temp first.
+	const VectorState K_local = K; // stores to P cannot alias the gain
+	const NonZeroIndices H_nz(H);
+	const VectorState PH = multiplySparse(P, H, H_nz); // H is stored as a column vector. H is in fact H.T
+	VectorState P_temp_H;
 
 	for (unsigned i = 0; i < State::size; i++) {
-		for (unsigned j = 0; j < State::size; j++) {
-			P(i, j) -= K(i) * PH(j); // P is now not symmetrical if K is not optimal (e.g.: some gains have been zeroed)
-		}
-	}
+		float sum = 0.f;
 
-	// Step 2: stabilized update
-	// 翻译：Step 2: 稳定化更新
-	PH = P * H; // H is stored as a column vector. H is in fact H.T
+		for (unsigned k = 0; k < H_nz.count; k++) {
+			const unsigned j = H_nz.idx[k];
+			const float P_temp = P(i, j) - K_local(i) * PH(j);
+			sum += P_temp * H(j);
+		}
+
+		P_temp_H(i) = sum;
+	}
 
 	for (unsigned i = 0; i < State::size; i++) {
 		for (unsigned j = 0; j <= i; j++) {
-			P(i, j) = P(i, j) - PH(i) * K(j) + K(i) * R * K(j);
+			// P_temp is not symmetrical if K is not optimal (e.g.: some gains have been zeroed)
+			const float P_temp = P(i, j) - K_local(i) * PH(j);
+			P(i, j) = P_temp - P_temp_H(i) * K_local(j) + K_local(i) * R * K_local(j);
 			P(j, i) = P(i, j);
 		}
 	}

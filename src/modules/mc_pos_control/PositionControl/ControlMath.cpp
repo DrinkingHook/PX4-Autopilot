@@ -67,11 +67,12 @@ void limitTilt(Vector3f &body_unit, const Vector3f &world_unit, const float max_
 	// determine tilt
 	// 翻译：确定倾斜
 	const float dot_product_unit = body_unit.dot(world_unit);
-	float angle = acosf(dot_product_unit);
+	Vector3f rejection = body_unit - (dot_product_unit * world_unit);
+	// atan2 instead of acos: acos turns rounding errors near +-1 into large angles
+	float angle = atan2f(rejection.norm(), dot_product_unit);
 	// limit tilt
 	// 翻译：限制倾斜
 	angle = math::min(angle, max_angle);
-	Vector3f rejection = body_unit - (dot_product_unit * world_unit);
 
 	// corner case exactly parallel vectors
 	// 翻译：特殊情况：向量完全平行
